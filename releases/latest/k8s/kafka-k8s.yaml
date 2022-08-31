@@ -2,7 +2,7 @@ bundle: kubernetes
 applications:
   kafka-k8s:
     charm: kafka-k8s
-    channel: stable
+    channel: edge
     revision: 5
     resources:
       jmx-prometheus-jar: 1
@@ -13,7 +13,7 @@ applications:
       data: kubernetes,1,1024M
   zookeeper-k8s:
     charm: zookeeper-k8s
-    channel: stable
+    channel: edge
     revision: 10
     resources:
       zookeeper-image: 2

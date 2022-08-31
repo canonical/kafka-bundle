@@ -2,11 +2,8 @@ series: focal
 applications:
   kafka:
     charm: kafka
-    channel: stable
-    revision: 57
-    series: xenial
-    resources:
-      bigtop-repo: 6
+    channel: edge
+    revision: 74
     num_units: 3
     to:
     - "0"
@@ -26,11 +23,8 @@ applications:
     constraints: arch=amd64
   zookeeper:
     charm: zookeeper
-    channel: stable
-    revision: 53
-    series: xenial
-    resources:
-      bigtop-repo: 6
+    channel: edge
+    revision: 75
     num_units: 3
     to:
     - "3"
@@ -40,27 +34,21 @@ applications:
 machines:
   "0":
     constraints: arch=amd64
-    series: xenial
   "1":
     constraints: arch=amd64
-    series: xenial
   "2":
     constraints: arch=amd64
-    series: xenial
   "3":
     constraints: arch=amd64
-    series: xenial
   "4":
     constraints: arch=amd64
-    series: xenial
   "5":
     constraints: arch=amd64
-    series: xenial
   "6":
     constraints: arch=amd64
 relations:
-- - kafka:zookeeper
-  - zookeeper:zookeeper
+- - zookeeper:zookeeper
+  - kafka:zookeeper
 - - tls-certificates-operator:certificates
   - zookeeper:certificates
 - - tls-certificates-operator:certificates

@@ -1,11 +1,9 @@
-series: xenial
+series: focal
 applications:
   kafka:
     charm: kafka
-    channel: stable
-    revision: 57
-    resources:
-      bigtop-repo: 6
+    channel: edge
+    revision: 74
     num_units: 3
     to:
     - "0"
@@ -14,10 +12,8 @@ applications:
     constraints: arch=amd64
   zookeeper:
     charm: zookeeper
-    channel: stable
-    revision: 53
-    resources:
-      bigtop-repo: 6
+    channel: edge
+    revision: 75
     num_units: 3
     to:
     - "3"
@@ -38,5 +34,5 @@ machines:
   "5":
     constraints: arch=amd64
 relations:
-- - kafka:zookeeper
-  - zookeeper:zookeeper
+- - zookeeper:zookeeper
+  - kafka:zookeeper

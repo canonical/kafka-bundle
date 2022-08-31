@@ -2,7 +2,7 @@ bundle: kubernetes
 applications:
   kafka-k8s:
     charm: kafka-k8s
-    channel: stable
+    channel: edge
     revision: 5
     resources:
       jmx-prometheus-jar: 1
@@ -22,7 +22,7 @@ applications:
     constraints: arch=amd64
   zookeeper-k8s:
     charm: zookeeper-k8s
-    channel: stable
+    channel: edge
     revision: 10
     resources:
       zookeeper-image: 2
@@ -35,5 +35,5 @@ relations:
   - zookeeper-k8s:zookeeper
 - - zookeeper-k8s:certificates
   - tls-certificate-operator:certificates
-- - kafka:certificates
+- - kafka-k8s:certificates
   - tls-certificates-operator:certificates
