@@ -1,6 +1,6 @@
 bundle: kubernetes
 applications:
-  kafka-k8s:
+  kafka:
     charm: kafka-k8s
     channel: edge
     revision: 5
@@ -11,7 +11,7 @@ applications:
     constraints: arch=amd64
     storage:
       data: kubernetes,1,1024M
-  zookeeper-k8s:
+  zookeeper:
     charm: zookeeper-k8s
     channel: edge
     revision: 10
@@ -22,5 +22,5 @@ applications:
     storage:
       data: kubernetes,1,1024M
 relations:
-- - kafka-k8s:zookeeper
-  - zookeeper-k8s:zookeeper
+- - kafka:zookeeper
+  - zookeeper:zookeeper
