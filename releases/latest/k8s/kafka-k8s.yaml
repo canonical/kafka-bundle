@@ -1,26 +1,26 @@
-bundle: kubernetes
 applications:
   kafka:
-    charm: kafka-k8s
     channel: edge
-    revision: 5
+    charm: kafka-k8s
+    constraints: arch=amd64
     resources:
       jmx-prometheus-jar: 1
       kafka-image: 1
+    revision: 68
     scale: 3
-    constraints: arch=amd64
     storage:
       data: kubernetes,1,1024M
   zookeeper:
-    charm: zookeeper-k8s
     channel: edge
-    revision: 10
+    charm: zookeeper-k8s
+    constraints: arch=amd64
     resources:
       zookeeper-image: 2
+    revision: 65
     scale: 3
-    constraints: arch=amd64
     storage:
       data: kubernetes,1,1024M
+bundle: kubernetes
 relations:
 - - kafka:zookeeper
   - zookeeper:zookeeper

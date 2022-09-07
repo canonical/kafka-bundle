@@ -3,7 +3,6 @@
 # See LICENSE file for licensing details.
 
 import re
-from pathlib import Path
 from subprocess import PIPE, check_output
 from typing import Dict
 

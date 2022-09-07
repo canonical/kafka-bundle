@@ -1,17 +1,16 @@
-series: focal
 applications:
   kafka:
+    channel: edge
     charm: kafka
-    channel: edge
-    revision: 74
-    num_units: 3
     constraints: arch=amd64
+    num_units: 3
+    revision: 68
   zookeeper:
-    charm: zookeeper
     channel: edge
-    revision: 75
-    num_units: 3
+    charm: zookeeper
     constraints: arch=amd64
+    num_units: 3
+    revision: 65
 relations:
 - - zookeeper:zookeeper
   - kafka:zookeeper
