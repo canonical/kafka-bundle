@@ -1,0 +1,10 @@
+name: bundle update avaiable
+on:
+  schedule:
+    - cron:  '* * * * 7'
+
+jobs:
+  integration-test-lxd:
+    name: integration tests for (lxd)
+    runs-on: ubuntu-latest
+    uses: ./.github/workflows/integrate.yaml

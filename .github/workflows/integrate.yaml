@@ -1,0 +1,20 @@
+name: integration tests
+on:
+  workflow_call:
+jobs:
+  integration-test-lxd:
+    name: Integration tests for (lxd)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup operator environment
+        uses: charmed-kubernetes/actions-operator@main
+        with:
+          provider: lxd
+      - name: Run integration tests
+        run: |
+          tree -fi releases/ | grep .yaml | while read BUNDLE
+          do
+            tox -e integration -- --bundle $BUNDLE
+          done
