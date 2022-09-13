@@ -1,7 +1,7 @@
 name: bundle update avaiable
 on:
   schedule:
-    - cron:  '* * * * 7'
+    - cron:  '0 12 * * 3'
 
 jobs:
   integration-test-lxd:
