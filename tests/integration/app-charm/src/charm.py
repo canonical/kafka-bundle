@@ -61,7 +61,7 @@ class ApplicationCharm(CharmBase):
 
     def _make_admin(self, _):
         self.model.get_relation(REL_NAME).data[self.app].update(
-            {"extra-user-roles": "admin,consumer"}
+            {"extra-user-roles": "admin,consumer,producer"}
         )
 
     def _remove_admin(self, _):
@@ -76,9 +76,16 @@ class ApplicationCharm(CharmBase):
     def _produce(self, event):
         try:
             relation_list = self.model.relations[REL_NAME]
-            servers = relation_list[0].data[relation_list[0].app]["endpoints"].split(',')
+            servers = relation_list[0].data[relation_list[0].app]["endpoints"].split(",")
+            username = relation_list[0].data[relation_list[0].app]["username"]
+            password = relation_list[0].data[relation_list[0].app]["password"]
 
-            producer = KafkaProducer(bootstrap_servers=servers)
+            producer = KafkaProducer(
+                bootstrap_servers=servers,
+                sasl_plain_username=username,
+                sasl_plain_password=password,
+                sasl_mechanism="SASL_PLAINTEXT",
+            )
             producer.send("test-topic", b"test-message")
             event.set_results({"result": "sent"})
         except TypeError:
@@ -89,9 +96,17 @@ class ApplicationCharm(CharmBase):
     def _consume(self, event):
         try:
             relation_list = self.model.relations[REL_NAME]
-            servers = relation_list[0].data[relation_list[0].app]["endpoints"].split(',')
+            servers = relation_list[0].data[relation_list[0].app]["endpoints"].split(",")
+            username = relation_list[0].data[relation_list[0].app]["username"]
+            password = relation_list[0].data[relation_list[0].app]["password"]
 
-            consumer = KafkaConsumer("test-topic", bootstrap_servers=servers)
+            consumer = KafkaConsumer(
+                "test-topic",
+                bootstrap_servers=servers,
+                sasl_plain_username=username,
+                sasl_plain_password=password,
+                sasl_mechanism="SASL_PLAINTEXT",
+            )
             for msg in consumer:
                 logger.info(msg)
                 if msg == "test-message":
@@ -100,6 +115,7 @@ class ApplicationCharm(CharmBase):
             message = "No relations data found.  Terminating consume action."
             event.fail(message=message)
             logger.info(message)
+
 
 if __name__ == "__main__":
     main(ApplicationCharm)

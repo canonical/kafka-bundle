@@ -18,6 +18,7 @@ from tests.integration.kafka_helpers import (
 
 logger = logging.getLogger(__name__)
 
+
 def units_deployed(model, bundle_data):
     for app_name, app in model.applications.items():
         try:
@@ -26,6 +27,7 @@ def units_deployed(model, bundle_data):
         except KeyError:
             print(f"Skipping {app_name}. Not found in bundle...")
     return True
+
 
 @pytest.fixture(scope="module")
 def usernames():
@@ -39,7 +41,7 @@ async def test_deploy_bundle_active(ops_test: OpsTest, usernames, bundle):
 
     for app in bundle_data["applications"]:
         applications.append(app)
-    
+
     charm = await ops_test.deploy_bundle(bundle=bundle, build=False)
     time.sleep(20)
     await ops_test.model.block_until(lambda: (units_deployed(ops_test.model, bundle_data)))
@@ -95,10 +97,12 @@ async def test_deploy_app_charm_relate(ops_test: OpsTest, usernames, bundle):
 async def test_run_action_produce(ops_test: OpsTest, usernames):
     action = await ops_test.model.units.get("app/0").run_action("produce")
     await action.wait()
+    breakpoint()
     try:
         assert action["results"]["result"] == "sent"
     except KeyError:
         assert False
+
 
 @pytest.mark.abort_on_fail
 async def test_run_action_consume(ops_test: OpsTest, usernames):
