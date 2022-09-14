@@ -9,3 +9,9 @@ remove-admin:
 
 change-topic:
   description: Changes topic
+
+produce:
+  description: Produce message
+
+consume:
+  description: Consume message

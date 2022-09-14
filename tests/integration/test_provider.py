@@ -2,7 +2,6 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-import asyncio
 import logging
 import time
 import yaml
@@ -15,10 +14,18 @@ from tests.integration.kafka_helpers import (
     check_user,
     get_zookeeper_connection,
     load_acls,
-    load_super_users,
 )
 
 logger = logging.getLogger(__name__)
+
+def units_deployed(model, bundle_data):
+    for app_name, app in model.applications.items():
+        try:
+            if len(app.units) != bundle_data["applications"][app_name]["num_units"]:
+                return False
+        except KeyError:
+            print(f"Skipping {app_name}. Not found in bundle...")
+    return True
 
 @pytest.fixture(scope="module")
 def usernames():
@@ -26,7 +33,27 @@ def usernames():
 
 
 @pytest.mark.abort_on_fail
-async def test_deploy_charms_relate_active(ops_test: OpsTest, usernames, bundle):
+async def test_deploy_bundle_active(ops_test: OpsTest, usernames, bundle):
+    bundle_data = yaml.safe_load(Path(bundle).read_text())
+    applications = []
+
+    for app in bundle_data["applications"]:
+        applications.append(app)
+    
+    charm = await ops_test.deploy_bundle(bundle=bundle, build=False)
+    time.sleep(20)
+    await ops_test.model.block_until(lambda: (units_deployed(ops_test.model, bundle_data)))
+    await ops_test.model.set_config({"update-status-hook-interval": "10s"})
+    await ops_test.model.wait_for_idle(apps=applications, status="active", timeout=1000)
+
+    for app in applications:
+        assert ops_test.model.applications[app].status == "active"
+
+    await ops_test.model.set_config({"update-status-hook-interval": "60m"})
+
+
+@pytest.mark.abort_on_fail
+async def test_deploy_app_charm_relate(ops_test: OpsTest, usernames, bundle):
     bundle_data = yaml.safe_load(Path(bundle).read_text())
     applications = []
 
@@ -34,19 +61,14 @@ async def test_deploy_charms_relate_active(ops_test: OpsTest, usernames, bundle)
         applications.append(app)
 
     app_charm = await ops_test.build_charm("tests/integration/app-charm")
-    charm = await ops_test.deploy_bundle(bundle=bundle, build=False)
     await ops_test.model.deploy(app_charm, application_name="app", num_units=1)
     await ops_test.model.add_relation("kafka", "app")
     time.sleep(20)
-    await ops_test.model.block_until(lambda: (len(ops_test.model.applications["kafka"].units) == 3 and len(ops_test.model.applications["zookeeper"].units) == 3))
-    await ops_test.model.set_config({"update-status-hook-interval": "10s"})
+    await ops_test.model.block_until(lambda: (units_deployed(ops_test.model, bundle_data)))
     await ops_test.model.wait_for_idle(apps=applications + ["app"], status="active", timeout=1000)
 
     for app in applications + ["app"]:
         assert ops_test.model.applications[app].status == "active"
-
-    await ops_test.model.set_config({"update-status-hook-interval": "60m"})
-
 
     # implicitly tests setting of kafka app data
     returned_usernames, zookeeper_uri = get_zookeeper_connection(
@@ -63,110 +85,26 @@ async def test_deploy_charms_relate_active(ops_test: OpsTest, usernames, bundle)
 
     for acl in load_acls(model_full_name=ops_test.model_full_name, zookeeper_uri=zookeeper_uri):
         assert acl.username in usernames
-        assert acl.operation in ["READ", "DESCRIBE"]
+        assert acl.operation in ["CREATE", "READ", "WRITE", "DESCRIBE"]
         assert acl.resource_type in ["GROUP", "TOPIC"]
         if acl.resource_type == "TOPIC":
             assert acl.resource_name == "test-topic"
 
 
 @pytest.mark.abort_on_fail
-async def test_deploy_multiple_charms_same_topic_relate_active(ops_test: OpsTest, usernames):
-    appii_charm = await ops_test.build_charm("tests/integration/app-charm")
-    await ops_test.model.deploy(appii_charm, application_name="appii", num_units=1),
-    await ops_test.model.wait_for_idle(apps=["appii"])
-    await ops_test.model.add_relation("kafka", "appii")
-    await ops_test.model.wait_for_idle(apps=["kafka", "appii"])
-    assert ops_test.model.applications["kafka"].status == "active"
-    assert ops_test.model.applications["app"].status == "active"
-    assert ops_test.model.applications["appii"].status == "active"
-
-    returned_usernames, zookeeper_uri = get_zookeeper_connection(
-        unit_name="kafka/0", model_full_name=ops_test.model_full_name
-    )
-    usernames.update(returned_usernames)
-
-    for username in usernames:
-        check_user(
-            username=username,
-            zookeeper_uri=zookeeper_uri,
-            model_full_name=ops_test.model_full_name,
-        )
-
-    for acl in load_acls(model_full_name=ops_test.model_full_name, zookeeper_uri=zookeeper_uri):
-        assert acl.username in usernames
-        assert acl.operation in ["READ", "DESCRIBE"]
-        assert acl.resource_type in ["GROUP", "TOPIC"]
-        if acl.resource_type == "TOPIC":
-            assert acl.resource_name == "test-topic"
-
-
-@pytest.mark.abort_on_fail
-async def test_remove_application_removes_user_and_acls(ops_test: OpsTest, usernames):
-    await ops_test.model.remove_application("app", block_until_done=True)
-    await ops_test.model.wait_for_idle(apps=["kafka"])
-    assert ops_test.model.applications["kafka"].status == "active"
-
-    _, zookeeper_uri = get_zookeeper_connection(
-        unit_name="kafka/0", model_full_name=ops_test.model_full_name
-    )
-
-    # checks that old users are removed from active cluster ACLs
-    acls = load_acls(model_full_name=ops_test.model_full_name, zookeeper_uri=zookeeper_uri)
-    acl_usernames = set()
-    for acl in acls:
-        acl_usernames.add(acl.username)
-
-    assert acl_usernames != usernames
-
-    # checks that past usernames no longer exist in ZooKeeper
-    with pytest.raises(AssertionError):
-        for username in usernames:
-            check_user(
-                username=username,
-                zookeeper_uri=zookeeper_uri,
-                model_full_name=ops_test.model_full_name,
-            )
-
-
-@pytest.mark.abort_on_fail
-async def test_change_client_topic(ops_test: OpsTest):
-    action = await ops_test.model.units.get(f"{'appii'}/0").run_action("change-topic")
+async def test_run_action_produce(ops_test: OpsTest, usernames):
+    action = await ops_test.model.units.get("app/0").run_action("produce")
     await action.wait()
-    assert ops_test.model.applications["kafka"].status == "active"
-    await ops_test.model.wait_for_idle(apps=["kafka", "appii"])
-
-    _, zookeeper_uri = get_zookeeper_connection(
-        unit_name="kafka/0", model_full_name=ops_test.model_full_name
-    )
-
-    for acl in load_acls(model_full_name=ops_test.model_full_name, zookeeper_uri=zookeeper_uri):
-        if acl.resource_type == "TOPIC":
-            assert acl.resource_name == "test-topic-changed"
-
+    try:
+        assert action["results"]["result"] == "sent"
+    except KeyError:
+        assert False
 
 @pytest.mark.abort_on_fail
-async def test_admin_added_to_super_users(ops_test: OpsTest):
-    # ensures only broker user for now
-    super_users = load_super_users(model_full_name=ops_test.model_full_name)
-    assert len(super_users) == 1
-
-    action = await ops_test.model.units.get(f"{'appii'}/0").run_action("make-admin")
+async def test_run_action_consume(ops_test: OpsTest, usernames):
+    action = await ops_test.model.units.get("app/0").run_action("consume")
     await action.wait()
-
-    await ops_test.model.wait_for_idle(apps=["kafka", "appii"])
-    assert ops_test.model.applications["kafka"].status == "active"
-
-    super_users = load_super_users(model_full_name=ops_test.model_full_name)
-    assert len(super_users) == 2
-
-
-@pytest.mark.abort_on_fail
-async def test_admin_removed_from_super_users(ops_test: OpsTest):
-    action = await ops_test.model.units.get(f"{'appii'}/0").run_action("remove-admin")
-    await action.wait()
-
-    await ops_test.model.wait_for_idle(apps=["kafka", "appii"])
-    assert ops_test.model.applications["kafka"].status == "active"
-
-    super_users = load_super_users(model_full_name=ops_test.model_full_name)
-    assert len(super_users) == 1
+    try:
+        assert action["results"]["result"] == "pass"
+    except KeyError:
+        assert False
