@@ -79,20 +79,21 @@ class ApplicationCharm(CharmBase):
             servers = relation_list[0].data[relation_list[0].app]["endpoints"].split(",")
             username = relation_list[0].data[relation_list[0].app]["username"]
             password = relation_list[0].data[relation_list[0].app]["password"]
-
-            producer = KafkaProducer(
-                bootstrap_servers=servers,
-                sasl_plain_username=username,
-                sasl_plain_password=password,
-                sasl_mechanism="SCRAM-SHA-512",
-                security_protocol="SASL_PLAINTEXT",
-            )
-            producer.send("test-topic", b"test-message")
-            event.set_results({"result": "sent"})
         except TypeError:
+            logger.info(message)
             message = "No relations data found.  Terminating produce action."
             event.fail(message=message)
-            logger.info(message)
+            return
+
+        producer = KafkaProducer(
+            bootstrap_servers=servers,
+            sasl_plain_username=username,
+            sasl_plain_password=password,
+            sasl_mechanism="SCRAM-SHA-512",
+            security_protocol="SASL_PLAINTEXT",
+        )
+        producer.send("test-topic", b"test-message")
+        event.set_results({"result": "sent"})
 
     def _consume(self, event):
         try:
@@ -100,23 +101,20 @@ class ApplicationCharm(CharmBase):
             servers = relation_list[0].data[relation_list[0].app]["endpoints"].split(",")
             username = relation_list[0].data[relation_list[0].app]["username"]
             password = relation_list[0].data[relation_list[0].app]["password"]
-
-            consumer = KafkaConsumer(
-                "test-topic",
-                bootstrap_servers=servers,
-                sasl_plain_username=username,
-                sasl_plain_password=password,
-                sasl_mechanism="SCRAM-SHA-512",
-                security_protocol="SASL_PLAINTEXT",
-            )
-            for msg in consumer:
-                logger.info(msg)
-                if msg == "test-message":
-                    event.set_results({"result": "pass"})
         except TypeError:
             message = "No relations data found.  Terminating consume action."
-            event.fail(message=message)
             logger.info(message)
+            event.fail(message=message)
+
+        consumer = KafkaConsumer(
+            "test-topic",
+            bootstrap_servers=servers,
+            sasl_plain_username=username,
+            sasl_plain_password=password,
+            sasl_mechanism="SCRAM-SHA-512",
+            security_protocol="SASL_PLAINTEXT",
+        )
+        event.set_results({"result": "read"})
 
 
 if __name__ == "__main__":

@@ -105,9 +105,10 @@ async def test_run_action_produce(ops_test: OpsTest, usernames):
 
 @pytest.mark.abort_on_fail
 async def test_run_action_consume(ops_test: OpsTest, usernames):
+    breakpoint()
     action = await ops_test.model.units.get("app/0").run_action("consume")
     await action.wait()
     try:
-        assert action.results["result"] == "pass"
+        assert action.results["result"] == "read"
     except KeyError:
         assert False
