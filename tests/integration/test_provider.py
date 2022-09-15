@@ -98,7 +98,7 @@ async def test_run_action_produce(ops_test: OpsTest, usernames):
     action = await ops_test.model.units.get("app/0").run_action("produce")
     await action.wait()
     try:
-        assert action["results"]["result"] == "sent"
+        assert action.results["result"] == "sent"
     except KeyError:
         assert False
 
@@ -108,6 +108,6 @@ async def test_run_action_consume(ops_test: OpsTest, usernames):
     action = await ops_test.model.units.get("app/0").run_action("consume")
     await action.wait()
     try:
-        assert action["results"]["result"] == "pass"
+        assert action.results["result"] == "pass"
     except KeyError:
         assert False
