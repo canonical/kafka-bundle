@@ -97,7 +97,6 @@ async def test_deploy_app_charm_relate(ops_test: OpsTest, usernames, bundle):
 async def test_run_action_produce(ops_test: OpsTest, usernames):
     action = await ops_test.model.units.get("app/0").run_action("produce")
     await action.wait()
-    breakpoint()
     try:
         assert action["results"]["result"] == "sent"
     except KeyError:
