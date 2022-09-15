@@ -84,7 +84,8 @@ class ApplicationCharm(CharmBase):
                 bootstrap_servers=servers,
                 sasl_plain_username=username,
                 sasl_plain_password=password,
-                sasl_mechanism="SASL_PLAINTEXT",
+                sasl_mechanism="SCRAM-SHA-512",
+                security_protocol="SASL_PLAINTEXT",
             )
             producer.send("test-topic", b"test-message")
             event.set_results({"result": "sent"})
@@ -105,7 +106,8 @@ class ApplicationCharm(CharmBase):
                 bootstrap_servers=servers,
                 sasl_plain_username=username,
                 sasl_plain_password=password,
-                sasl_mechanism="SASL_PLAINTEXT",
+                sasl_mechanism="SCRAM-SHA-512",
+                security_protocol="SASL_PLAINTEXT",
             )
             for msg in consumer:
                 logger.info(msg)
