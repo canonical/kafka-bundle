@@ -29,8 +29,8 @@ jobs:
             Update bundles with new revisions from Charmhub.
           labels: |
             automated pr
-          assignees: jardon
-          reviewers: jardon
+          assignees: marcoppenheimer,zmraul
+          reviewers: marcoppenheimer,zmraul
           team-reviewers: |
             owners
             maintainers
