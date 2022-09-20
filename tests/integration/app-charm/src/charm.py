@@ -50,9 +50,6 @@ class ApplicationCharm(CharmBase):
         self.unit.status = ActiveStatus()
 
     def _set_data(self, event: RelationEvent) -> None:
-
-        event.relation.data[self.unit].update({"group": self.unit.name.split("/")[1]})
-
         if not self.unit.is_leader():
             return
         event.relation.data[self.app].update(
@@ -92,7 +89,7 @@ class ApplicationCharm(CharmBase):
             sasl_mechanism="SCRAM-SHA-512",
             security_protocol="SASL_PLAINTEXT",
         )
-        producer.send("test-topic", b"test-message")
+        producer.send(self.model.get_relation(REL_NAME).data[self.app]["topic"], b"test-message")
         event.set_results({"result": "sent"})
 
     def _consume(self, event):
@@ -107,7 +104,7 @@ class ApplicationCharm(CharmBase):
             event.fail(message=message)
 
         consumer = KafkaConsumer(
-            "test-topic",
+            self.model.get_relation(REL_NAME).data[self.app]["topic"],
             bootstrap_servers=servers,
             sasl_plain_username=username,
             sasl_plain_password=password,
