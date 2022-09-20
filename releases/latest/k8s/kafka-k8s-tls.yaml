@@ -1,11 +1,10 @@
 bundle: kubernetes
 applications:
-  kafka-k8s:
+  kafka:
     charm: kafka-k8s
-    channel: stable
+    channel: edge
     revision: 5
     resources:
-      jmx-prometheus-jar: 1
       kafka-image: 1
     scale: 3
     constraints: arch=amd64
@@ -20,9 +19,9 @@ applications:
       ca-common-name: canonical
       generate-self-signed-certificates: true
     constraints: arch=amd64
-  zookeeper-k8s:
+  zookeeper:
     charm: zookeeper-k8s
-    channel: stable
+    channel: edge
     revision: 10
     resources:
       zookeeper-image: 2
@@ -31,9 +30,9 @@ applications:
     storage:
       data: kubernetes,1,1024M
 relations:
-- - kafka-k8s:zookeeper
-  - zookeeper-k8s:zookeeper
-- - zookeeper-k8s:certificates
+- - kafka:zookeeper
+  - zookeeper:zookeeper
+- - zookeeper:certificates
   - tls-certificate-operator:certificates
 - - kafka:certificates
   - tls-certificates-operator:certificates
