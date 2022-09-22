@@ -3,7 +3,7 @@ on:
   workflow_call:
 jobs:
   integration-test-lxd:
-    name: Integration tests for (lxd)
+    name: Integration tests for machine charms
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -20,7 +20,7 @@ jobs:
           done
   integration-test-k8s:
     runs-on: ubuntu-latest
-    name: Integration tests for (lxd)
+    name: Integration tests for k8s charms
     steps:
       - name: Setup operator environment
         uses: charmed-kubernetes/actions-operator@main
