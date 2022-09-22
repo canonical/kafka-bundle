@@ -15,5 +15,4 @@ jobs:
 
   integration-test-lxd:
     name: Integration tests for (lxd)
-    runs-on: ubuntu-latest
     uses: ./.github/workflows/integrate.yaml
