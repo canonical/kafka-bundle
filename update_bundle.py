@@ -3,11 +3,11 @@
 # See LICENSE file for licensing details.
 
 import logging
+import sys
+from pathlib import Path
+
 import requests
 import yaml
-import sys
-
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +22,7 @@ def fetch_revision(charm, charm_channel):
             return channel["revision"]["revision"]
     raise ValueError("Revision not found.")
 
+
 def update_bundle(bundle_path):
     """Updates a bundle's revision number."""
     bundle_data = yaml.safe_load(Path(bundle_path).read_text())
@@ -30,10 +31,10 @@ def update_bundle(bundle_path):
             app, bundle_data["applications"][app]["channel"]
         )
 
-    with open(bundle_path, 'w') as bundle:
+    with open(bundle_path, "w") as bundle:
         yaml.dump(bundle_data, bundle)
         bundle.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     update_bundle(sys.argv[1])

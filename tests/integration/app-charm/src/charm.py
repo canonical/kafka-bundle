@@ -10,10 +10,10 @@ of the libraries in this repository.
 
 import logging
 
+from kafka import KafkaConsumer, KafkaProducer
 from ops.charm import CharmBase, RelationEvent
 from ops.main import main
 from ops.model import ActiveStatus
-from kafka import KafkaConsumer, KafkaProducer
 
 logger = logging.getLogger(__name__)
 
@@ -77,8 +77,8 @@ class ApplicationCharm(CharmBase):
             username = relation_list[0].data[relation_list[0].app]["username"]
             password = relation_list[0].data[relation_list[0].app]["password"]
         except TypeError:
-            logger.info(message)
             message = "No relations data found.  Terminating produce action."
+            logger.info(message)
             event.fail(message=message)
             return
 
@@ -103,7 +103,7 @@ class ApplicationCharm(CharmBase):
             logger.info(message)
             event.fail(message=message)
 
-        consumer = KafkaConsumer(
+        KafkaConsumer(
             self.model.get_relation(REL_NAME).data[self.app]["topic"],
             bootstrap_servers=servers,
             sasl_plain_username=username,

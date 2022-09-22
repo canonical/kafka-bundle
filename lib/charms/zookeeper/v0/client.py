@@ -58,13 +58,13 @@ def update_cluster(new_members: List[str], event: EventBase) -> None:
 import logging
 import re
 from typing import Any, Dict, Iterable, List, Set, Tuple
-from kazoo.client import KazooClient
+
+from kazoo.client import ACL, KazooClient
 from kazoo.handlers.threading import KazooTimeoutError
 from tenacity import RetryError, retry
 from tenacity.retry import retry_if_not_result
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
-from kazoo.client import ACL, KazooClient
 
 # The unique Charmhub library identifier, never change it
 LIBID = "4dc4430e6e5d492699391f57bd697fce"

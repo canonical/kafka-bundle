@@ -2,7 +2,6 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 import re
-from pathlib import Path
 from subprocess import PIPE, check_output
 from typing import Any, Dict, List, Set, Tuple
 
