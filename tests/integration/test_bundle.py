@@ -4,11 +4,11 @@
 
 import logging
 import time
-import yaml
+from pathlib import Path
 
 import pytest
+import yaml
 from pytest_operator.plugin import OpsTest
-from pathlib import Path
 
 from tests.integration.kafka_helpers import (
     check_user,
@@ -42,7 +42,7 @@ async def test_deploy_bundle_active(ops_test: OpsTest, usernames, bundle):
     for app in bundle_data["applications"]:
         applications.append(app)
 
-    charm = await ops_test.deploy_bundle(bundle=bundle, build=False)
+    await ops_test.deploy_bundle(bundle=bundle, build=False)
     time.sleep(20)
     await ops_test.model.block_until(lambda: (units_deployed(ops_test.model, bundle_data)))
     await ops_test.model.set_config({"update-status-hook-interval": "10s"})
