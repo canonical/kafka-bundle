@@ -2,13 +2,11 @@ applications:
   kafka:
     channel: edge
     charm: kafka
-    constraints: arch=amd64
     num_units: 3
     revision: 68
   tls-certificates-operator:
     channel: edge
     charm: tls-certificates-operator
-    constraints: arch=amd64
     num_units: 1
     options:
       ca-common-name: canonical
@@ -17,7 +15,6 @@ applications:
   zookeeper:
     channel: edge
     charm: zookeeper
-    constraints: arch=amd64
     num_units: 3
     revision: 65
 relations:
@@ -27,4 +24,3 @@ relations:
   - zookeeper:certificates
 - - tls-certificates-operator:certificates
   - kafka:certificates
-series: focal
