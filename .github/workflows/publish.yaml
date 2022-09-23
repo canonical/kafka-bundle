@@ -1,0 +1,30 @@
+name: publish bundles
+on:
+  workflow_call:
+jobs:
+  list-bundles:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v2
+      - id: set-matrix
+        run: echo "::set-output name=matrix::$(find releases | grep yaml | jq -R -s -c 'split("\n")[:-1]')"
+  publish:
+    name: publish to stable
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        bundles: ${{ fromJson(needs.list-bundles.outputs.matrix) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Upload bundle to edge
+        uses: canonical/charming-actions/upload-bundle@1.0.0
+        bundle-path: ${{ matrix.bundles }}
+        channel: latest/stable
+        with:
+          credentials: "${{ secrets.CHARMCRAFT_AUTH }}"
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
