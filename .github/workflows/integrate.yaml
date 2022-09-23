@@ -12,6 +12,9 @@ jobs:
         uses: charmed-kubernetes/actions-operator@main
         with:
           provider: lxd
+      - name: Install Dependencies
+        run: |
+          sudo snap install juju-wait --classic
       - name: Run machine integration tests
         run: |
           tree -fi releases/ | grep .yaml | grep -v k8s |  while read BUNDLE
