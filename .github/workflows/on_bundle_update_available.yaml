@@ -20,8 +20,8 @@ jobs:
         with:
           token: ${{ secrets.PAT }}
           commit-message: Update bundles
-          committer: GitHub <noreply@github.com>
-          author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
+          committer: jardon <jarred.wilson12@gmail.com>
+          author: jardon <jarred.wilson12@gmail.com>
           signoff: false
           branch: update-bundles
           delete-branch: true
