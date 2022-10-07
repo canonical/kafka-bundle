@@ -19,7 +19,7 @@ applications:
     revision: 82
 relations:
 - - zookeeper:certificates
-  - tls-certificate-operator:certificates
+  - tls-certificates-operator:certificates
 - - kafka:certificates
   - tls-certificates-operator:certificates
 - - kafka:zookeeper
