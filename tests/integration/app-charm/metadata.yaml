@@ -15,3 +15,6 @@ peers:
 requires:
   kafka-client:
     interface: kafka_client
+  certificates:
+    interface: tls-certificates
+    limit: 1
