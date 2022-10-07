@@ -29,11 +29,12 @@ def fetch_revision(charm: str, charm_channel: str) -> int:
     for channel in charm_info["channel-map"]:
         if channel["channel"]["risk"] == charm_channel:
             revisions.append(channel["revision"]["revision"])
-    
+
     if not revisions:
         raise ValueError("Revision not found.")
 
     return max(revisions)
+
 
 def update_bundle(bundle_path: str) -> None:
     """Updates a bundle's revision number.
