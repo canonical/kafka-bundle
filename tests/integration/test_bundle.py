@@ -43,15 +43,14 @@ async def test_deploy_bundle_active(ops_test: OpsTest, usernames, bundle):
         applications.append(app)
 
     await ops_test.deploy_bundle(bundle=bundle, build=False)
-    time.sleep(20)
+    time.sleep(60)
     await ops_test.model.block_until(lambda: (units_deployed(ops_test.model, bundle_data)))
-    await ops_test.model.set_config({"update-status-hook-interval": "10s"})
-    await ops_test.model.wait_for_idle(apps=applications, status="active", timeout=1000)
+    await ops_test.model.wait_for_idle(
+        apps=applications, status="active", timeout=1000, idle_period=20
+    )
 
     for app in applications:
         assert ops_test.model.applications[app].status == "active"
-
-    await ops_test.model.set_config({"update-status-hook-interval": "60m"})
 
 
 @pytest.mark.abort_on_fail
@@ -60,17 +59,26 @@ async def test_deploy_app_charm_relate(ops_test: OpsTest, usernames, bundle):
     applications = []
 
     kafka_app_name = "kafka"
+    tls = False
     for app in bundle_data["applications"]:
         applications.append(app)
         if "kafka" in app:
             kafka_app_name = app
+        if "tls-certificates-operator" in app:
+            tls = True
+
 
     app_charm = await ops_test.build_charm("tests/integration/app-charm")
     await ops_test.model.deploy(app_charm, application_name="app", num_units=1)
+    if tls:
+        await ops_test.model.add_relation("app", "tls-certificates-operator")
+    time.sleep(30)
     await ops_test.model.add_relation(kafka_app_name, "app")
-    time.sleep(20)
+    time.sleep(60)
     await ops_test.model.block_until(lambda: (units_deployed(ops_test.model, bundle_data)))
-    await ops_test.model.wait_for_idle(apps=applications + ["app"], status="active", timeout=1000)
+    await ops_test.model.wait_for_idle(
+        apps=applications + ["app"], status="active", timeout=1000, idle_period=20
+    )
 
     for app in applications + ["app"]:
         assert ops_test.model.applications[app].status == "active"
