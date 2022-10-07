@@ -12,7 +12,7 @@ from tests.integration.auth import Acl, KafkaAuth
 
 def load_acls(model_full_name: str, zookeeper_uri: str, unit_name: str) -> Set[Acl]:
     result = check_output(
-        f"JUJU_MODEL={model_full_name} juju ssh kafka/0 'kafka.acls --authorizer-properties zookeeper.connect={zookeeper_uri} --list'",
+        f"JUJU_MODEL={model_full_name} juju ssh {unit_name} 'kafka.acls --authorizer-properties zookeeper.connect={zookeeper_uri} --list'",
         stderr=PIPE,
         shell=True,
         universal_newlines=True,
@@ -23,7 +23,7 @@ def load_acls(model_full_name: str, zookeeper_uri: str, unit_name: str) -> Set[A
 
 def load_super_users(model_full_name: str, unit_name: str) -> List[str]:
     result = check_output(
-        f"JUJU_MODEL={model_full_name} juju ssh kafka/0 'cat /var/snap/kafka/common/server.properties'",
+        f"JUJU_MODEL={model_full_name} juju ssh {unit_name} 'cat /var/snap/kafka/common/server.properties'",
         stderr=PIPE,
         shell=True,
         universal_newlines=True,
@@ -39,7 +39,7 @@ def load_super_users(model_full_name: str, unit_name: str) -> List[str]:
 
 def check_user(model_full_name: str, username: str, zookeeper_uri: str, unit_name: str) -> None:
     result = check_output(
-        f"JUJU_MODEL={model_full_name} juju ssh kafka/0 'kafka.configs --zookeeper {zookeeper_uri} --describe --entity-type users --entity-name {username}'",
+        f"JUJU_MODEL={model_full_name} juju ssh {unit_name} 'kafka.configs --zookeeper {zookeeper_uri} --describe --entity-type users --entity-name {username}'",
         stderr=PIPE,
         shell=True,
         universal_newlines=True,
