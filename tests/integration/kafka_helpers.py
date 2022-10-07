@@ -9,10 +9,8 @@ import yaml
 
 from tests.integration.auth import Acl, KafkaAuth
 
-APP_NAME = "kafka"
 
-
-def load_acls(model_full_name: str, zookeeper_uri: str) -> Set[Acl]:
+def load_acls(model_full_name: str, zookeeper_uri: str, unit_name: str) -> Set[Acl]:
     result = check_output(
         f"JUJU_MODEL={model_full_name} juju ssh kafka/0 'kafka.acls --authorizer-properties zookeeper.connect={zookeeper_uri} --list'",
         stderr=PIPE,
@@ -23,7 +21,7 @@ def load_acls(model_full_name: str, zookeeper_uri: str) -> Set[Acl]:
     return KafkaAuth._parse_acls(acls=result)
 
 
-def load_super_users(model_full_name: str) -> List[str]:
+def load_super_users(model_full_name: str, unit_name: str) -> List[str]:
     result = check_output(
         f"JUJU_MODEL={model_full_name} juju ssh kafka/0 'cat /var/snap/kafka/common/server.properties'",
         stderr=PIPE,
@@ -39,7 +37,7 @@ def load_super_users(model_full_name: str) -> List[str]:
     return []
 
 
-def check_user(model_full_name: str, username: str, zookeeper_uri: str) -> None:
+def check_user(model_full_name: str, username: str, zookeeper_uri: str, unit_name: str) -> None:
     result = check_output(
         f"JUJU_MODEL={model_full_name} juju ssh kafka/0 'kafka.configs --zookeeper {zookeeper_uri} --describe --entity-type users --entity-name {username}'",
         stderr=PIPE,
