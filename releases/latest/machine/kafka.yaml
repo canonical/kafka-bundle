@@ -1,12 +1,12 @@
 applications:
   kafka:
-    channel: edge
+    channel: latest/edge
     charm: kafka
     constraints: arch=amd64
     num_units: 1
     revision: 75
   zookeeper:
-    channel: edge
+    channel: latest/edge
     charm: zookeeper
     constraints: arch=amd64
     num_units: 3

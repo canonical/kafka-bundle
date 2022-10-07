@@ -1,11 +1,11 @@
 applications:
   kafka:
-    channel: edge
+    channel: latest/edge
     charm: kafka
     num_units: 1
     revision: 75
   tls-certificates-operator:
-    channel: edge
+    channel: latest/edge
     charm: tls-certificates-operator
     num_units: 1
     options:
@@ -13,7 +13,7 @@ applications:
       generate-self-signed-certificates: true
     revision: 9
   zookeeper:
-    channel: edge
+    channel: latest/edge
     charm: zookeeper
     num_units: 3
     revision: 82
