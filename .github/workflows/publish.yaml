@@ -23,8 +23,8 @@ jobs:
           fetch-depth: 0
       - name: Upload bundle to edge
         uses: canonical/charming-actions/upload-bundle@1.0.0
-        bundle-path: ${{ matrix.bundles }}
-        channel: latest/stable
         with:
           credentials: "${{ secrets.CHARMCRAFT_AUTH }}"
           github-token: "${{ secrets.GITHUB_TOKEN }}"
+          bundle-path: "${{ matrix.bundles }}"
+          channel: latest/stable
