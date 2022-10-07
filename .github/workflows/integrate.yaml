@@ -1,6 +1,7 @@
 name: integration tests
 on:
   workflow_call:
+  workflow_dispatch:
 jobs:
   integration-test-lxd:
     name: Integration tests for machine charms
