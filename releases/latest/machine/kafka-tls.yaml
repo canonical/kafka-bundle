@@ -11,7 +11,7 @@ applications:
     options:
       ca-common-name: canonical
       generate-self-signed-certificates: true
-    revision: 9
+    revision: 11
   zookeeper:
     channel: edge
     charm: zookeeper
