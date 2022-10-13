@@ -23,7 +23,7 @@ applications:
 bundle: kubernetes
 relations:
 - - zookeeper-k8s:certificates
-  - tls-certificate-operator:certificates
+  - tls-certificates-operator:certificates
 - - kafka-k8s:certificates
   - tls-certificates-operator:certificates
 - - kafka-k8s:zookeeper
