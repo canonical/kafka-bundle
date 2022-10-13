@@ -10,9 +10,12 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - id: set-matrix
-        run: echo "::set-output name=matrix::$(find releases | grep yaml | jq -R -s -c 'split("\n")[:-1]')"
+        run: |
+          echo "::set-output name=matrix::$(find releases | grep  bundle.yaml | sed 's:[^/]*$::' | jq -R -s -c 'split("\n")[:-1]')"
   publish:
     name: publish to stable
+    needs: 
+      - list-bundles
     runs-on: ubuntu-latest
     strategy:
       matrix:
