@@ -25,6 +25,7 @@ def fetch_revision(charm: str, charm_channel: str) -> int:
     charm_info = requests.get(
         f"https://api.snapcraft.io/v2/charms/info/{charm}?fields=channel-map"
     ).json()
+
     revisions = []
     for channel in charm_info["channel-map"]:
         if channel["channel"]["risk"] == charm_channel:
