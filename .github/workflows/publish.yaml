@@ -1,6 +1,7 @@
 name: publish bundles
 on:
   workflow_call:
+  workflow_dispatch:
 jobs:
   list-bundles:
     runs-on: ubuntu-latest
