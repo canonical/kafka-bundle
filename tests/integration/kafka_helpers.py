@@ -28,7 +28,7 @@ def load_acls(model_full_name: str, zookeeper_uri: str, unit_name: str) -> Set[A
         )
         return KafkaAuth._parse_acls(acls=result)
     except CalledProcessError as e:
-        logger.erro(f"{str(e.stdout)=}")
+        logger.error(f"{str(e.stdout)=}")
         raise e
 
 
