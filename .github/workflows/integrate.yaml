@@ -13,6 +13,7 @@ jobs:
         uses: charmed-kubernetes/actions-operator@main
         with:
           provider: lxd
+          bootstrap-options: "--agent-version 2.9.34"
       - name: Install Dependencies
         run: |
           sudo snap install juju-wait --classic
@@ -33,6 +34,7 @@ jobs:
         uses: charmed-kubernetes/actions-operator@main
         with:
           provider: microk8s
+          bootstrap-options: "--agent-version 2.9.34"
       - name: Install Dependencies
         run: |
           sudo snap install juju-wait --classic
