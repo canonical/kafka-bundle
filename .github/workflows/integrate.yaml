@@ -22,6 +22,7 @@ jobs:
           do
             tox -e integration -- --bundle $BUNDLE
           done
+
   integration-test-k8s:
     runs-on: ubuntu-latest
     name: Integration tests for k8s charms
@@ -32,6 +33,9 @@ jobs:
         uses: charmed-kubernetes/actions-operator@main
         with:
           provider: microk8s
+      - name: Install Dependencies
+        run: |
+          sudo snap install juju-wait --classic
       - name: Run k8s integration tests
         run: |
           tree -fi releases/ | grep .yaml | grep -v machine | while read BUNDLE
