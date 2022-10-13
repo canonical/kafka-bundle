@@ -35,7 +35,7 @@ def usernames():
 
 
 @pytest.mark.abort_on_fail
-async def test_deploy_bundle_active(ops_test: OpsTest, usernames, bundle):
+async def test_deploy_bundle_active(ops_test: OpsTest, bundle):
     bundle_data = yaml.safe_load(Path(bundle).read_text())
     applications = []
 
@@ -66,7 +66,6 @@ async def test_deploy_app_charm_relate(ops_test: OpsTest, usernames, bundle):
             kafka_app_name = app
         if "tls-certificates-operator" in app:
             tls = True
-
 
     app_charm = await ops_test.build_charm("tests/integration/app-charm")
     await ops_test.model.deploy(app_charm, application_name="app", num_units=1)
@@ -110,20 +109,7 @@ async def test_deploy_app_charm_relate(ops_test: OpsTest, usernames, bundle):
 
 
 @pytest.mark.abort_on_fail
-async def test_run_action_produce(ops_test: OpsTest, usernames):
-    action = await ops_test.model.units.get("app/0").run_action("produce")
-    await action.wait()
-    try:
-        assert action.results["result"] == "sent"
-    except KeyError:
-        assert False
-
-
-@pytest.mark.abort_on_fail
-async def test_run_action_consume(ops_test: OpsTest, usernames):
-    action = await ops_test.model.units.get("app/0").run_action("consume")
-    await action.wait()
-    try:
-        assert action.results["result"] == "read"
-    except KeyError:
-        assert False
+async def test_run_action_produce_consume(ops_test: OpsTest):
+    action = await ops_test.model.units.get("app/0").run_action("produce-consume")
+    ran_action = await action.wait()
+    assert ran_action.results.get("passed", "") == "true"
