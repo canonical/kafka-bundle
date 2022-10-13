@@ -1,16 +1,16 @@
 applications:
   kafka:
-    channel: latest/edge
+    channel: edge
     charm: kafka
     constraints: arch=amd64
     num_units: 1
-    revision: 75
+    revision: 79
   zookeeper:
-    channel: latest/edge
+    channel: edge
     charm: zookeeper
     constraints: arch=amd64
     num_units: 3
-    revision: 82
+    revision: 83
 relations:
 - - zookeeper:zookeeper
   - kafka:zookeeper

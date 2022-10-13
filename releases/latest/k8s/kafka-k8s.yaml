@@ -1,17 +1,17 @@
-bundle: kubernetes
 applications:
   kafka-k8s:
-    channel: latest/edge
+    channel: edge
     charm: kafka-k8s
     constraints: arch=amd64
-    revision: 9
+    revision: 11
     scale: 1
   zookeeper-k8s:
-    channel: latest/edge
+    channel: edge
     charm: zookeeper-k8s
     constraints: arch=amd64
     revision: 14
     scale: 3
+bundle: kubernetes
 relations:
 - - kafka-k8s:zookeeper
   - zookeeper-k8s:zookeeper
