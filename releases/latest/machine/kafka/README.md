@@ -1,4 +1,4 @@
-# Kakfa + Zookeeper Bundle
+# Kafka + Zookeeper Bundle
 
 ## A fast and fault-tolerant, real-time event streaming platform!
 
