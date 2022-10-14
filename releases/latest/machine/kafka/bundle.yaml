@@ -4,11 +4,13 @@ applications:
   kafka:
     channel: edge
     charm: kafka
+    series: focal
     constraints: arch=amd64
     num_units: 1
   zookeeper:
     channel: edge
     charm: zookeeper
+    series: focal
     constraints: arch=amd64
     num_units: 3
 relations:
