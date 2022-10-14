@@ -1,5 +1,5 @@
 name: kafka-latest
-series: focal
+series: bionic
 applications:
   kafka:
     channel: edge
