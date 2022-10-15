@@ -3,13 +3,13 @@ applications:
     channel: edge
     charm: kafka-k8s
     constraints: arch=amd64
-    revision: 11
+    revision: 12
     scale: 1
   zookeeper-k8s:
     channel: edge
     charm: zookeeper-k8s
     constraints: arch=amd64
-    revision: 14
+    revision: 15
     scale: 3
 bundle: kubernetes
 relations:

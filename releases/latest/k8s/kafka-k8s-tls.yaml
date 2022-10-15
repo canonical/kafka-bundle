@@ -3,7 +3,7 @@ applications:
     channel: edge
     charm: kafka-k8s
     constraints: arch=amd64
-    revision: 11
+    revision: 12
     scale: 1
   tls-certificates-operator:
     channel: edge
@@ -18,7 +18,7 @@ applications:
     channel: edge
     charm: zookeeper-k8s
     constraints: arch=amd64
-    revision: 14
+    revision: 15
     scale: 3
 bundle: kubernetes
 relations:
