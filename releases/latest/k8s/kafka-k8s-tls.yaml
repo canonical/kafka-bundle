@@ -18,7 +18,7 @@ applications:
     channel: edge
     charm: zookeeper-k8s
     constraints: arch=amd64
-    revision: 15
+    revision: 16
     scale: 3
 bundle: kubernetes
 relations:
