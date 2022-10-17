@@ -19,7 +19,6 @@ applications:
     charm: zookeeper-k8s
     constraints: arch=amd64
     scale: 3
-bundle: kubernetes
 relations:
 - - zookeeper-k8s:certificates
   - tls-certificates-operator:certificates
