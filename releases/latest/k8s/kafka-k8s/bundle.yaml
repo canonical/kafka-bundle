@@ -11,7 +11,6 @@ applications:
     charm: zookeeper-k8s
     constraints: arch=amd64
     scale: 3
-bundle: kubernetes
 relations:
 - - kafka-k8s:zookeeper
   - zookeeper-k8s:zookeeper
