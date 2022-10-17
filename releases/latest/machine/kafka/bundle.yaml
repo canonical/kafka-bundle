@@ -1,4 +1,4 @@
-name: kafka-latest
+name: kafka-bundle
 series: bionic
 applications:
   kafka:

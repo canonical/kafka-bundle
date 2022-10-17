@@ -1,4 +1,4 @@
-name: kafka-k8s-latest
+name: kafka-k8s-bundle
 bundle: kubernetes
 applications:
   kafka-k8s:

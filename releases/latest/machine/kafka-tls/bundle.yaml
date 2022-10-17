@@ -1,4 +1,4 @@
-name: kafka-tls-latest
+name: kafka-tls-bundle
 series: bionic
 applications:
   kafka:
