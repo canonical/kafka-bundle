@@ -2,8 +2,8 @@ applications:
   kafka:
     channel: edge
     charm: kafka
-    num_units: 3
-    revision: 68
+    num_units: 1
+    revision: 80
   tls-certificates-operator:
     channel: edge
     charm: tls-certificates-operator
@@ -11,16 +11,16 @@ applications:
     options:
       ca-common-name: canonical
       generate-self-signed-certificates: true
-    revision: 9
+    revision: 11
   zookeeper:
     channel: edge
     charm: zookeeper
     num_units: 3
-    revision: 65
+    revision: 84
 relations:
-- - zookeeper:zookeeper
-  - kafka:zookeeper
-- - tls-certificates-operator:certificates
-  - zookeeper:certificates
-- - tls-certificates-operator:certificates
-  - kafka:certificates
+- - zookeeper:certificates
+  - tls-certificates-operator:certificates
+- - kafka:certificates
+  - tls-certificates-operator:certificates
+- - kafka:zookeeper
+  - zookeeper:zookeeper

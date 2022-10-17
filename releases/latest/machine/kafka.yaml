@@ -3,14 +3,14 @@ applications:
     channel: edge
     charm: kafka
     constraints: arch=amd64
-    num_units: 3
-    revision: 68
+    num_units: 1
+    revision: 80
   zookeeper:
     channel: edge
     charm: zookeeper
     constraints: arch=amd64
     num_units: 3
-    revision: 65
+    revision: 84
 relations:
 - - zookeeper:zookeeper
   - kafka:zookeeper

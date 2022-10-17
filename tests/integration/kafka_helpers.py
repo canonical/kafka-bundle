@@ -1,31 +1,49 @@
 #!/usr/bin/env python3
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
+import logging
 import re
-from subprocess import PIPE, check_output
+from subprocess import PIPE, CalledProcessError, check_output
 from typing import Any, Dict, List, Set, Tuple
 
 import yaml
+from charms.kafka.v0.kafka_snap import SNAP_CONFIG_PATH
 
 from tests.integration.auth import Acl, KafkaAuth
 
-APP_NAME = "kafka"
+logger = logging.getLogger(__name__)
 
 
-def load_acls(model_full_name: str, zookeeper_uri: str) -> Set[Acl]:
+def load_acls(model_full_name: str, zookeeper_uri: str, unit_name: str) -> Set[Acl]:
+    if "k8s" in unit_name:
+        command = f"JUJU_MODEL={model_full_name} juju ssh --container kafka {unit_name} 'KAFKA_OPTS=-Djava.security.auth.login.config=/data/kafka/config/kafka-jaas.cfg ./opt/kafka/bin/kafka-acls.sh --authorizer-properties zookeeper.connect={zookeeper_uri} --list --zk-tls-config-file=/data/kafka/config/server.properties'"
+    else:
+        command = f"JUJU_MODEL={model_full_name} juju ssh {unit_name} 'kafka.acls --authorizer-properties zookeeper.connect={zookeeper_uri} --list --zk-tls-config-file={SNAP_CONFIG_PATH}server.properties'"
+    try:
+        result = check_output(
+            command,
+            stderr=PIPE,
+            shell=True,
+            universal_newlines=True,
+        )
+        return KafkaAuth._parse_acls(acls=result)
+    except CalledProcessError as e:
+        logger.error(f"{str(e.stdout)=}")
+        raise e
+
+
+def load_super_users(model_full_name: str, unit_name: str) -> List[str]:
+    if "k8s" in unit_name:
+        command = (
+            f"JUJU_MODEL={model_full_name} juju ssh --container kafka {unit_name} 'cat /data/kafka/config/server.properties'",
+        )
+    else:
+        command = (
+            f"JUJU_MODEL={model_full_name} juju ssh {unit_name} 'cat /var/snap/kafka/common/server.properties'",
+        )
+
     result = check_output(
-        f"JUJU_MODEL={model_full_name} juju ssh kafka/0 'kafka.acls --authorizer-properties zookeeper.connect={zookeeper_uri} --list'",
-        stderr=PIPE,
-        shell=True,
-        universal_newlines=True,
-    )
-
-    return KafkaAuth._parse_acls(acls=result)
-
-
-def load_super_users(model_full_name: str) -> List[str]:
-    result = check_output(
-        f"JUJU_MODEL={model_full_name} juju ssh kafka/0 'cat /var/snap/kafka/common/server.properties'",
+        command,
         stderr=PIPE,
         shell=True,
         universal_newlines=True,
@@ -39,15 +57,22 @@ def load_super_users(model_full_name: str) -> List[str]:
     return []
 
 
-def check_user(model_full_name: str, username: str, zookeeper_uri: str) -> None:
-    result = check_output(
-        f"JUJU_MODEL={model_full_name} juju ssh kafka/0 'kafka.configs --zookeeper {zookeeper_uri} --describe --entity-type users --entity-name {username}'",
-        stderr=PIPE,
-        shell=True,
-        universal_newlines=True,
-    )
-
-    assert "SCRAM-SHA-512" in result
+def check_user(model_full_name: str, username: str, zookeeper_uri: str, unit_name: str) -> None:
+    if "k8s" in unit_name:
+        command = f"JUJU_MODEL={model_full_name} juju ssh --container kafka {unit_name} 'KAFKA_OPTS=-Djava.security.auth.login.config=/data/kafka/config/kafka-jaas.cfg ./opt/kafka/bin/kafka-configs.sh --zookeeper {zookeeper_uri} --describe --entity-type users --entity-name {username} --zk-tls-config-file=/data/kafka/config/server.properties'"
+    else:
+        command = f"JUJU_MODEL={model_full_name} juju ssh {unit_name} 'kafka.configs --zookeeper {zookeeper_uri} --describe --entity-type users --entity-name {username} --zk-tls-config-file={SNAP_CONFIG_PATH}server.properties'"
+    try:
+        result = check_output(
+            command,
+            stderr=PIPE,
+            shell=True,
+            universal_newlines=True,
+        )
+        assert "SCRAM-SHA-512" in result
+    except CalledProcessError as e:
+        logger.error(f"{str(e.stdout)=}")
+        raise e
 
 
 def show_unit(unit_name: str, model_full_name: str) -> Any:

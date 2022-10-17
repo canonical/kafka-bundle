@@ -13,6 +13,7 @@ jobs:
         uses: charmed-kubernetes/actions-operator@main
         with:
           provider: lxd
+          bootstrap-options: "--agent-version 2.9.34"
       - name: Install Dependencies
         run: |
           sudo snap install juju-wait --classic
@@ -22,14 +23,21 @@ jobs:
           do
             tox -e integration -- --bundle $BUNDLE
           done
+
   integration-test-k8s:
     runs-on: ubuntu-latest
     name: Integration tests for k8s charms
     steps:
+      - name: Checkout
+        uses: actions/checkout@v2
       - name: Setup operator environment
         uses: charmed-kubernetes/actions-operator@main
         with:
           provider: microk8s
+          bootstrap-options: "--agent-version 2.9.34"
+      - name: Install Dependencies
+        run: |
+          sudo snap install juju-wait --classic
       - name: Run k8s integration tests
         run: |
           tree -fi releases/ | grep .yaml | grep -v machine | while read BUNDLE

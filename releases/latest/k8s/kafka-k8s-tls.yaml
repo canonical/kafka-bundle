@@ -1,38 +1,30 @@
-bundle: kubernetes
 applications:
-  kafka:
+  kafka-k8s:
+    channel: edge
     charm: kafka-k8s
-    channel: edge
-    revision: 5
-    resources:
-      kafka-image: 1
-    scale: 3
     constraints: arch=amd64
-    storage:
-      data: kubernetes,1,1024M
-  tls-certificates-operator:
-    charm: tls-certificates-operator
-    channel: edge
-    revision: 8
+    revision: 12
     scale: 1
+  tls-certificates-operator:
+    channel: edge
+    charm: tls-certificates-operator
+    constraints: arch=amd64
     options:
       ca-common-name: canonical
       generate-self-signed-certificates: true
-    constraints: arch=amd64
-  zookeeper:
-    charm: zookeeper-k8s
+    revision: 11
+    scale: 1
+  zookeeper-k8s:
     channel: edge
-    revision: 10
-    resources:
-      zookeeper-image: 2
-    scale: 3
+    charm: zookeeper-k8s
     constraints: arch=amd64
-    storage:
-      data: kubernetes,1,1024M
+    revision: 16
+    scale: 3
+bundle: kubernetes
 relations:
-- - kafka:zookeeper
-  - zookeeper:zookeeper
-- - zookeeper:certificates
-  - tls-certificate-operator:certificates
-- - kafka:certificates
+- - zookeeper-k8s:certificates
+  - tls-certificates-operator:certificates
+- - kafka-k8s:zookeeper
+  - zookeeper-k8s:zookeeper
+- - kafka-k8s:certificates
   - tls-certificates-operator:certificates
