@@ -1,16 +1,18 @@
+name: kafka-bundle
+series: bionic
 applications:
   kafka:
     channel: edge
     charm: kafka
+    series: focal
     constraints: arch=amd64
     num_units: 1
-    revision: 80
   zookeeper:
     channel: edge
     charm: zookeeper
+    series: focal
     constraints: arch=amd64
     num_units: 3
-    revision: 84
 relations:
 - - zookeeper:zookeeper
   - kafka:zookeeper

@@ -1,0 +1,11 @@
+on:
+  push:
+jobs:
+  integration-tests:
+    name: Integration tests
+    uses: ./.github/workflows/integrate.yaml
+
+  publish:
+    name: Publish bundles
+    uses: ./.github/workflows/publish.yaml
+    needs: [integration-tests]

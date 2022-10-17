@@ -1,9 +1,10 @@
+name: kafka-k8s-tls-bundle
+bundle: kubernetes
 applications:
   kafka-k8s:
     channel: edge
     charm: kafka-k8s
     constraints: arch=amd64
-    revision: 12
     scale: 1
   tls-certificates-operator:
     channel: edge
@@ -12,13 +13,11 @@ applications:
     options:
       ca-common-name: canonical
       generate-self-signed-certificates: true
-    revision: 11
     scale: 1
   zookeeper-k8s:
     channel: edge
     charm: zookeeper-k8s
     constraints: arch=amd64
-    revision: 16
     scale: 3
 bundle: kubernetes
 relations:
