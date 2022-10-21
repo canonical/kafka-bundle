@@ -1,6 +1,5 @@
 description: A fast, secure and fault-tolerant Apache Kafka, supported by Apache ZooKeeper
 issues: https://github.com/canonical/kafka-bundle/issues/new
-series: focal
 source: https://github.com/canonical/kafka-bundle
 name: kafka-bundle
 applications:
