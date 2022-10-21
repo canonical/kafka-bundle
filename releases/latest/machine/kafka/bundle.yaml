@@ -1,18 +1,30 @@
+description: A fast, secure and fault-tolerant Apache Kafka, supported by Apache ZooKeeper
+issues: https://github.com/canonical/kafka-bundle/issues/new
+source: https://github.com/canonical/kafka-bundle
 name: kafka-bundle
-series: bionic
 applications:
   kafka:
     channel: edge
     charm: kafka
     series: focal
-    constraints: arch=amd64
     num_units: 1
+  tls-certificates-operator:
+    channel: edge
+    charm: tls-certificates-operator
+    series: focal
+    num_units: 1
+    options:
+      ca-common-name: canonical
+      generate-self-signed-certificates: true
   zookeeper:
     channel: edge
     charm: zookeeper
     series: focal
-    constraints: arch=amd64
     num_units: 3
 relations:
-- - zookeeper:zookeeper
-  - kafka:zookeeper
+- - zookeeper:certificates
+  - tls-certificates-operator:certificates
+- - kafka:certificates
+  - tls-certificates-operator:certificates
+- - kafka:zookeeper
+  - zookeeper:zookeeper

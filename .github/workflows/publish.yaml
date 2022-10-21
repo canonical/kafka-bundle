@@ -3,32 +3,52 @@ on:
   workflow_call:
   workflow_dispatch:
 jobs:
-  list-bundles:
-    runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
-    steps:
-      - uses: actions/checkout@v2
-      - id: set-matrix
-        run: |
-          echo "::set-output name=matrix::$(find releases | grep  bundle.yaml | sed 's:[^/]*$::' | jq -R -s -c 'split("\n")[:-1]')"
-  publish:
-    name: publish to stable
-    needs: 
-      - list-bundles
+  publish-machine-bundle:
+    name: Publish machine bundle
     runs-on: ubuntu-latest
     strategy:
       matrix:
         bundles: ${{ fromJson(needs.list-bundles.outputs.matrix) }}
+    env:
+      CHARMCRAFT_AUTH: ${{ secrets.CHARMHUB_TOKEN }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      - name: Upload bundle to edge
-        uses: canonical/charming-actions/upload-bundle@1.0.0
-        with:
-          credentials: "${{ secrets.CHARMCRAFT_AUTH }}"
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
-          bundle-path: "${{ matrix.bundles }}"
-          channel: latest/stable
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: sudo snap install charmcraft --classic
+      - name: Pack and publish bundle
+        run: |
+          set -ex
+          # Use a temporary directory to support publishing any of the bundles in this root dir
+          BUILD_DIR=.bundle_build
+          mkdir $BUILD_DIR
+          cp ./releases/latest/machine/kafka/* $BUILD_DIR/
+          cd $BUILD_DIR
+          charmcraft pack --destructive-mode
+          charmcraft upload ./*.zip
+          export REVISION=$(charmcraft revisions kafka-bundle 2>&1 | awk 'NR==2 {print $1}')
+          charmcraft release kafka-bundle --revision $REVISION --channel=latest/edge
+  publish-k8s-bundle:
+    name: Publish K8s bundle
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        bundles: ${{ fromJson(needs.list-bundles.outputs.matrix) }}
+    env:
+      CHARMCRAFT_AUTH: ${{ secrets.CHARMHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: sudo snap install charmcraft --classic
+      - name: Pack and publish bundle
+        run: |
+          set -ex
+          # Use a temporary directory to support publishing any of the bundles in this root dir
+          BUILD_DIR=.bundle_build
+          mkdir $BUILD_DIR
+          cp ./releases/latest/k8s/kafka/* $BUILD_DIR/
+          cd $BUILD_DIR
+          charmcraft pack --destructive-mode
+          charmcraft upload ./*.zip
+          export REVISION=$(charmcraft revisions kafka-k8s-bundle 2>&1 | awk 'NR==2 {print $1}')
+          charmcraft release kafka-k8s-bundle --revision $REVISION --channel=latest/edge
+

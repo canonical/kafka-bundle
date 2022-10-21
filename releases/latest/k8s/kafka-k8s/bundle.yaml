@@ -1,10 +1,21 @@
-name: kafka-k8s-bundle
+description: A fast, secure and fault-tolerant Apache Kafka on Kubernetes, supported by Apache ZooKeeper
+issues: https://github.com/canonical/kafka-bundle/issues/new
+source: https://github.com/canonical/kafka-bundle
 bundle: kubernetes
+name: kafka-k8s-bundle
 applications:
   kafka-k8s:
     channel: edge
     charm: kafka-k8s
     constraints: arch=amd64
+    scale: 1
+  tls-certificates-operator:
+    channel: edge
+    charm: tls-certificates-operator
+    constraints: arch=amd64
+    options:
+      ca-common-name: canonical
+      generate-self-signed-certificates: true
     scale: 1
   zookeeper-k8s:
     channel: edge
@@ -12,5 +23,9 @@ applications:
     constraints: arch=amd64
     scale: 3
 relations:
+- - zookeeper-k8s:certificates
+  - tls-certificates-operator:certificates
 - - kafka-k8s:zookeeper
   - zookeeper-k8s:zookeeper
+- - kafka-k8s:certificates
+  - tls-certificates-operator:certificates

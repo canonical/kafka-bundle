@@ -1,4 +1,4 @@
-# Kafka + Zookeeper Bundle
+# Kafka + Zookeeper Kubernetes Bundle
 
 ## A fast and fault-tolerant, real-time event streaming platform!
 
@@ -11,4 +11,4 @@ Manual, Day 2 operations for deploying and operating Apache Kafka, topic creatio
 - Streamlined topic-creation through [Juju Actions](https://juju.is/docs/olm/working-with-actions) and [application relations](https://juju.is/docs/olm/relations)
 
 
-Deployed with various components, these bundles support Kafka + Zookeeper and _optionally_, TLS support for Kafka and Zookeeper.  This includes encryption between nodes in the cluster as well as client communication.
+Deployed with various components, these bundles support Kafka + Zookeeper with TLS support.  This includes encryption between nodes in the cluster as well as client communication.
