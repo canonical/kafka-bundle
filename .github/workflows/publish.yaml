@@ -6,9 +6,6 @@ jobs:
   publish-machine-bundle:
     name: Publish machine bundle
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        bundles: ${{ fromJson(needs.list-bundles.outputs.matrix) }}
     env:
       CHARMCRAFT_AUTH: ${{ secrets.CHARMHUB_TOKEN }}
     steps:
@@ -30,9 +27,6 @@ jobs:
   publish-k8s-bundle:
     name: Publish K8s bundle
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        bundles: ${{ fromJson(needs.list-bundles.outputs.matrix) }}
     env:
       CHARMCRAFT_AUTH: ${{ secrets.CHARMHUB_TOKEN }}
     steps:
