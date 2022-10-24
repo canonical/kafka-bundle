@@ -42,7 +42,7 @@ async def test_deploy_bundle_active(ops_test: OpsTest, bundle):
     for app in bundle_data["applications"]:
         applications.append(app)
 
-    await ops_test.deploy_bundle(bundle=bundle, build=False)
+    await ops_test.run(*["juju", "deploy", "--trust", "-m", ops_test.model_full_name, bundle])
     time.sleep(720)
     await ops_test.model.block_until(lambda: (units_deployed(ops_test.model, bundle_data)))
     await ops_test.model.wait_for_idle(
