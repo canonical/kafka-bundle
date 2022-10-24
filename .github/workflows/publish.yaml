@@ -24,6 +24,11 @@ jobs:
           charmcraft upload ./*.zip
           export REVISION=$(charmcraft revisions kafka-bundle 2>&1 | awk 'NR==2 {print $1}')
           charmcraft release kafka-bundle --revision $REVISION --channel=latest/edge
+      - name: Dump logs
+        if: failure()
+        run: |
+          awk '{print}' /home/runner/snap/charmcraft/common/cache/charmcraft/log/*.log
+
   publish-k8s-bundle:
     name: Publish K8s bundle
     runs-on: ubuntu-latest
@@ -39,10 +44,14 @@ jobs:
           # Use a temporary directory to support publishing any of the bundles in this root dir
           BUILD_DIR=.bundle_build
           mkdir $BUILD_DIR
-          cp ./releases/latest/k8s/kafka/* $BUILD_DIR/
+          cp ./releases/latest/k8s/kafka-k8s/* $BUILD_DIR/
           cd $BUILD_DIR
           charmcraft pack --destructive-mode
           charmcraft upload ./*.zip
           export REVISION=$(charmcraft revisions kafka-k8s-bundle 2>&1 | awk 'NR==2 {print $1}')
           charmcraft release kafka-k8s-bundle --revision $REVISION --channel=latest/edge
+      - name: Dump logs
+        if: failure()
+        run: |
+          awk '{print}' /home/runner/snap/charmcraft/common/cache/charmcraft/log/*.log
 

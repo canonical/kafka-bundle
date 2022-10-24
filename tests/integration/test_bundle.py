@@ -43,10 +43,10 @@ async def test_deploy_bundle_active(ops_test: OpsTest, bundle):
         applications.append(app)
 
     await ops_test.deploy_bundle(bundle=bundle, build=False)
-    time.sleep(60)
+    time.sleep(180)
     await ops_test.model.block_until(lambda: (units_deployed(ops_test.model, bundle_data)))
     await ops_test.model.wait_for_idle(
-        apps=applications, status="active", timeout=1000, idle_period=20
+        apps=applications, status="active", timeout=1000, idle_period=30
     )
 
     for app in applications:
@@ -71,12 +71,12 @@ async def test_deploy_app_charm_relate(ops_test: OpsTest, usernames, bundle):
     await ops_test.model.deploy(app_charm, application_name="app", num_units=1)
     if tls:
         await ops_test.model.add_relation("app", "tls-certificates-operator")
-    time.sleep(30)
-    await ops_test.model.add_relation(kafka_app_name, "app")
     time.sleep(60)
+    await ops_test.model.add_relation(kafka_app_name, "app")
+    time.sleep(90)
     await ops_test.model.block_until(lambda: (units_deployed(ops_test.model, bundle_data)))
     await ops_test.model.wait_for_idle(
-        apps=applications + ["app"], status="active", timeout=1000, idle_period=20
+        apps=applications + ["app"], status="active", timeout=1000, idle_period=30
     )
 
     for app in applications + ["app"]:
