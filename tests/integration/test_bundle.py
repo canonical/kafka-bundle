@@ -32,7 +32,7 @@ async def test_deploy_bundle_active(ops_test: OpsTest, bundle):
     for app in bundle_data["applications"]:
         applications.append(app)
 
-    retcode, stdout, stderr =  await ops_test.run(*["juju", "deploy", "--trust", "-m", ops_test.model_full_name, bundle])
+    retcode, stdout, stderr =  await ops_test.run(*["juju", "deploy", "--trust", "-m", ops_test.model_full_name, f"./{bundle}"])
     assert retcode == 0, f"Deploy failed: {(stderr or stdout).strip()}"
     logger.info(stdout)
     time.sleep(720)
