@@ -19,16 +19,6 @@ from tests.integration.kafka_helpers import (
 logger = logging.getLogger(__name__)
 
 
-def units_deployed(model, bundle_data):
-    for app_name, app in model.applications.items():
-        try:
-            if len(app.units) != bundle_data["applications"][app_name]["num_units"]:
-                return False
-        except KeyError:
-            print(f"Skipping {app_name}. Not found in bundle...")
-    return True
-
-
 @pytest.fixture(scope="module")
 def usernames():
     return set()
@@ -42,12 +32,11 @@ async def test_deploy_bundle_active(ops_test: OpsTest, bundle):
     for app in bundle_data["applications"]:
         applications.append(app)
 
-    await ops_test.run(*["juju", "deploy", "--trust", "-m", ops_test.model_full_name, bundle])
+    retcode, stdout, stderr =  await ops_test.run(*["juju", "deploy", "--trust", "-m", ops_test.model_full_name, bundle])
+    assert retcode == 0, f"Deploy failed: {(stderr or stdout).strip()}"
+    logger.info(stdout)
     time.sleep(720)
-    await ops_test.model.block_until(lambda: (units_deployed(ops_test.model, bundle_data)))
-    await ops_test.model.wait_for_idle(
-        apps=applications, status="active", timeout=1000, idle_period=30
-    )
+    await ops_test.model.wait_for_idle(timeout=1000, idle_period=30)
 
     for app in applications:
         assert ops_test.model.applications[app].status == "active"
@@ -74,7 +63,6 @@ async def test_deploy_app_charm_relate(ops_test: OpsTest, usernames, bundle):
     time.sleep(60)
     await ops_test.model.add_relation(kafka_app_name, "app")
     time.sleep(90)
-    await ops_test.model.block_until(lambda: (units_deployed(ops_test.model, bundle_data)))
     await ops_test.model.wait_for_idle(
         apps=applications + ["app"], status="active", timeout=1000, idle_period=30
     )
