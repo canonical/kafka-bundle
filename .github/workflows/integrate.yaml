@@ -14,15 +14,9 @@ jobs:
         with:
           provider: lxd
           bootstrap-options: "--agent-version 2.9.34"
-      - name: Install Dependencies
-        run: |
-          sudo snap install juju-wait --classic
       - name: Run machine integration tests
         run: |
-          tree -fi releases/ | grep .yaml | grep -v k8s |  while read BUNDLE
-          do
-            tox -e integration -- --bundle $BUNDLE
-          done
+          tox -e integration-vm -- --bundle ./releases/latest/machine/bundle.yaml
 
   integration-test-k8s:
     runs-on: ubuntu-latest
@@ -35,12 +29,6 @@ jobs:
         with:
           provider: microk8s
           bootstrap-options: "--agent-version 2.9.34"
-      - name: Install Dependencies
-        run: |
-          sudo snap install juju-wait --classic
       - name: Run k8s integration tests
         run: |
-          tree -fi releases/ | grep .yaml | grep -v machine | while read BUNDLE
-          do
-            tox -e integration -- --bundle $BUNDLE
-          done
+          tox -e integration-k8s -- --bundle ./releases/latest/k8s/bundle.yaml
