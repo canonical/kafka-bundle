@@ -43,7 +43,7 @@ async def test_deploy_bundle_active(ops_test: OpsTest, bundle):
         applications.append(app)
 
     await ops_test.deploy_bundle(bundle=bundle, build=False)
-    time.sleep(180)
+    time.sleep(720)
     await ops_test.model.block_until(lambda: (units_deployed(ops_test.model, bundle_data)))
     await ops_test.model.wait_for_idle(
         apps=applications, status="active", timeout=1000, idle_period=30
