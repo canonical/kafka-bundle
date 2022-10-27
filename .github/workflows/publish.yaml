@@ -22,6 +22,7 @@ jobs:
           mkdir $BUILD_DIR
           cp ./releases/latest/machine/kafka/* $BUILD_DIR/
           cd $BUILD_DIR
+          # FIXME: token will expire on 2023-10-27
           export CHARMCRAFT_AUTH=${{ secrets.CHARMCRAFT_AUTH }}
           charmcraft pack --destructive-mode
           charmcraft upload ./*.zip
@@ -52,6 +53,7 @@ jobs:
           mkdir $BUILD_DIR
           cp ./releases/latest/k8s/kafka-k8s/* $BUILD_DIR/
           cd $BUILD_DIR
+          # FIXME: token will expire on 2023-10-27
           export CHARMCRAFT_AUTH=${{ secrets.CHARMCRAFT_AUTH }}
           charmcraft pack --destructive-mode
           charmcraft upload ./*.zip
