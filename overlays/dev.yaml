@@ -1,0 +1,5 @@
+applications:
+  kafka:
+    storage:
+      log-data:
+        minimum-size: 10G
