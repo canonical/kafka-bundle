@@ -2,16 +2,30 @@
 
 This repository contains both machine and k8s charm bundles for Kafka.
 
-To deploy a bundle:
+## Usage
+Create a [Juju controller](https://juju.is/docs/olm/create-a-controller)
 
-1) Create a [Juju controller](https://juju.is/docs/olm/create-a-controller)
-
-2) Add a Juju model
+Add a Juju model for your deployment, for example:
 ```bash
 juju add-model kafka
+juju switch kafka
 ```
-3) Deploy the bundle to the newly-created model
+You can deploy the bundle from CharmHub to VM/machines:
 ```bash
-# The bundle must match the cloud type (i.e. kafka-k8s.yaml can only be deployed on K8s)
-juju deploy ./path/to/bundle.yaml
+juju deploy kafka-bundle --channel=edge
+```
+and similarly for Kubernetes:
+```bash
+juju deploy kafka-k8s-bundle --channel=edge
+```
+
+## Production Storage - VM ONLY
+For certain workloads, you may wish to provision more storage. The supported production storage configuration is as follows:
+- 12x 1TB storage volumes per Kafka broker
+- 1x 10GB storage volume per ZooKeeper server
+
+### Deploying production storage
+To deploy the bundle with the supported production storage attached, you may do the following:
+```bash
+juju deploy ./releases/latest/machine/kafka/bundle.yaml --overlay ./overlays/production.yaml
 ```
