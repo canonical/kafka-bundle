@@ -1,0 +1,7 @@
+applications:
+  kafka:
+    storage:
+      log-data:
+        minimum-size: 1T
+        multiple:
+          range: 12
