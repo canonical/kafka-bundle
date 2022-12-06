@@ -27,5 +27,5 @@ For certain workloads, you may wish to provision more storage. The supported pro
 ### Deploying production storage
 To deploy the bundle with the supported production storage attached, you may do the following:
 ```bash
-juju deploy ./releases/latest/machine/kafka/bundle.yaml --overlay ./overlays/production.yaml
+juju deploy kafka-bundle --overlay ./overlays/production.yaml
 ```
