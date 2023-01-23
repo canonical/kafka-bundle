@@ -1,9 +1,0 @@
-name: scheduled integration tests
-on:
-  schedule:
-    - cron:  '0 12 * * 3'
-
-jobs:
-  integration-tests:
-    name: integration tests
-    uses: ./.github/workflows/integrate.yaml

@@ -1,13 +1,14 @@
-name: Integration Tests
+name: Integration tests on PR
 on:
   pull_request:
+
 jobs:
   lint:
     name: lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Install dependencies
         run: python3 -m pip install tox
       - name: Run linters
@@ -15,4 +16,6 @@ jobs:
 
   integration-tests:
     name: Integration tests
-    uses: ./.github/workflows/integrate.yaml
+    needs:
+      - lint
+    uses: ./.github/workflows/ci.yaml
