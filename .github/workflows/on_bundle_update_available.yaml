@@ -8,10 +8,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - name: Install tox
+        run: python3 -m pip install tox
       - name: check for updates
-        run: |
-          ./update_bundle.py releases/latest/machine/kafka/kafka-bundle.yaml
-          ./update_bundle.py releases/latest/k8s/kafka-k8s/kafka-k8s-bundle.yaml
+        run: tox -e generate_bundles
       - name: create pull request
         id: cpr
         uses: peter-evans/create-pull-request@v4

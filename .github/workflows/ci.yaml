@@ -19,8 +19,7 @@ jobs:
           bootstrap-options: "--agent-version 2.9.38"
       - name: Run machine integration tests
         run: |
-          cat "${PWD}/releases/latest/machine/kafka/kafka-bundle.yaml" # FIXME: DEBUG ONLY. DELETE ME.
-          tox -e integration-vm -- --bundle "${PWD}/releases/latest/machine/kafka/kafka-bundle.yaml"
+          tox -e integration-vm -- --bundle "releases/latest/machine/kafka/bundle.yaml"
 
   integration-test-k8s:
     runs-on: ubuntu-latest
@@ -35,4 +34,4 @@ jobs:
           bootstrap-options: "--agent-version 2.9.38"
       - name: Run k8s integration tests
         run: |
-          tox -e integration-k8s -- --bundle "${PWD}/releases/latest/k8s/kafka-k8s/kafka-k8s-bundle.yaml"
+          tox -e integration-k8s -- --bundle "releases/latest/k8s/kafka-k8s/bundle.yaml"

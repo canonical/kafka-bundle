@@ -11,9 +11,6 @@ show_missing = true
 [tool.pytest.ini_options]
 minversion = "6.0"
 log_cli_level = "INFO"
-markers = [
-    "bundle: integration tests for k8s bundle"
-]
 
 # Formatting tools configuration
 [tool.black]
@@ -23,6 +20,7 @@ target-version = ["py38"]
 [tool.isort]
 profile = "black"
 
+# Linting tools configuration
 [tool.flake8]
 max-line-length = 99
 max-doc-length = 99
@@ -33,7 +31,7 @@ select = ["E", "W", "F", "C", "N", "R", "D", "H"]
 # Ignore D107 Missing docstring in __init__
 ignore = ["W503", "E501", "D107"]
 # D100, D101, D102, D103: Ignore missing docstrings in tests
-per-file-ignores = ["tests/*:D100,D101,D102,D103,D104"]
+per-file-ignores = ["tests/*:D100,D101,D102,D103,D104", "update_bundle.py:D100"]
 docstring-convention = "google"
 # Check for properly formatted copyright header in each file
 copyright-check = "True"
