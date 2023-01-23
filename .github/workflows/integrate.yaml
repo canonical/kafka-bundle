@@ -13,7 +13,7 @@ jobs:
         uses: charmed-kubernetes/actions-operator@main
         with:
           provider: lxd
-          bootstrap-options: "--agent-version 2.9.34"
+          bootstrap-options: "--agent-version 2.9.38"
       - name: Run machine integration tests
         run: |
           tox -e integration-vm -- --bundle $PWD"/releases/latest/machine/kafka/bundle.yaml"
@@ -28,7 +28,7 @@ jobs:
         uses: charmed-kubernetes/actions-operator@main
         with:
           provider: microk8s
-          bootstrap-options: "--agent-version 2.9.34"
+          bootstrap-options: "--agent-version 2.9.38"
       - name: Run k8s integration tests
         run: |
           tox -e integration-k8s -- --bundle $PWD"/releases/latest/k8s/kafka-k8s/bundle.yaml"
