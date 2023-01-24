@@ -5,12 +5,12 @@ bundle: kubernetes
 name: kafka-k8s-bundle
 applications:
   kafka-k8s:
-    channel: edge
+    channel: latest/edge
     charm: kafka-k8s
     constraints: arch=amd64
     scale: 1
   tls-certificates-operator:
-    channel: edge
+    channel: latest/edge
     charm: tls-certificates-operator
     constraints: arch=amd64
     options:
@@ -18,7 +18,7 @@ applications:
       generate-self-signed-certificates: true
     scale: 1
   zookeeper-k8s:
-    channel: edge
+    channel: latest/edge
     charm: zookeeper-k8s
     constraints: arch=amd64
     scale: 3
