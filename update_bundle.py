@@ -2,6 +2,8 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+"""The scipt to update Juju bundle.yaml on CI/CD."""
+
 import logging
 import sys
 from pathlib import Path
