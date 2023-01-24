@@ -1,5 +1,10 @@
 name: Release to latest/edge
 
+on:
+  push:
+    branches:
+      - main
+
 jobs:
   publish-machine-bundle:
     name: Publish machine bundle
