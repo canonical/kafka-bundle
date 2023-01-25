@@ -2,6 +2,8 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+"""The pytest fixtures to support '--bundle' cmd option for CI/CD."""
+
 
 def pytest_addoption(parser):
     """Defines pytest parsers."""

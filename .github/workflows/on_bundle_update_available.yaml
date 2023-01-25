@@ -1,0 +1,36 @@
+name: Bundle update available
+on:
+  schedule:
+    - cron:  '0 */8 * * 1-5'
+
+jobs:
+  update-bundles:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install tox
+        run: python3 -m pip install tox
+      - name: check for updates
+        run: tox -e generate_bundles
+      - name: create pull request
+        id: cpr
+        uses: peter-evans/create-pull-request@v4
+        with:
+          token: ${{ secrets.PAT }}
+          commit-message: Update bundles
+          committer: GitHub <noreply@github.com>
+          author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
+          signoff: false
+          branch: update-bundles
+          delete-branch: true
+          title: 'Update Bundles'
+          body: |
+            Update bundles with new revisions from Charmhub.
+          labels: |
+            automated pr
+          assignees: team-reviewers, marcoppenheimer, deusebio
+          reviewers: team-reviewers, marcoppenheimer, deusebio
+          team-reviewers: |
+            owners
+            maintainers
+          draft: false

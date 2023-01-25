@@ -881,7 +881,7 @@ class TLSCertificatesProvidesV1(Object):
             self._remove_certificate(certificate=certificate, relation_id=certificate_relation.id)
 
     def _on_relation_changed(self, event: RelationChangedEvent) -> None:
-        """Handler triggerred on relation changed event.
+        """Handler triggered on relation changed event.
 
         Looks at the relation data and either emits:
         - certificate request event: If the unit relation data contains a CSR for which
@@ -923,8 +923,8 @@ class TLSCertificatesProvidesV1(Object):
     def _revoke_certificates_for_which_no_csr_exists(self, relation_id: int) -> None:
         """Revokes certificates for which no unit has a CSR.
 
-        Goes through all generated certificates and compare agains the list of CSRS for all units
-        of a given relationship.
+        Goes through all generated certificates and compare against the list of CSRS for all
+        units of a given relationship.
 
         Args:
             relation_id (int): Relation id
@@ -1127,7 +1127,7 @@ class TLSCertificatesRequiresV1(Object):
             return False
 
     def _on_relation_changed(self, event: RelationChangedEvent) -> None:
-        """Handler triggerred on relation changed events.
+        """Handler triggered on relation changed events.
 
         Args:
             event: Juju event
