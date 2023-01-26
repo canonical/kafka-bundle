@@ -12,7 +12,7 @@ jobs:
       - name: Install tox
         run: python3 -m pip install tox
       - name: check for updates
-        run: tox -e generate_bundles
+        run: tox -e update_bundle
       - name: create pull request
         id: cpr
         uses: peter-evans/create-pull-request@v4
