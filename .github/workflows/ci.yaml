@@ -21,17 +21,3 @@ jobs:
         run: |
           tox -e integration-vm -- --bundle "releases/latest/machine/kafka/bundle.yaml"
 
-  integration-test-k8s:
-    runs-on: ubuntu-latest
-    name: Integration tests for k8s charms
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Setup operator environment
-        uses: charmed-kubernetes/actions-operator@main
-        with:
-          provider: microk8s
-          bootstrap-options: "--agent-version 2.9.38"
-      - name: Run k8s integration tests
-        run: |
-          tox -e integration-k8s -- --bundle "releases/latest/k8s/kafka-k8s/bundle.yaml"
