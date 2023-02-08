@@ -19,5 +19,5 @@ jobs:
           bootstrap-options: "--agent-version 2.9.38"
       - name: Run machine integration tests
         run: |
-          tox -e integration-vm -- --bundle "releases/latest/kafka/bundle.yaml"
+          tox -e integration -- --bundle "releases/latest/kafka/bundle.yaml"
 
