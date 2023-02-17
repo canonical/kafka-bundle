@@ -18,7 +18,7 @@ def load_acls(model_full_name: str, zookeeper_uri: str, unit_name: str) -> Set[A
     if "k8s" in unit_name:
         command = f"JUJU_MODEL={model_full_name} juju ssh --container kafka {unit_name} 'KAFKA_OPTS=-Djava.security.auth.login.config=/data/kafka/config/kafka-jaas.cfg ./opt/kafka/bin/kafka-acls.sh --authorizer-properties zookeeper.connect={zookeeper_uri} --list --zk-tls-config-file=/data/kafka/config/server.properties'"
     else:
-        command = f"JUJU_MODEL={model_full_name} juju ssh {unit_name} 'kafka.acls --authorizer-properties zookeeper.connect={zookeeper_uri} --list --zk-tls-config-file={SNAP_CONFIG_PATH}server.properties'"
+        command = f"JUJU_MODEL={model_full_name} juju ssh kafka/0 'charmed-kafka.acls --authorizer-properties zookeeper.connect={zookeeper_uri} --list'"
     try:
         result = check_output(
             command,
@@ -61,7 +61,7 @@ def check_user(model_full_name: str, username: str, zookeeper_uri: str, unit_nam
     if "k8s" in unit_name:
         command = f"JUJU_MODEL={model_full_name} juju ssh --container kafka {unit_name} 'KAFKA_OPTS=-Djava.security.auth.login.config=/data/kafka/config/kafka-jaas.cfg ./opt/kafka/bin/kafka-configs.sh --zookeeper {zookeeper_uri} --describe --entity-type users --entity-name {username} --zk-tls-config-file=/data/kafka/config/server.properties'"
     else:
-        command = f"JUJU_MODEL={model_full_name} juju ssh {unit_name} 'kafka.configs --zookeeper {zookeeper_uri} --describe --entity-type users --entity-name {username} --zk-tls-config-file={SNAP_CONFIG_PATH}server.properties'"
+        command = f"JUJU_MODEL={model_full_name} juju ssh {unit_name} 'charmed-kafka.configs --zookeeper {zookeeper_uri} --describe --entity-type users --entity-name {username}'"
     try:
         result = check_output(
             command,

@@ -1,18 +1,18 @@
 description: A fast, secure and fault-tolerant Apache Kafka, supported by Apache ZooKeeper
 issues: https://github.com/canonical/kafka-bundle/issues/new
 source: https://github.com/canonical/kafka-bundle
-series: focal
+series: jammy
 name: kafka-bundle
 applications:
   kafka:
     channel: latest/edge
     charm: kafka
-    series: focal
+    series: jammy
     num_units: 1
   tls-certificates-operator:
     channel: latest/edge
     charm: tls-certificates-operator
-    series: focal
+    series: jammy
     num_units: 1
     options:
       ca-common-name: canonical
@@ -20,7 +20,7 @@ applications:
   zookeeper:
     channel: latest/edge
     charm: zookeeper
-    series: focal
+    series: jammy
     num_units: 3
 relations:
 - - zookeeper:certificates
