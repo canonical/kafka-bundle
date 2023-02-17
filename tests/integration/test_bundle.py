@@ -10,11 +10,7 @@ import pytest
 import yaml
 from pytest_operator.plugin import OpsTest
 
-from tests.integration.kafka_helpers import (
-    check_user,
-    get_zookeeper_connection,
-    load_acls,
-)
+from .kafka_helpers import check_user, get_zookeeper_connection, load_acls
 
 logger = logging.getLogger(__name__)
 

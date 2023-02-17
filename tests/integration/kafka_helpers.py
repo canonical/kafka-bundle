@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Set, Tuple
 import yaml
 from charms.kafka.v0.kafka_snap import SNAP_CONFIG_PATH
 
-from tests.integration.auth import Acl, KafkaAuth
+from .auth import Acl, KafkaAuth
 
 logger = logging.getLogger(__name__)
 
