@@ -50,7 +50,7 @@ LIBAPI = 0
 LIBPATCH = 4
 
 
-SNAP_CONFIG_PATH = "/var/snap/kafka/common/"
+SNAP_CONFIG_PATH = "/var/snap/charmed-kafka/common/"
 
 
 class KafkaSnap:

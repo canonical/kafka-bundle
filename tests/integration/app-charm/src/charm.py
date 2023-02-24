@@ -127,7 +127,7 @@ class ApplicationCharm(CharmBase):
             event.fail(message=message)
             return
 
-        servers = relation.data[app].get("uris", "")
+        servers = relation.data[app].get("endpoints", "")
         if private_key:
             servers = servers.replace("9092", "9093")
         servers = servers.split(",")
@@ -298,9 +298,11 @@ class Consumer(threading.Thread):
             logger.info(message)
             if message == b"test-message":
                 self.message_found = True
-
+            logger.info(f"INSIDE: {self.message_found=}")
+        
+        logger.info(f"BEFORE: {self.message_found=}")
         consumer.close()
-
+        logger.info(f"{self.message_found=}")
         if not self.message_found:
             raise KeyError("Could not find produced message in consumer stream")
 
