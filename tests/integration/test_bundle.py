@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2022 Canonical Ltd.
+# Copyright 2023 Canonical Ltd.
 # See LICENSE file for licensing details.
 
 import logging
@@ -9,7 +9,6 @@ import pytest
 import yaml
 from pytest_operator.plugin import OpsTest
 
-from lib.charms.kafka.v0.kafka_snap import SNAP_CONFIG_PATH
 from tests.integration.kafka_helpers import (
     check_properties,
     check_user,
