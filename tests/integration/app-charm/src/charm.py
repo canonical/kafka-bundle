@@ -299,18 +299,18 @@ class Consumer(threading.Thread):
             if message.value == b"test-message":
                 self.message_found = True
             logger.info(f"INSIDE: {self.message_found=}")
-        
+
         logger.info(f"BEFORE: {self.message_found=}")
         consumer.close()
         logger.info(f"{self.message_found=}")
         if not self.message_found:
             self.exc = KeyError("Could not find produced message in consumer stream")
-    
+
     def join(self, timeout=None):
         super(Consumer, self).join(timeout)
         if self.exc:
             raise self.exc
-        
+
 
 if __name__ == "__main__":
     main(ApplicationCharm)

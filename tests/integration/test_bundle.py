@@ -3,24 +3,26 @@
 # See LICENSE file for licensing details.
 
 import logging
-import time
 from pathlib import Path
-from lib.charms.kafka.v0.kafka_snap import SNAP_CONFIG_PATH
 
 import pytest
 import yaml
 from pytest_operator.plugin import OpsTest
 
+from lib.charms.kafka.v0.kafka_snap import SNAP_CONFIG_PATH
 from tests.integration.kafka_helpers import (
     check_properties,
     check_user,
     get_zookeeper_connection,
     load_acls,
-    ping_servers
+    ping_servers,
 )
 
 logger = logging.getLogger(__name__)
 ZOOKEEPER = "zookeeper"
+
+kafka_app_name = "kafka"
+
 
 @pytest.fixture(scope="module")
 def usernames():
@@ -44,16 +46,17 @@ async def test_deploy_bundle_active(ops_test: OpsTest, bundle):
     for app in applications:
         assert ops_test.model.applications[app].status == "active"
 
+
 @pytest.mark.abort_on_fail
 async def test_active_zookeeper(ops_test: OpsTest):
     assert await ping_servers(ops_test, ZOOKEEPER)
+
 
 @pytest.mark.abort_on_fail
 async def test_deploy_app_charm_relate(ops_test: OpsTest, usernames, bundle):
     bundle_data = yaml.safe_load(Path(bundle).read_text())
     applications = []
 
-    kafka_app_name = "kafka"
     tls = False
     for app in bundle_data["applications"]:
         applications.append(app)
@@ -66,7 +69,9 @@ async def test_deploy_app_charm_relate(ops_test: OpsTest, usernames, bundle):
     await ops_test.model.deploy(app_charm, application_name="app", num_units=1)
     if tls:
         await ops_test.model.add_relation("app", "tls-certificates-operator")
-    await ops_test.model.wait_for_idle(apps=applications,timeout=1200, idle_period=30, status="active")
+    await ops_test.model.wait_for_idle(
+        apps=applications, timeout=1200, idle_period=30, status="active"
+    )
     await ops_test.model.add_relation(kafka_app_name, "app")
     await ops_test.model.wait_for_idle(
         apps=applications + ["app"], status="active", timeout=1000, idle_period=30
@@ -75,6 +80,9 @@ async def test_deploy_app_charm_relate(ops_test: OpsTest, usernames, bundle):
     for app in applications + ["app"]:
         assert ops_test.model.applications[app].status == "active"
 
+
+@pytest.mark.abort_on_fail
+async def test_apps_up_and_running(ops_test: OpsTest, usernames, bundle):
     assert await ping_servers(ops_test, ZOOKEEPER)
 
     for unit in ops_test.model.applications[ZOOKEEPER].units:
@@ -91,13 +99,10 @@ async def test_deploy_app_charm_relate(ops_test: OpsTest, usernames, bundle):
     logger.info(f"Usernames: {usernames}")
     assert await ping_servers(ops_test, ZOOKEEPER)
 
-
     for username in usernames:
         unit_name = f"{kafka_app_name}/0"
         command = f"JUJU_MODEL={ops_test.model_full_name} juju ssh {unit_name} 'charmed-kafka.configs --zookeeper {zookeeper_uri} --describe --entity-type users --entity-name {username} --zk-tls-config-file={SNAP_CONFIG_PATH}server.properties'"
         logger.info(f"Command: {command}")
-
-    # time.sleep(600)
 
     for username in usernames:
         check_user(

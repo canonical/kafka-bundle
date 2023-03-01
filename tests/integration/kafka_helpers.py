@@ -8,10 +8,9 @@ from typing import Any, Dict, List, Set, Tuple
 
 import yaml
 from charms.kafka.v0.kafka_snap import SNAP_CONFIG_PATH
-
-from tests.integration.auth import Acl, KafkaAuth
 from pytest_operator.plugin import OpsTest
 
+from tests.integration.auth import Acl, KafkaAuth
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +106,8 @@ def get_zookeeper_connection(unit_name: str, model_full_name: str) -> Tuple[List
         return usernames, zookeeper_uri
     else:
         raise Exception("config not found")
-    
+
+
 def check_properties(model_full_name: str, unit: str):
     properties = check_output(
         f"JUJU_MODEL={model_full_name} juju exec cat /var/snap/zookeeper/common/conf/zoo.cfg --unit {unit}",
@@ -135,6 +135,7 @@ def get_kafka_zk_relation_data(unit_name: str, model_full_name: str) -> Dict[str
 
 def srvr(host: str) -> Dict:
     """Retrieves attributes returned from the 'srvr' 4lw command.
+
     Specifically for this test, we are interested in the "Mode" of the ZK server,
     which allows checking quorum leadership and follower active status.
     """
