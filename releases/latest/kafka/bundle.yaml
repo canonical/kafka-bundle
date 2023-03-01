@@ -18,7 +18,8 @@ applications:
       ca-common-name: canonical
       generate-self-signed-certificates: true
   zookeeper:
-    charm: /home/ubuntu/git/zookeeper-operator/zookeeper_ubuntu-22.04-amd64.charm
+    channel: latest/edge
+    charm: zookeeper
     series: jammy
     num_units: 3
 relations:

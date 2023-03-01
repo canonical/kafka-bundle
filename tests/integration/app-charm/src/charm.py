@@ -271,7 +271,7 @@ class Consumer(threading.Thread):
         self.private_key = private_key
         self.relation = relation
         self.group_id = group_id
-
+        self.exc = None
         threading.Thread.__init__(self)
 
     def run(self):
@@ -296,7 +296,7 @@ class Consumer(threading.Thread):
         self.message_found = False
         for message in consumer:
             logger.info(message)
-            if message == b"test-message":
+            if message.value == b"test-message":
                 self.message_found = True
             logger.info(f"INSIDE: {self.message_found=}")
         
@@ -304,8 +304,13 @@ class Consumer(threading.Thread):
         consumer.close()
         logger.info(f"{self.message_found=}")
         if not self.message_found:
-            raise KeyError("Could not find produced message in consumer stream")
-
+            self.exc = KeyError("Could not find produced message in consumer stream")
+    
+    def join(self, timeout=None):
+        super(Consumer, self).join(timeout)
+        if self.exc:
+            raise self.exc
+        
 
 if __name__ == "__main__":
     main(ApplicationCharm)
