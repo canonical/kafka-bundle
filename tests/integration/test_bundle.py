@@ -31,6 +31,7 @@ def usernames():
 
 @pytest.mark.abort_on_fail
 async def test_deploy_bundle_active(ops_test: OpsTest, bundle):
+    """Deploy the bundle."""
     bundle_data = yaml.safe_load(Path(bundle).read_text())
     applications = []
 
@@ -49,11 +50,13 @@ async def test_deploy_bundle_active(ops_test: OpsTest, bundle):
 
 @pytest.mark.abort_on_fail
 async def test_active_zookeeper(ops_test: OpsTest):
+    """Test the status the correct status of Zookeeper."""
     assert await ping_servers(ops_test, ZOOKEEPER)
 
 
 @pytest.mark.abort_on_fail
 async def test_deploy_app_charm_relate(ops_test: OpsTest, usernames, bundle):
+    """Deploy dummy app and relate with Kafka and TLS operator."""
     bundle_data = yaml.safe_load(Path(bundle).read_text())
     applications = []
 
@@ -83,6 +86,7 @@ async def test_deploy_app_charm_relate(ops_test: OpsTest, usernames, bundle):
 
 @pytest.mark.abort_on_fail
 async def test_apps_up_and_running(ops_test: OpsTest, usernames, bundle):
+    """Test that all apps are up and running."""
     assert await ping_servers(ops_test, ZOOKEEPER)
 
     for unit in ops_test.model.applications[ZOOKEEPER].units:
@@ -95,14 +99,6 @@ async def test_apps_up_and_running(ops_test: OpsTest, usernames, bundle):
         unit_name=f"{kafka_app_name}/0", model_full_name=ops_test.model_full_name
     )
     usernames.update(returned_usernames)
-
-    logger.info(f"Usernames: {usernames}")
-    assert await ping_servers(ops_test, ZOOKEEPER)
-
-    for username in usernames:
-        unit_name = f"{kafka_app_name}/0"
-        command = f"JUJU_MODEL={ops_test.model_full_name} juju ssh {unit_name} 'charmed-kafka.configs --zookeeper {zookeeper_uri} --describe --entity-type users --entity-name {username} --zk-tls-config-file={SNAP_CONFIG_PATH}server.properties'"
-        logger.info(f"Command: {command}")
 
     for username in usernames:
         check_user(
@@ -127,6 +123,7 @@ async def test_apps_up_and_running(ops_test: OpsTest, usernames, bundle):
 
 @pytest.mark.abort_on_fail
 async def test_run_action_produce_consume(ops_test: OpsTest):
+    """Test production and consumption of messages."""
     action = await ops_test.model.units.get("app/0").run_action("produce-consume")
     ran_action = await action.wait()
     assert ran_action.results.get("passed", "") == "true"

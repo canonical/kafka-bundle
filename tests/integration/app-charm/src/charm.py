@@ -298,11 +298,8 @@ class Consumer(threading.Thread):
             logger.info(message)
             if message.value == b"test-message":
                 self.message_found = True
-            logger.info(f"INSIDE: {self.message_found=}")
 
-        logger.info(f"BEFORE: {self.message_found=}")
         consumer.close()
-        logger.info(f"{self.message_found=}")
         if not self.message_found:
             self.exc = KeyError("Could not find produced message in consumer stream")
 
