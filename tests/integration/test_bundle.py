@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-# Copyright 2022 Canonical Ltd.
+# Copyright 2023 Canonical Ltd.
 # See LICENSE file for licensing details.
 
 import logging
-import time
 from pathlib import Path
 
 import pytest
@@ -11,12 +10,17 @@ import yaml
 from pytest_operator.plugin import OpsTest
 
 from tests.integration.kafka_helpers import (
+    check_properties,
     check_user,
     get_zookeeper_connection,
     load_acls,
+    ping_servers,
 )
 
 logger = logging.getLogger(__name__)
+ZOOKEEPER = "zookeeper"
+
+kafka_app_name = "kafka"
 
 
 @pytest.fixture(scope="module")
@@ -26,6 +30,7 @@ def usernames():
 
 @pytest.mark.abort_on_fail
 async def test_deploy_bundle_active(ops_test: OpsTest, bundle):
+    """Deploy the bundle."""
     bundle_data = yaml.safe_load(Path(bundle).read_text())
     applications = []
 
@@ -37,19 +42,23 @@ async def test_deploy_bundle_active(ops_test: OpsTest, bundle):
     )
     assert retcode == 0, f"Deploy failed: {(stderr or stdout).strip()}"
     logger.info(stdout)
-    time.sleep(720)
-    await ops_test.model.wait_for_idle(timeout=1000, idle_period=30)
-
+    await ops_test.model.wait_for_idle(timeout=1200, idle_period=30, status="active")
     for app in applications:
         assert ops_test.model.applications[app].status == "active"
 
 
 @pytest.mark.abort_on_fail
+async def test_active_zookeeper(ops_test: OpsTest):
+    """Test the status the correct status of Zookeeper."""
+    assert await ping_servers(ops_test, ZOOKEEPER)
+
+
+@pytest.mark.abort_on_fail
 async def test_deploy_app_charm_relate(ops_test: OpsTest, usernames, bundle):
+    """Deploy dummy app and relate with Kafka and TLS operator."""
     bundle_data = yaml.safe_load(Path(bundle).read_text())
     applications = []
 
-    kafka_app_name = "kafka"
     tls = False
     for app in bundle_data["applications"]:
         applications.append(app)
@@ -62,15 +71,27 @@ async def test_deploy_app_charm_relate(ops_test: OpsTest, usernames, bundle):
     await ops_test.model.deploy(app_charm, application_name="app", num_units=1)
     if tls:
         await ops_test.model.add_relation("app", "tls-certificates-operator")
-    time.sleep(60)
+    await ops_test.model.wait_for_idle(
+        apps=applications, timeout=1200, idle_period=30, status="active"
+    )
     await ops_test.model.add_relation(kafka_app_name, "app")
-    time.sleep(90)
     await ops_test.model.wait_for_idle(
         apps=applications + ["app"], status="active", timeout=1000, idle_period=30
     )
 
     for app in applications + ["app"]:
         assert ops_test.model.applications[app].status == "active"
+
+
+@pytest.mark.abort_on_fail
+async def test_apps_up_and_running(ops_test: OpsTest, usernames, bundle):
+    """Test that all apps are up and running."""
+    assert await ping_servers(ops_test, ZOOKEEPER)
+
+    for unit in ops_test.model.applications[ZOOKEEPER].units:
+        assert "sslQuorum=true" in check_properties(
+            model_full_name=ops_test.model_full_name, unit=unit.name
+        )
 
     # implicitly tests setting of kafka app data
     returned_usernames, zookeeper_uri = get_zookeeper_connection(
@@ -96,10 +117,12 @@ async def test_deploy_app_charm_relate(ops_test: OpsTest, usernames, bundle):
         assert acl.resource_type in ["GROUP", "TOPIC"]
         if acl.resource_type == "TOPIC":
             assert acl.resource_name == "test-topic"
+    assert await ping_servers(ops_test, ZOOKEEPER)
 
 
 @pytest.mark.abort_on_fail
 async def test_run_action_produce_consume(ops_test: OpsTest):
+    """Test production and consumption of messages."""
     action = await ops_test.model.units.get("app/0").run_action("produce-consume")
     ran_action = await action.wait()
     assert ran_action.results.get("passed", "") == "true"
