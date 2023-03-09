@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2022 Canonical Ltd.
+# Copyright 2023 Canonical Ltd.
 # See LICENSE file for licensing details.
 
 """Application charm that connects to database charms.
@@ -127,7 +127,7 @@ class ApplicationCharm(CharmBase):
             event.fail(message=message)
             return
 
-        servers = relation.data[app].get("uris", "")
+        servers = relation.data[app].get("endpoints", "")
         if private_key:
             servers = servers.replace("9092", "9093")
         servers = servers.split(",")
@@ -271,7 +271,7 @@ class Consumer(threading.Thread):
         self.private_key = private_key
         self.relation = relation
         self.group_id = group_id
-
+        self.exc = None
         threading.Thread.__init__(self)
 
     def run(self):
@@ -296,13 +296,17 @@ class Consumer(threading.Thread):
         self.message_found = False
         for message in consumer:
             logger.info(message)
-            if message == b"test-message":
+            if message.value == b"test-message":
                 self.message_found = True
 
         consumer.close()
-
         if not self.message_found:
-            raise KeyError("Could not find produced message in consumer stream")
+            self.exc = KeyError("Could not find produced message in consumer stream")
+
+    def join(self, timeout=None):
+        super(Consumer, self).join(timeout)
+        if self.exc:
+            raise self.exc
 
 
 if __name__ == "__main__":

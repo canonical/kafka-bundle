@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2022 Canonical Ltd.
+# Copyright 2023 Canonical Ltd.
 # See LICENSE file for licensing details.
 import logging
 import re
@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Set, Tuple
 
 import yaml
 from charms.kafka.v0.kafka_snap import SNAP_CONFIG_PATH
+from pytest_operator.plugin import OpsTest
 
 from .auth import Acl, KafkaAuth
 
@@ -18,7 +19,7 @@ def load_acls(model_full_name: str, zookeeper_uri: str, unit_name: str) -> Set[A
     if "k8s" in unit_name:
         command = f"JUJU_MODEL={model_full_name} juju ssh --container kafka {unit_name} 'KAFKA_OPTS=-Djava.security.auth.login.config=/data/kafka/config/kafka-jaas.cfg ./opt/kafka/bin/kafka-acls.sh --authorizer-properties zookeeper.connect={zookeeper_uri} --list --zk-tls-config-file=/data/kafka/config/server.properties'"
     else:
-        command = f"JUJU_MODEL={model_full_name} juju ssh {unit_name} 'kafka.acls --authorizer-properties zookeeper.connect={zookeeper_uri} --list --zk-tls-config-file={SNAP_CONFIG_PATH}server.properties'"
+        command = f"JUJU_MODEL={model_full_name} juju ssh kafka/0 'charmed-kafka.acls --authorizer-properties zookeeper.connect={zookeeper_uri} --list --zk-tls-config-file={SNAP_CONFIG_PATH}server.properties'"
     try:
         result = check_output(
             command,
@@ -61,7 +62,7 @@ def check_user(model_full_name: str, username: str, zookeeper_uri: str, unit_nam
     if "k8s" in unit_name:
         command = f"JUJU_MODEL={model_full_name} juju ssh --container kafka {unit_name} 'KAFKA_OPTS=-Djava.security.auth.login.config=/data/kafka/config/kafka-jaas.cfg ./opt/kafka/bin/kafka-configs.sh --zookeeper {zookeeper_uri} --describe --entity-type users --entity-name {username} --zk-tls-config-file=/data/kafka/config/server.properties'"
     else:
-        command = f"JUJU_MODEL={model_full_name} juju ssh {unit_name} 'kafka.configs --zookeeper {zookeeper_uri} --describe --entity-type users --entity-name {username} --zk-tls-config-file={SNAP_CONFIG_PATH}server.properties'"
+        command = f"JUJU_MODEL={model_full_name} juju ssh {unit_name} 'charmed-kafka.configs --zookeeper {zookeeper_uri} --describe --entity-type users --entity-name {username} --zk-tls-config-file={SNAP_CONFIG_PATH}server.properties'"
     try:
         result = check_output(
             command,
@@ -107,6 +108,16 @@ def get_zookeeper_connection(unit_name: str, model_full_name: str) -> Tuple[List
         raise Exception("config not found")
 
 
+def check_properties(model_full_name: str, unit: str):
+    properties = check_output(
+        f"JUJU_MODEL={model_full_name} juju exec cat /var/snap/zookeeper/common/conf/zoo.cfg --unit {unit}",
+        stderr=PIPE,
+        shell=True,
+        universal_newlines=True,
+    )
+    return properties.splitlines()
+
+
 def get_kafka_zk_relation_data(unit_name: str, model_full_name: str) -> Dict[str, str]:
     result = show_unit(unit_name=unit_name, model_full_name=model_full_name)
     relations_info = result[unit_name]["relation-info"]
@@ -120,3 +131,32 @@ def get_kafka_zk_relation_data(unit_name: str, model_full_name: str) -> Dict[str
             zk_relation_data["uris"] = info["application-data"]["uris"]
             zk_relation_data["username"] = info["application-data"]["username"]
     return zk_relation_data
+
+
+def srvr(host: str) -> Dict:
+    """Retrieves attributes returned from the 'srvr' 4lw command.
+
+    Specifically for this test, we are interested in the "Mode" of the ZK server,
+    which allows checking quorum leadership and follower active status.
+    """
+    response = check_output(
+        f"echo srvr | nc {host} 2181", stderr=PIPE, shell=True, universal_newlines=True
+    )
+
+    result = {}
+    for item in response.splitlines():
+        k = re.split(": ", item)[0]
+        v = re.split(": ", item)[1]
+        result[k] = v
+
+    return result
+
+
+async def ping_servers(ops_test: OpsTest, zookeeper_app_name: str) -> bool:
+    for unit in ops_test.model.applications[zookeeper_app_name].units:
+        host = unit.public_address
+        mode = srvr(host)["Mode"]
+        if mode not in ["leader", "follower"]:
+            return False
+
+    return True
