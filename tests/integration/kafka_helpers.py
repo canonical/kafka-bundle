@@ -10,7 +10,7 @@ import yaml
 from charms.kafka.v0.kafka_snap import SNAP_CONFIG_PATH
 from pytest_operator.plugin import OpsTest
 
-from tests.integration.auth import Acl, KafkaAuth
+from .auth import Acl, KafkaAuth
 
 logger = logging.getLogger(__name__)
 

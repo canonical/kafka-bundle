@@ -9,7 +9,7 @@ import pytest
 import yaml
 from pytest_operator.plugin import OpsTest
 
-from tests.integration.kafka_helpers import (
+from .kafka_helpers import (
     check_properties,
     check_user,
     get_zookeeper_connection,

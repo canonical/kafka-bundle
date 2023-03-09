@@ -9,6 +9,7 @@ jobs:
   publish-machine-bundle:
     name: Publish machine bundle
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v3
       - name: Install dependencies
