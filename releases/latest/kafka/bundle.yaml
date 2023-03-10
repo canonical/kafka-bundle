@@ -1,27 +1,28 @@
-description: A fast, secure and fault-tolerant Apache Kafka, supported by Apache ZooKeeper
-issues: https://github.com/canonical/kafka-bundle/issues/new
-source: https://github.com/canonical/kafka-bundle
-series: jammy
-name: kafka-bundle
 applications:
   kafka:
     channel: latest/edge
     charm: kafka
-    series: jammy
     num_units: 1
+    revision: 100
+    series: jammy
   tls-certificates-operator:
     channel: latest/edge
     charm: tls-certificates-operator
-    series: jammy
     num_units: 1
     options:
       ca-common-name: canonical
       generate-self-signed-certificates: true
+    revision: 22
+    series: jammy
   zookeeper:
     channel: latest/edge
     charm: zookeeper
-    series: jammy
     num_units: 3
+    revision: 91
+    series: jammy
+description: A fast, secure and fault-tolerant Apache Kafka, supported by Apache ZooKeeper
+issues: https://github.com/canonical/kafka-bundle/issues/new
+name: kafka-bundle
 relations:
 - - zookeeper:certificates
   - tls-certificates-operator:certificates
@@ -29,3 +30,5 @@ relations:
   - tls-certificates-operator:certificates
 - - kafka:zookeeper
   - zookeeper:zookeeper
+series: jammy
+source: https://github.com/canonical/kafka-bundle
