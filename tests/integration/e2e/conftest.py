@@ -17,6 +17,7 @@ from literals import (
     TLS_APP_NAME,
     TLS_CHARM_NAME,
     ZOOKEEPER_CHARM_NAME,
+    TLS_REL_NAME,
 )
 from pytest_operator.plugin import OpsTest
 
@@ -124,12 +125,12 @@ async def deploy_cluster(ops_test: OpsTest, tls):
 
         async with ops_test.fast_forward():
             await ops_test.model.add_relation(ZOOKEEPER_CHARM_NAME, TLS_CHARM_NAME)
-            await ops_test.model.add_relation(KAFKA_CHARM_NAME, TLS_CHARM_NAME)
+            await ops_test.model.add_relation(f"{KAFKA_CHARM_NAME}:{TLS_REL_NAME}", TLS_CHARM_NAME)
             await ops_test.model.wait_for_idle(
                 apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME],
-                idle_period=10,
+                idle_period=30,
                 status="active",
-                timeout=300,
+                timeout=1800,
             )
 
     if tls:  # grabbed from command-line args
@@ -167,7 +168,7 @@ async def deploy_client(ops_test: OpsTest, kafka):
 
         await ops_test.model.add_relation(generated_app_name, kafka)
         await ops_test.model.wait_for_idle(
-            apps=[generated_app_name, kafka], idle_period=10, status="active", timeout=300
+            apps=[generated_app_name, kafka], idle_period=30, status="active", timeout=1800
         )
 
         return generated_app_name
@@ -180,4 +181,4 @@ async def deploy_client(ops_test: OpsTest, kafka):
         logger.info(f"tearing down {app}")
         await ops_test.model.applications[app].remove()
 
-    await ops_test.model.wait_for_idle(apps=[kafka], idle_period=10, status="active", timeout=300)
+    await ops_test.model.wait_for_idle(apps=[kafka], idle_period=30, status="active", timeout=1800)

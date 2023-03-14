@@ -10,3 +10,4 @@ KAFKA_CHARM_NAME = "kafka"
 ZOOKEEPER_CHARM_NAME = "zookeeper"
 
 TLS_APP_NAME = "certificates"
+TLS_REL_NAME = "certificates"
