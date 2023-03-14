@@ -80,14 +80,14 @@ async def deploy_cluster(ops_test: OpsTest, tls):
             ops_test.model.deploy(
                 KAFKA_CHARM_NAME,
                 application_name=KAFKA_CHARM_NAME,
-                num_units=3,
+                num_units=1,
                 series="jammy",
                 channel="edge",
             ),
             ops_test.model.deploy(
                 ZOOKEEPER_CHARM_NAME,
                 application_name=ZOOKEEPER_CHARM_NAME,
-                num_units=3,
+                num_units=1,
                 series="jammy",
                 channel="edge",
             ),
