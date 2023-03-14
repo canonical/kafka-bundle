@@ -35,9 +35,12 @@ jobs:
   integration-test:
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         tox-environments:
-          - integration
+          - integration-bundle
+          - integration-e2e
+          - integration-e2e-tls
     name: ${{ matrix.tox-environments }}
     needs:
       - lint
@@ -69,6 +72,6 @@ jobs:
             echo "mark_expression=not unstable" >> $GITHUB_OUTPUT
           fi
       - name: Run integration tests
-        run: tox run -e ${{ matrix.tox-environments }} -- --bundle "releases/latest/kafka/bundle.yaml" -m '${{ steps.select-tests.outputs.mark_expression }}'
+        run: tox run -e ${{ matrix.tox-environments }} -- -m '${{ steps.select-tests.outputs.mark_expression }}'
         env:
           CI_PACKED_CHARMS: ${{ needs.build.outputs.charms }}
