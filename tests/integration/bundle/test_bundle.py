@@ -8,8 +8,7 @@ from pathlib import Path
 import pytest
 import yaml
 from pytest_operator.plugin import OpsTest
-
-from .kafka_helpers import (
+from tests.integration.bundle.kafka_helpers import (
     check_properties,
     check_user,
     get_zookeeper_connection,
@@ -22,6 +21,11 @@ ZOOKEEPER = "zookeeper"
 
 kafka_app_name = "kafka"
 
+BUNDLE_PATH = "releases/latest/kafka/bundle.yaml"
+
+ZOOKEEPER = "zookeeper"
+kafka_app_name = "kafka"
+
 
 @pytest.fixture(scope="module")
 def usernames():
@@ -29,16 +33,16 @@ def usernames():
 
 
 @pytest.mark.abort_on_fail
-async def test_deploy_bundle_active(ops_test: OpsTest, bundle):
+async def test_deploy_bundle_active(ops_test: OpsTest):
     """Deploy the bundle."""
-    bundle_data = yaml.safe_load(Path(bundle).read_text())
+    bundle_data = yaml.safe_load(Path(BUNDLE_PATH).read_text())
     applications = []
 
     for app in bundle_data["applications"]:
         applications.append(app)
 
     retcode, stdout, stderr = await ops_test.run(
-        *["juju", "deploy", "--trust", "-m", ops_test.model_full_name, f"./{bundle}"]
+        *["juju", "deploy", "--trust", "-m", ops_test.model_full_name, f"./{BUNDLE_PATH}"]
     )
     assert retcode == 0, f"Deploy failed: {(stderr or stdout).strip()}"
     logger.info(stdout)
@@ -54,9 +58,9 @@ async def test_active_zookeeper(ops_test: OpsTest):
 
 
 @pytest.mark.abort_on_fail
-async def test_deploy_app_charm_relate(ops_test: OpsTest, usernames, bundle):
+async def test_deploy_app_charm_relate(ops_test: OpsTest, usernames):
     """Deploy dummy app and relate with Kafka and TLS operator."""
-    bundle_data = yaml.safe_load(Path(bundle).read_text())
+    bundle_data = yaml.safe_load(Path(BUNDLE_PATH).read_text())
     applications = []
 
     tls = False
@@ -84,7 +88,7 @@ async def test_deploy_app_charm_relate(ops_test: OpsTest, usernames, bundle):
 
 
 @pytest.mark.abort_on_fail
-async def test_apps_up_and_running(ops_test: OpsTest, usernames, bundle):
+async def test_apps_up_and_running(ops_test: OpsTest, usernames):
     """Test that all apps are up and running."""
     assert await ping_servers(ops_test, ZOOKEEPER)
 

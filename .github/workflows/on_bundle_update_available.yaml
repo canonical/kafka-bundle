@@ -10,8 +10,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v3
-      - name: Install tox
-        run: python3 -m pip install tox
+      - name: Install tox and poetry
+        run: python3 -m pip install tox and poetry
       - name: check for updates
         run: tox -e update_bundle
       - name: create pull request
