@@ -16,8 +16,8 @@ from literals import (
     KAFKA_CHARM_NAME,
     TLS_APP_NAME,
     TLS_CHARM_NAME,
-    ZOOKEEPER_CHARM_NAME,
     TLS_REL_NAME,
+    ZOOKEEPER_CHARM_NAME,
 )
 from pytest_operator.plugin import OpsTest
 
