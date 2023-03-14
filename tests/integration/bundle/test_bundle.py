@@ -15,16 +15,9 @@ from tests.integration.bundle.kafka_helpers import (
     load_acls,
     ping_servers,
 )
+from tests.integration.bundle.literals import APP_CHARM_PATH, BUNDLE_PATH, KAFKA, ZOOKEEPER
 
 logger = logging.getLogger(__name__)
-ZOOKEEPER = "zookeeper"
-
-kafka_app_name = "kafka"
-
-BUNDLE_PATH = "releases/latest/kafka/bundle.yaml"
-
-ZOOKEEPER = "zookeeper"
-kafka_app_name = "kafka"
 
 
 @pytest.fixture(scope="module")
@@ -58,7 +51,7 @@ async def test_active_zookeeper(ops_test: OpsTest):
 
 
 @pytest.mark.abort_on_fail
-async def test_deploy_app_charm_relate(ops_test: OpsTest, usernames):
+async def test_deploy_app_charm_relate(ops_test: OpsTest):
     """Deploy dummy app and relate with Kafka and TLS operator."""
     bundle_data = yaml.safe_load(Path(BUNDLE_PATH).read_text())
     applications = []
@@ -66,19 +59,17 @@ async def test_deploy_app_charm_relate(ops_test: OpsTest, usernames):
     tls = False
     for app in bundle_data["applications"]:
         applications.append(app)
-        if "kafka" in app:
-            kafka_app_name = app
         if "tls-certificates-operator" in app:
             tls = True
 
-    app_charm = await ops_test.build_charm("tests/integration/app-charm")
+    app_charm = await ops_test.build_charm(APP_CHARM_PATH)
     await ops_test.model.deploy(app_charm, application_name="app", num_units=1)
     if tls:
         await ops_test.model.add_relation("app", "tls-certificates-operator")
     await ops_test.model.wait_for_idle(
         apps=applications, timeout=1200, idle_period=30, status="active"
     )
-    await ops_test.model.add_relation(kafka_app_name, "app")
+    await ops_test.model.add_relation(KAFKA, "app")
     await ops_test.model.wait_for_idle(
         apps=applications + ["app"], status="active", timeout=1000, idle_period=30
     )
@@ -99,7 +90,7 @@ async def test_apps_up_and_running(ops_test: OpsTest, usernames):
 
     # implicitly tests setting of kafka app data
     returned_usernames, zookeeper_uri = get_zookeeper_connection(
-        unit_name=f"{kafka_app_name}/0", model_full_name=ops_test.model_full_name
+        unit_name=f"{KAFKA}/0", model_full_name=ops_test.model_full_name
     )
     usernames.update(returned_usernames)
 
@@ -108,13 +99,13 @@ async def test_apps_up_and_running(ops_test: OpsTest, usernames):
             username=username,
             zookeeper_uri=zookeeper_uri,
             model_full_name=ops_test.model_full_name,
-            unit_name=f"{kafka_app_name}/0",
+            unit_name=f"{KAFKA}/0",
         )
 
     for acl in load_acls(
         model_full_name=ops_test.model_full_name,
         zookeeper_uri=zookeeper_uri,
-        unit_name=f"{kafka_app_name}/0",
+        unit_name=f"{KAFKA}/0",
     ):
         assert acl.username in usernames
         assert acl.operation in ["CREATE", "READ", "WRITE", "DESCRIBE"]
