@@ -72,6 +72,9 @@ async def deploy_cluster(ops_test: OpsTest, tls):
         raise RuntimeError("model not set")
 
     async def _deploy_non_tls_cluster():
+        if not ops_test.model:  # avoids a multitude of linting errors
+            raise RuntimeError("model not set")
+
         await asyncio.gather(
             ops_test.model.deploy(
                 KAFKA_CHARM_NAME,
@@ -100,6 +103,9 @@ async def deploy_cluster(ops_test: OpsTest, tls):
             )
 
     async def _deploy_tls_cluster():
+        if not ops_test.model:  # avoids a multitude of linting errors
+            raise RuntimeError("model not set")
+
         # start future for slow non-tls cluster deploy
         deploy_non_tls = asyncio.ensure_future(_deploy_non_tls_cluster())
 
@@ -140,6 +146,9 @@ async def deploy_client(ops_test: OpsTest, kafka):
 
     async def _deploy_client(role: Literal["producer", "consumer"]):
         """Deploys client with specified role and uuid."""
+        if not ops_test.model:  # avoids a multitude of linting errors
+            raise RuntimeError("model not set")
+
         # uuid to avoid name clashes for same applications
         key = "".join(random.choices(string.ascii_lowercase, k=4))
         generated_app_name = f"{role}-{key}"

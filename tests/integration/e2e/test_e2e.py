@@ -12,10 +12,12 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.mark.skip_if_deployed
+@pytest.mark.abort_on_fail
 async def test_deploy(ops_test: OpsTest, deploy_cluster):
     await asyncio.sleep(0)  # do nothing, await deploy_cluster
 
 
+@pytest.mark.abort_on_fail
 async def test_cluster_is_deployed_successfully(
     ops_test: OpsTest, kafka, zookeeper, tls, certificates
 ):
@@ -26,6 +28,7 @@ async def test_cluster_is_deployed_successfully(
         assert ops_test.model.applications[certificates].status == "active"
 
 
+@pytest.mark.abort_on_fail
 async def test_clients_actually_set_up(ops_test: OpsTest, deploy_client):
     producer = await deploy_client(role="producer")
     consumer = await deploy_client(role="consumer")
@@ -34,6 +37,7 @@ async def test_clients_actually_set_up(ops_test: OpsTest, deploy_client):
     assert ops_test.model.applications[producer].status == "active"
 
 
+@pytest.mark.abort_on_fail
 async def test_clients_actually_tear_down_after_test_exit(ops_test: OpsTest):
     assert "consumer" not in "".join(ops_test.model.applications.keys())
     assert "producer" not in "".join(ops_test.model.applications.keys())
