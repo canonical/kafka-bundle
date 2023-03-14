@@ -23,6 +23,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
       - name: Install tox and poetry
         run: python3 -m pip install tox poetry
 
@@ -37,6 +38,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Install tox and poetry
+        run: python3 -m pip install tox poetry
 
       - name: Setup operator environment
         uses: charmed-kubernetes/actions-operator@main
