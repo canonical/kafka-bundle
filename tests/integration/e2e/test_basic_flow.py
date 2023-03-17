@@ -42,7 +42,7 @@ async def test_test_app_actually_set_up(ops_test: OpsTest, deploy_test_app):
 async def test_consumed_messages(ops_test: OpsTest, deploy_data_integrator):
 
     # get mongodb credentials
-    mongo_integrator = await deploy_data_integrator({"extra-user-roles": "producer", "database-name":"topic_0"})
+    mongo_integrator = await deploy_data_integrator({"database-name":"topic_0"})
 
     await ops_test.model.add_relation(mongo_integrator, DATABASE_CHARM_NAME)
     await ops_test.model.wait_for_idle(
@@ -55,7 +55,7 @@ async def test_consumed_messages(ops_test: OpsTest, deploy_data_integrator):
     
     logger.info(f"credentials: {credentials}")
 
-    uris = credentials[DATABASE_CHARM_NAME]["endpoints"]
+    uris = credentials[DATABASE_CHARM_NAME]["uris"]
 
     check_messages(uris, "topic_0")
 
