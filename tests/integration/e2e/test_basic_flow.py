@@ -103,6 +103,7 @@ async def test_consumed_messages(ops_test: OpsTest, deploy_data_integrator):
     # get mongodb credentials
     mongo_integrator = await deploy_data_integrator({"database-name": TOPIC})
 
+
     await ops_test.model.add_relation(mongo_integrator, DATABASE_CHARM_NAME)
     await ops_test.model.wait_for_idle(
         apps=[mongo_integrator, DATABASE_CHARM_NAME], idle_period=30, status="active", timeout=1800
