@@ -11,3 +11,5 @@ ZOOKEEPER_CHARM_NAME = "zookeeper"
 
 TLS_APP_NAME = "certificates"
 TLS_REL_NAME = "certificates"
+
+DATABASE_CHARM_NAME = "mongodb"

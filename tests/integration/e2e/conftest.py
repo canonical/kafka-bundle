@@ -8,11 +8,12 @@ import asyncio
 import logging
 import random
 import string
-from typing import Literal
+from typing import Dict, Literal
 
 import pytest
 from literals import (
     CLIENT_CHARM_NAME,
+    DATABASE_CHARM_NAME,
     KAFKA_CHARM_NAME,
     TLS_APP_NAME,
     TLS_CHARM_NAME,
@@ -91,13 +92,21 @@ async def deploy_cluster(ops_test: OpsTest, tls):
                 series="jammy",
                 channel="edge",
             ),
+            ops_test.model.deploy(
+                DATABASE_CHARM_NAME,
+                application_name=DATABASE_CHARM_NAME,
+                num_units=1,
+                series="jammy",
+                channel="5/edge",
+            )
+
         )
-        await ops_test.model.wait_for_idle(apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME])
+        await ops_test.model.wait_for_idle(apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME, DATABASE_CHARM_NAME])
 
         async with ops_test.fast_forward():
             await ops_test.model.add_relation(KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME)
             await ops_test.model.wait_for_idle(
-                apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME],
+                apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME, DATABASE_CHARM_NAME],
                 idle_period=10,
                 status="active",
                 timeout=300,
@@ -140,12 +149,57 @@ async def deploy_cluster(ops_test: OpsTest, tls):
 
 
 @pytest.fixture(scope="function")
-async def deploy_client(ops_test: OpsTest, kafka):
+async def deploy_data_integrator(ops_test: OpsTest, kafka):
     """Factory fixture for deploying + tearing down client applications."""
     # tracks deployed app names for teardown later
     apps = []
 
-    async def _deploy_client(role: Literal["producer", "consumer"]):
+    async def _deploy_data_integrator(config: Dict[str, str]):
+        """Deploys client with specified role and uuid."""
+        if not ops_test.model:  # avoids a multitude of linting errors
+            raise RuntimeError("model not set")
+
+        # uuid to avoid name clashes for same applications
+        key = "".join(random.choices(string.ascii_lowercase, k=4))
+        generated_app_name = f"data-integrator-{key}"
+        apps.append(generated_app_name)
+
+        logger.info(f"{generated_app_name=} - {apps=}")
+        await ops_test.model.deploy(
+            CLIENT_CHARM_NAME,
+            application_name=generated_app_name,
+            num_units=1,
+            series="jammy",
+            channel="edge",
+            config=config,
+        )
+        await ops_test.model.wait_for_idle(apps=[generated_app_name])
+
+        # await ops_test.model.add_relation(generated_app_name, kafka)
+        # await ops_test.model.wait_for_idle(
+        #     apps=[generated_app_name, kafka], idle_period=30, status="active", timeout=1800
+        # )
+
+        return generated_app_name
+
+    logger.info(f"setting up data_integrator - current apps {apps}")
+    yield _deploy_data_integrator
+
+    logger.info(f"tearing down {apps}")
+    for app in apps:
+        logger.info(f"tearing down {app}")
+        await ops_test.model.applications[app].remove()
+
+    await ops_test.model.wait_for_idle(apps=[kafka], idle_period=30, status="active", timeout=1800)
+
+
+@pytest.fixture(scope="function")
+async def deploy_test_app(ops_test: OpsTest, kafka, tls):
+    """Factory fixture for deploying + tearing down client applications."""
+    # tracks deployed app names for teardown later
+    apps = []
+
+    async def _deploy_test_app(role: Literal["producer", "consumer"], topic_name: str="test-topic"):
         """Deploys client with specified role and uuid."""
         if not ops_test.model:  # avoids a multitude of linting errors
             raise RuntimeError("model not set")
@@ -157,15 +211,28 @@ async def deploy_client(ops_test: OpsTest, kafka):
 
         logger.info(f"{generated_app_name=} - {apps=}")
         await ops_test.model.deploy(
-            CLIENT_CHARM_NAME,
+            "/home/ubuntu/git/kafka-test-app/kafka-test-app_ubuntu-22.04-amd64.charm",
             application_name=generated_app_name,
             num_units=1,
             series="jammy",
-            channel="edge",
-            config={"topic-name": "HOT-TOPIC", "extra-user-roles": role},
+            # channel="edge",
+            config={"role": role, "topic_name": topic_name},
         )
-        await ops_test.model.wait_for_idle(apps=[generated_app_name])
+        await ops_test.model.wait_for_idle(apps=[generated_app_name], idle_period=20, status="active")
 
+        # Relate with TLS operator
+        if tls:
+            await ops_test.model.add_relation(generated_app_name, TLS_APP_NAME)
+            await ops_test.model.wait_for_idle(
+            apps=[generated_app_name, TLS_APP_NAME], idle_period=30, status="active", timeout=1800)
+
+        # Relate with MongoDB
+        await ops_test.model.add_relation(generated_app_name, DATABASE_CHARM_NAME)
+        await ops_test.model.wait_for_idle(
+            apps=[generated_app_name, DATABASE_CHARM_NAME], idle_period=30, status="active", timeout=1800
+            )
+
+        # Relate with Kafka
         await ops_test.model.add_relation(generated_app_name, kafka)
         await ops_test.model.wait_for_idle(
             apps=[generated_app_name, kafka], idle_period=30, status="active", timeout=1800
@@ -173,12 +240,22 @@ async def deploy_client(ops_test: OpsTest, kafka):
 
         return generated_app_name
 
+
     logger.info(f"setting up client - current apps {apps}")
-    yield _deploy_client
+    yield _deploy_test_app
 
     logger.info(f"tearing down {apps}")
-    for app in apps:
+    # stop producers before consumers
+    for app in sorted(apps, reverse=True):
         logger.info(f"tearing down {app}")
-        await ops_test.model.applications[app].remove()
+        # check if application is in the 
+        if app in ops_test.model.applications:
+
+            await ops_test.model.applications[app].remove()
+            await asyncio.sleep(1)
+        else:
+            logger.info(f"App: {app} already removed!")
 
     await ops_test.model.wait_for_idle(apps=[kafka], idle_period=30, status="active", timeout=1800)
+
+

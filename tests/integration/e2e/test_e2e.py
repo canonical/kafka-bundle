@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2022 Canonical Ltd.
+# Copyright 2023 Canonical Ltd.
 # See LICENSE file for licensing details.
 
 import asyncio
@@ -7,6 +7,7 @@ import logging
 
 import pytest
 from pytest_operator.plugin import OpsTest
+from tests.integration.e2e.literals import KAFKA_CHARM_NAME
 
 logger = logging.getLogger(__name__)
 
@@ -29,9 +30,19 @@ async def test_cluster_is_deployed_successfully(
 
 
 @pytest.mark.abort_on_fail
-async def test_clients_actually_set_up(ops_test: OpsTest, deploy_client):
-    producer = await deploy_client(role="producer")
-    consumer = await deploy_client(role="consumer")
+async def test_clients_actually_set_up(ops_test: OpsTest, deploy_data_integrator):
+    producer = await deploy_data_integrator({"extra-user-roles": "producer", "topic_name":"test-topic"})
+    consumer = await deploy_data_integrator({"extra-user-roles": "producer", "topic_name":"test-topic"})
+
+    await ops_test.model.add_relation(producer,KAFKA_CHARM_NAME)
+    await ops_test.model.wait_for_idle(
+        apps=[producer, KAFKA_CHARM_NAME], idle_period=30, status="active", timeout=1800
+    )
+
+    await ops_test.model.add_relation(consumer,KAFKA_CHARM_NAME)
+    await ops_test.model.wait_for_idle(
+        apps=[consumer, KAFKA_CHARM_NAME], idle_period=30, status="active", timeout=1800
+    )
 
     assert ops_test.model.applications[consumer].status == "active"
     assert ops_test.model.applications[producer].status == "active"
