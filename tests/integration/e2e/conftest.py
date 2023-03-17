@@ -8,7 +8,9 @@ import asyncio
 import logging
 import random
 import string
+
 from typing import Dict, Literal, Optional
+
 
 import pytest
 from literals import (
@@ -92,13 +94,21 @@ async def deploy_cluster(ops_test: OpsTest, tls):
                 series="jammy",
                 channel="edge",
             ),
+            ops_test.model.deploy(
+                DATABASE_CHARM_NAME,
+                application_name=DATABASE_CHARM_NAME,
+                num_units=1,
+                series="jammy",
+                channel="5/edge",
+            )
+
         )
-        await ops_test.model.wait_for_idle(apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME])
+        await ops_test.model.wait_for_idle(apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME, DATABASE_CHARM_NAME])
 
         async with ops_test.fast_forward(fast_interval="30s"):
             await ops_test.model.add_relation(KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME)
             await ops_test.model.wait_for_idle(
-                apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME],
+                apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME, DATABASE_CHARM_NAME],
                 idle_period=10,
                 status="active",
                 timeout=300,
@@ -182,6 +192,7 @@ async def deploy_data_integrator(ops_test: OpsTest, kafka):
 
 @pytest.fixture(scope="function")
 async def deploy_test_app(ops_test: OpsTest, kafka, certificates, tls):
+
     """Factory fixture for deploying + tearing down client applications."""
     # tracks deployed app names for teardown later
     apps = []
@@ -231,6 +242,7 @@ async def deploy_test_app(ops_test: OpsTest, kafka, certificates, tls):
                 timeout=1800,
             )
 
+
         # Relate with MongoDB
         await ops_test.model.add_relation(generated_app_name, DATABASE_CHARM_NAME)
         await ops_test.model.wait_for_idle(
@@ -249,6 +261,7 @@ async def deploy_test_app(ops_test: OpsTest, kafka, certificates, tls):
         return generated_app_name
 
     logger.info(f"setting up test_app - current apps {apps}")
+
     yield _deploy_test_app
 
     logger.info(f"tearing down {apps}")
@@ -266,3 +279,5 @@ async def deploy_test_app(ops_test: OpsTest, kafka, certificates, tls):
             logger.info(f"App: {app} already removed!")
 
     await ops_test.model.wait_for_idle(apps=[kafka], idle_period=30, status="active", timeout=1800)
+
+

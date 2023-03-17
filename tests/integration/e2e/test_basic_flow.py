@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 TOPIC = get_random_topic()
 
 
+
 @pytest.mark.skip_if_deployed
 @pytest.mark.abort_on_fail
 async def test_deploy(ops_test: OpsTest, deploy_cluster):
@@ -35,6 +36,7 @@ async def test_cluster_is_deployed_successfully(
     if tls:
         assert ops_test.model.applications[certificates].status == "active"
 
+<<<<<<< HEAD
     # deploy MongoDB
 
     await asyncio.gather(
