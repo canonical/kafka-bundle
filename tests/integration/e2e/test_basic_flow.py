@@ -63,6 +63,28 @@ async def test_test_app_actually_set_up(ops_test: OpsTest, deploy_test_app):
     assert ops_test.model.applications[consumer].status == "active"
 
     await asyncio.sleep(100)
+    logger.info("Scale up producer")
+    await ops_test.model.applications[producer].add_units(count=2)
+    await ops_test.model.block_until(lambda: len(ops_test.model.applications[producer].units) == 3)
+    await ops_test.model.wait_for_idle(
+        apps=[producer], status="active", timeout=1000, idle_period=40
+    )
+    await asyncio.sleep(100)
+    logger.info("Scale up consumer")
+    await ops_test.model.applications[consumer].add_units(count=2)
+    await ops_test.model.block_until(lambda: len(ops_test.model.applications[consumer].units) == 3)
+    await ops_test.model.wait_for_idle(
+        apps=[consumer], status="active", timeout=1000, idle_period=40
+    )
+    await asyncio.sleep(100)
+    logger.info("Scale down consumer")
+    await ops_test.model.applications[consumer].destroy_units(f"{consumer}/2")
+    await ops_test.model.applications[consumer].destroy_units(f"{consumer}/1")
+    await ops_test.model.block_until(lambda: len(ops_test.model.applications[consumer].units) == 1)
+    await ops_test.model.wait_for_idle(apps=[consumer], status="active", timeout=1000)
+    logger.info(f"End scale down")
+    await asyncio.sleep(100)
+
 
     # scale up producer
     logger.info("Scale up producer")
