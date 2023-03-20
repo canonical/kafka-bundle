@@ -99,10 +99,11 @@ async def deploy_cluster(ops_test: OpsTest, tls):
                 num_units=1,
                 series="jammy",
                 channel="5/edge",
-            )
-
+            ),
         )
-        await ops_test.model.wait_for_idle(apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME, DATABASE_CHARM_NAME])
+        await ops_test.model.wait_for_idle(
+            apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME, DATABASE_CHARM_NAME]
+        )
 
         async with ops_test.fast_forward(fast_interval="30s"):
             await ops_test.model.add_relation(KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME)
@@ -241,7 +242,6 @@ async def deploy_test_app(ops_test: OpsTest, kafka, certificates, tls):
                 timeout=1800,
             )
 
-
         # Relate with MongoDB
         await ops_test.model.add_relation(generated_app_name, DATABASE_CHARM_NAME)
         await ops_test.model.wait_for_idle(
@@ -278,5 +278,3 @@ async def deploy_test_app(ops_test: OpsTest, kafka, certificates, tls):
             logger.info(f"App: {app} already removed!")
 
     await ops_test.model.wait_for_idle(apps=[kafka], idle_period=30, status="active", timeout=1800)
-
-

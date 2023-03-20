@@ -81,7 +81,7 @@ async def test_test_app_actually_set_up(ops_test: OpsTest, deploy_test_app):
     await ops_test.model.applications[consumer].destroy_units(f"{consumer}/1")
     await ops_test.model.block_until(lambda: len(ops_test.model.applications[consumer].units) == 1)
     await ops_test.model.wait_for_idle(apps=[consumer], status="active", timeout=1000)
-    logger.info(f"End scale down")
+    logger.info("End scale down")
     await asyncio.sleep(100)
 
 
@@ -123,7 +123,6 @@ async def test_consumed_messages(ops_test: OpsTest, deploy_data_integrator):
 
     # get mongodb credentials
     mongo_integrator = await deploy_data_integrator({"database-name": TOPIC})
-
 
     await ops_test.model.add_relation(mongo_integrator, DATABASE_CHARM_NAME)
     await ops_test.model.wait_for_idle(
