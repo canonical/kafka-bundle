@@ -11,7 +11,6 @@ import string
 
 from typing import Dict, Literal, Optional
 
-
 import pytest
 from literals import (
     CLIENT_CHARM_NAME,

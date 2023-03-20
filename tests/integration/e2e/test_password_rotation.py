@@ -100,7 +100,6 @@ async def test_consumed_messages(ops_test: OpsTest, deploy_data_integrator):
     credentials = await fetch_action_get_credentials(
         ops_test.model.applications[mongo_integrator].units[0]
     )
-
     logger.info(f"Credentials: {credentials}")
 
     uris = credentials[DATABASE_CHARM_NAME]["uris"]

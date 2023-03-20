@@ -36,7 +36,6 @@ def check_produced_and_consumed_messages(uris: str, collection_name: str):
         logger.info(f"Number of messages from producer: {producer_collection.count_documents({})}")
         assert consumer_collection.count_documents({}) > 0
         assert producer_collection.count_documents({}) > 0
-
         client.close()
     except Exception as e:
         logger.error("Cannot connect to MongoDB collection.")
