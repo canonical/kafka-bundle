@@ -93,22 +93,13 @@ async def deploy_cluster(ops_test: OpsTest, tls):
                 series="jammy",
                 channel="edge",
             ),
-            ops_test.model.deploy(
-                DATABASE_CHARM_NAME,
-                application_name=DATABASE_CHARM_NAME,
-                num_units=1,
-                series="jammy",
-                channel="5/edge",
-            ),
         )
-        await ops_test.model.wait_for_idle(
-            apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME, DATABASE_CHARM_NAME]
-        )
+        await ops_test.model.wait_for_idle(apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME])
 
         async with ops_test.fast_forward(fast_interval="30s"):
             await ops_test.model.add_relation(KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME)
             await ops_test.model.wait_for_idle(
-                apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME, DATABASE_CHARM_NAME],
+                apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME],
                 idle_period=10,
                 status="active",
                 timeout=300,

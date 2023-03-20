@@ -12,7 +12,4 @@ ZOOKEEPER_CHARM_NAME = "zookeeper"
 TLS_REL_NAME = "certificates"
 
 DATABASE_CHARM_NAME = "mongodb"
-<<<<<<< HEAD
 KAFKA_TEST_APP_CHARM_NAME = "kafka-test-app"
-=======
->>>>>>> fedfd49 (Fix lint)
