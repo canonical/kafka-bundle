@@ -15,6 +15,7 @@ from literals import (
     CLIENT_CHARM_NAME,
     DATABASE_CHARM_NAME,
     KAFKA_CHARM_NAME,
+    KAFKA_TEST_APP_CHARM_NAME,
     TLS_APP_NAME,
     TLS_CHARM_NAME,
     TLS_REL_NAME,
@@ -92,22 +93,13 @@ async def deploy_cluster(ops_test: OpsTest, tls):
                 series="jammy",
                 channel="edge",
             ),
-            ops_test.model.deploy(
-                DATABASE_CHARM_NAME,
-                application_name=DATABASE_CHARM_NAME,
-                num_units=1,
-                series="jammy",
-                channel="5/edge",
-            ),
         )
-        await ops_test.model.wait_for_idle(
-            apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME, DATABASE_CHARM_NAME]
-        )
+        await ops_test.model.wait_for_idle(apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME])
 
         async with ops_test.fast_forward():
             await ops_test.model.add_relation(KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME)
             await ops_test.model.wait_for_idle(
-                apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME, DATABASE_CHARM_NAME],
+                apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME],
                 idle_period=10,
                 status="active",
                 timeout=300,
@@ -199,6 +191,7 @@ async def deploy_test_app(ops_test: OpsTest, kafka, tls):
         role: Literal["producer", "consumer"],
         topic_name: str = "test-topic",
         consumer_group_prefix: Optional[str] = None,
+        num_messages: int = 150,
     ):
         """Deploys client with specified role and uuid."""
         if not ops_test.model:  # avoids a multitude of linting errors
@@ -211,18 +204,18 @@ async def deploy_test_app(ops_test: OpsTest, kafka, tls):
 
         logger.info(f"{generated_app_name=} - {apps=}")
 
-        config = {"role": role, "topic_name": topic_name}
+        config = {"role": role, "topic_name": topic_name, "num_messages": num_messages}
 
         if consumer_group_prefix:
             config["consumer_group_prefix"] = consumer_group_prefix
 
         # todo substitute with the published charm
         await ops_test.model.deploy(
-            "/home/ubuntu/git/kafka-test-app/kafka-test-app_ubuntu-22.04-amd64.charm",
+            KAFKA_TEST_APP_CHARM_NAME,
             application_name=generated_app_name,
             num_units=1,
             series="jammy",
-            # channel="edge",
+            channel="edge",
             config=config,
         )
         await ops_test.model.wait_for_idle(
