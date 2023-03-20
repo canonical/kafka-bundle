@@ -108,5 +108,5 @@ async def test_consumed_messages(ops_test: OpsTest, deploy_data_integrator):
 
     await ops_test.model.applications[DATABASE_CHARM_NAME].remove()
     await ops_test.model.wait_for_idle(
-        apps=[mongo_integrator], idle_period=10, status="active", timeout=1800
+        apps=[mongo_integrator], idle_period=10, status="blocked", timeout=1800
     )
