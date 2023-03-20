@@ -98,10 +98,11 @@ async def deploy_cluster(ops_test: OpsTest, tls):
                 num_units=1,
                 series="jammy",
                 channel="5/edge",
-            )
-
+            ),
         )
-        await ops_test.model.wait_for_idle(apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME, DATABASE_CHARM_NAME])
+        await ops_test.model.wait_for_idle(
+            apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME, DATABASE_CHARM_NAME]
+        )
 
         async with ops_test.fast_forward():
             await ops_test.model.add_relation(KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME)
@@ -195,10 +196,10 @@ async def deploy_test_app(ops_test: OpsTest, kafka, tls):
     apps = []
 
     async def _deploy_test_app(
-            role: Literal["producer", "consumer"], 
-            topic_name: str="test-topic", 
-            consumer_group_prefix: Optional[str] = None
-            ):
+        role: Literal["producer", "consumer"],
+        topic_name: str = "test-topic",
+        consumer_group_prefix: Optional[str] = None,
+    ):
         """Deploys client with specified role and uuid."""
         if not ops_test.model:  # avoids a multitude of linting errors
             raise RuntimeError("model not set")
@@ -224,19 +225,28 @@ async def deploy_test_app(ops_test: OpsTest, kafka, tls):
             # channel="edge",
             config=config,
         )
-        await ops_test.model.wait_for_idle(apps=[generated_app_name], idle_period=20, status="active")
+        await ops_test.model.wait_for_idle(
+            apps=[generated_app_name], idle_period=20, status="active"
+        )
 
         # Relate with TLS operator
         if tls:
             await ops_test.model.add_relation(generated_app_name, TLS_APP_NAME)
             await ops_test.model.wait_for_idle(
-            apps=[generated_app_name, TLS_APP_NAME], idle_period=30, status="active", timeout=1800)
+                apps=[generated_app_name, TLS_APP_NAME],
+                idle_period=30,
+                status="active",
+                timeout=1800,
+            )
 
         # Relate with MongoDB
         await ops_test.model.add_relation(generated_app_name, DATABASE_CHARM_NAME)
         await ops_test.model.wait_for_idle(
-            apps=[generated_app_name, DATABASE_CHARM_NAME], idle_period=30, status="active", timeout=1800
-            )
+            apps=[generated_app_name, DATABASE_CHARM_NAME],
+            idle_period=30,
+            status="active",
+            timeout=1800,
+        )
 
         # Relate with Kafka
         await ops_test.model.add_relation(generated_app_name, kafka)
@@ -246,7 +256,6 @@ async def deploy_test_app(ops_test: OpsTest, kafka, tls):
 
         return generated_app_name
 
-
     logger.info(f"setting up test_app - current apps {apps}")
     yield _deploy_test_app
 
@@ -254,14 +263,14 @@ async def deploy_test_app(ops_test: OpsTest, kafka, tls):
     # stop producers before consumers
     for app in sorted(apps, reverse=True):
         logger.info(f"tearing down {app}")
-        # check if application is in the 
+        # check if application is in the
         if app in ops_test.model.applications:
 
             await ops_test.model.applications[app].remove()
-            await ops_test.model.wait_for_idle(apps=[kafka], idle_period=10, status="active", timeout=1800)
+            await ops_test.model.wait_for_idle(
+                apps=[kafka], idle_period=10, status="active", timeout=1800
+            )
         else:
             logger.info(f"App: {app} already removed!")
 
     await ops_test.model.wait_for_idle(apps=[kafka], idle_period=30, status="active", timeout=1800)
-
-
