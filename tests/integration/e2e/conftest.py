@@ -8,7 +8,7 @@ import asyncio
 import logging
 import random
 import string
-from typing import Dict, Literal
+from typing import Dict, Literal, Optional
 
 import pytest
 from literals import (
@@ -175,11 +175,6 @@ async def deploy_data_integrator(ops_test: OpsTest, kafka):
         )
         await ops_test.model.wait_for_idle(apps=[generated_app_name])
 
-        # await ops_test.model.add_relation(generated_app_name, kafka)
-        # await ops_test.model.wait_for_idle(
-        #     apps=[generated_app_name, kafka], idle_period=30, status="active", timeout=1800
-        # )
-
         return generated_app_name
 
     logger.info(f"setting up data_integrator - current apps {apps}")
@@ -199,7 +194,11 @@ async def deploy_test_app(ops_test: OpsTest, kafka, tls):
     # tracks deployed app names for teardown later
     apps = []
 
-    async def _deploy_test_app(role: Literal["producer", "consumer"], topic_name: str="test-topic"):
+    async def _deploy_test_app(
+            role: Literal["producer", "consumer"], 
+            topic_name: str="test-topic", 
+            consumer_group_prefix: Optional[str] = None
+            ):
         """Deploys client with specified role and uuid."""
         if not ops_test.model:  # avoids a multitude of linting errors
             raise RuntimeError("model not set")
@@ -210,13 +209,20 @@ async def deploy_test_app(ops_test: OpsTest, kafka, tls):
         apps.append(generated_app_name)
 
         logger.info(f"{generated_app_name=} - {apps=}")
+
+        config = {"role": role, "topic_name": topic_name}
+
+        if consumer_group_prefix:
+            config["consumer_group_prefix"] = consumer_group_prefix
+
+        # todo substitute with the published charm
         await ops_test.model.deploy(
             "/home/ubuntu/git/kafka-test-app/kafka-test-app_ubuntu-22.04-amd64.charm",
             application_name=generated_app_name,
             num_units=1,
             series="jammy",
             # channel="edge",
-            config={"role": role, "topic_name": topic_name},
+            config=config,
         )
         await ops_test.model.wait_for_idle(apps=[generated_app_name], idle_period=20, status="active")
 
@@ -241,7 +247,7 @@ async def deploy_test_app(ops_test: OpsTest, kafka, tls):
         return generated_app_name
 
 
-    logger.info(f"setting up client - current apps {apps}")
+    logger.info(f"setting up test_app - current apps {apps}")
     yield _deploy_test_app
 
     logger.info(f"tearing down {apps}")
@@ -252,7 +258,7 @@ async def deploy_test_app(ops_test: OpsTest, kafka, tls):
         if app in ops_test.model.applications:
 
             await ops_test.model.applications[app].remove()
-            await asyncio.sleep(1)
+            await ops_test.model.wait_for_idle(apps=[kafka], idle_period=10, status="active", timeout=1800)
         else:
             logger.info(f"App: {app} already removed!")
 

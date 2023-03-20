@@ -8,6 +8,8 @@ from pymongo import MongoClient
 def check_messages(uris: str, collection_name: str):
     logger.info(f"MongoDB uris: {uris}")
     logger.info(f"Topic: {collection_name}")
+    produced_messages = []
+    consumed_messages = []
     try:
         client = MongoClient(
             uris,
@@ -24,6 +26,22 @@ def check_messages(uris: str, collection_name: str):
         logger.info(f"Number of messages from producer: {producer_collection.count_documents({})}")
         assert consumer_collection.count_documents({}) > 0
         assert producer_collection.count_documents({}) > 0
+
+        cursor = consumer_collection.find({})
+        for document in cursor:
+            elem = (document["origin"], document["content"])
+            consumed_messages.append(elem)
+        
+        cursor = producer_collection.find({})
+        for document in cursor:
+            elem = (document["origin"], document["content"])
+            produced_messages.append(elem)
+
+        logger.info(f"Number of produced messages: {len(produced_messages)}")
+        logger.info(f"Number of unique produced messages: {len(set(produced_messages))}")
+        logger.info(f"Number of consumed messages: {len(consumed_messages)}")
+        logger.info(f"Number of unique consumed messages: {len(set(consumed_messages))}")
+
         assert consumer_collection.count_documents({}) == producer_collection.count_documents({})
 
         client.close()
