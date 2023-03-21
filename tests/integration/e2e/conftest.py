@@ -190,7 +190,7 @@ async def deploy_test_app(ops_test: OpsTest, kafka, tls):
         role: Literal["producer", "consumer"],
         topic_name: str = "test-topic",
         consumer_group_prefix: Optional[str] = None,
-        num_messages: int = 150,
+        num_messages: int = 1500,
     ):
         """Deploys client with specified role and uuid."""
         if not ops_test.model:  # avoids a multitude of linting errors
