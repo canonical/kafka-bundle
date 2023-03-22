@@ -11,11 +11,12 @@ from pytest_operator.plugin import OpsTest
 from tests.integration.e2e.helpers import (
     check_produced_and_consumed_messages,
     fetch_action_get_credentials,
+    get_random_topic,
 )
 
 logger = logging.getLogger(__name__)
 
-TOPIC = "topic_1"
+TOPIC = get_random_topic()
 
 
 @pytest.mark.skip_if_deployed
@@ -52,7 +53,7 @@ async def test_cluster_is_deployed_successfully(
 
 @pytest.mark.abort_on_fail
 async def test_test_app_actually_set_up(ops_test: OpsTest, deploy_test_app):
-    producer = await deploy_test_app(role="producer", topic_name=TOPIC)
+    producer = await deploy_test_app(role="producer", topic_name=TOPIC, num_messages=2000)
     assert ops_test.model.applications[producer].status == "active"
     consumer_1 = await deploy_test_app(
         role="consumer", topic_name=TOPIC, consumer_group_prefix="cg"

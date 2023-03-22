@@ -11,11 +11,12 @@ from pytest_operator.plugin import OpsTest
 from tests.integration.e2e.helpers import (
     check_produced_and_consumed_messages,
     fetch_action_get_credentials,
+    get_random_topic,
 )
 
 logger = logging.getLogger(__name__)
 
-TOPIC = "topic_0"
+TOPIC = get_random_topic()
 
 
 @pytest.mark.skip_if_deployed

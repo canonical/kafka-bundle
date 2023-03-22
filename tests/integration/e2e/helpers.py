@@ -3,6 +3,8 @@
 # See LICENSE file for licensing details.
 
 import logging
+import random
+import string
 from typing import Dict
 
 from juju.unit import Unit
@@ -67,3 +69,8 @@ async def fetch_action_get_credentials(unit: Unit) -> Dict:
     action = await unit.run_action(action_name="get-credentials")
     result = await action.wait()
     return result.results
+
+
+def get_random_topic() -> str:
+    """Return a random topic name."""
+    return f"topic-{random.choices(string.ascii_lowercase, k=4)}"
