@@ -16,9 +16,8 @@ from tests.integration.e2e.helpers import (
 
 logger = logging.getLogger(__name__)
 
+
 TOPIC = get_random_topic()
-
-
 
 @pytest.mark.skip_if_deployed
 @pytest.mark.abort_on_fail
