@@ -32,10 +32,10 @@ async def test_cluster_is_deployed_successfully(
 @pytest.mark.abort_on_fail
 async def test_clients_actually_set_up(ops_test: OpsTest, deploy_data_integrator):
     producer = await deploy_data_integrator(
-        {"extra-user-roles": "producer", "topic_name": "test-topic"}
+        {"extra-user-roles": "producer", "topic-name": "test-topic"}
     )
     consumer = await deploy_data_integrator(
-        {"extra-user-roles": "producer", "topic_name": "test-topic"}
+        {"extra-user-roles": "producer", "topic-name": "test-topic"}
     )
 
     await ops_test.model.add_relation(producer, KAFKA_CHARM_NAME)

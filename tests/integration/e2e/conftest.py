@@ -181,7 +181,7 @@ async def deploy_data_integrator(ops_test: OpsTest, kafka):
 
 
 @pytest.fixture(scope="function")
-async def deploy_test_app(ops_test: OpsTest, kafka, tls):
+async def deploy_test_app(ops_test: OpsTest, kafka, certificates, tls):
     """Factory fixture for deploying + tearing down client applications."""
     # tracks deployed app names for teardown later
     apps = []
@@ -223,9 +223,9 @@ async def deploy_test_app(ops_test: OpsTest, kafka, tls):
 
         # Relate with TLS operator
         if tls:
-            await ops_test.model.add_relation(generated_app_name, TLS_CHARM_NAME)
+            await ops_test.model.add_relation(generated_app_name, certificates)
             await ops_test.model.wait_for_idle(
-                apps=[generated_app_name, TLS_CHARM_NAME],
+                apps=[generated_app_name, certificates],
                 idle_period=30,
                 status="active",
                 timeout=1800,
