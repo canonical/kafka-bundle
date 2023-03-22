@@ -57,4 +57,3 @@ async def fetch_action_get_credentials(unit: Unit) -> Dict:
 def get_random_topic() -> str:
     """Return a random topic name."""
     return f"topic-{''.join(random.choices(string.ascii_lowercase, k=4))}"
-
