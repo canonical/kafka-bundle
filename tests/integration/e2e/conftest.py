@@ -183,7 +183,6 @@ async def deploy_data_integrator(ops_test: OpsTest, kafka):
 
 @pytest.fixture(scope="function")
 async def deploy_test_app(ops_test: OpsTest, kafka, certificates, tls):
-
     """Factory fixture for deploying + tearing down client applications."""
     # tracks deployed app names for teardown later
     apps = []

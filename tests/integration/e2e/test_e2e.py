@@ -32,17 +32,10 @@ async def test_cluster_is_deployed_successfully(
 @pytest.mark.abort_on_fail
 async def test_clients_actually_set_up(ops_test: OpsTest, deploy_data_integrator):
     producer = await deploy_data_integrator(
-<<<<<<< HEAD
         {"extra-user-roles": "producer", "topic-name": "test-topic"}
     )
     consumer = await deploy_data_integrator(
         {"extra-user-roles": "producer", "topic-name": "test-topic"}
-=======
-        {"extra-user-roles": "producer", "topic_name": "test-topic"}
-    )
-    consumer = await deploy_data_integrator(
-        {"extra-user-roles": "producer", "topic_name": "test-topic"}
->>>>>>> fedfd49 (Fix lint)
     )
 
     await ops_test.model.add_relation(producer, KAFKA_CHARM_NAME)
@@ -51,10 +44,6 @@ async def test_clients_actually_set_up(ops_test: OpsTest, deploy_data_integrator
     )
     await ops_test.model.add_relation(consumer, KAFKA_CHARM_NAME)
 
-<<<<<<< HEAD
-=======
-    await ops_test.model.add_relation(consumer, KAFKA_CHARM_NAME)
->>>>>>> fedfd49 (Fix lint)
     await ops_test.model.wait_for_idle(
         apps=[consumer, KAFKA_CHARM_NAME], idle_period=30, status="active", timeout=1800
     )
