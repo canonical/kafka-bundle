@@ -45,6 +45,8 @@ def pytest_addoption(parser):
         default=TLS_CHARM_NAME,
     )
 
+    parser.addoption("--integrator", action="store_true", help="set usage of data-integrator for e2e tests")
+
 
 def pytest_generate_tests(metafunc):
     """Processes pytest parsers."""
@@ -63,6 +65,10 @@ def pytest_generate_tests(metafunc):
     certificates = metafunc.config.option.certificates
     if "certificates" in metafunc.fixturenames:
         metafunc.parametrize("certificates", [certificates], scope="module")
+
+    integrator = metafunc.config.option.integrator
+    if "integrator" in metafunc.fixturenames:
+        metafunc.parametrize("integrator", [bool(integrator)], scope="module")
 
 
 ### - FIXTURES - ###
@@ -102,7 +108,7 @@ async def deploy_cluster(ops_test: OpsTest, tls):
                 apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME],
                 idle_period=10,
                 status="active",
-                timeout=300,
+                timeout=600,
             )
 
     async def _deploy_tls_cluster():
@@ -159,11 +165,12 @@ async def deploy_data_integrator(ops_test: OpsTest, kafka):
 
         logger.info(f"{generated_app_name=} - {apps=}")
         await ops_test.model.deploy(
-            CLIENT_CHARM_NAME,
+            # CLIENT_CHARM_NAME,
+            "/home/ubuntu/git/data-integrator/data-integrator_ubuntu-22.04-amd64.charm", 
             application_name=generated_app_name,
             num_units=1,
             series="jammy",
-            channel="edge",
+            # channel="edge",
             config=config,
         )
         await ops_test.model.wait_for_idle(apps=[generated_app_name])
@@ -182,7 +189,7 @@ async def deploy_data_integrator(ops_test: OpsTest, kafka):
 
 
 @pytest.fixture(scope="function")
-async def deploy_test_app(ops_test: OpsTest, kafka, certificates, tls):
+async def deploy_test_app(ops_test: OpsTest, kafka, certificates, tls, integrator):
     """Factory fixture for deploying + tearing down client applications."""
     # tracks deployed app names for teardown later
     apps = []
@@ -211,11 +218,12 @@ async def deploy_test_app(ops_test: OpsTest, kafka, certificates, tls):
 
         # todo substitute with the published charm
         await ops_test.model.deploy(
-            KAFKA_TEST_APP_CHARM_NAME,
+            # KAFKA_TEST_APP_CHARM_NAME,
+            "/home/ubuntu/git/kafka-test-app/kafka-test-app_ubuntu-22.04-amd64.charm",
             application_name=generated_app_name,
             num_units=1,
             series="jammy",
-            channel="edge",
+            # channel="edge",
             config=config,
         )
         await ops_test.model.wait_for_idle(
@@ -242,10 +250,11 @@ async def deploy_test_app(ops_test: OpsTest, kafka, certificates, tls):
         )
 
         # Relate with Kafka
-        await ops_test.model.add_relation(generated_app_name, kafka)
-        await ops_test.model.wait_for_idle(
-            apps=[generated_app_name, kafka], idle_period=30, status="active", timeout=1800
-        )
+        if not integrator:
+            await ops_test.model.add_relation(generated_app_name, kafka)
+            await ops_test.model.wait_for_idle(
+                apps=[generated_app_name, kafka], idle_period=30, status="active", timeout=1800
+            )
 
         return generated_app_name
 

@@ -53,6 +53,27 @@ async def fetch_action_get_credentials(unit: Unit) -> Dict:
     result = await action.wait()
     return result.results
 
+def get_action_parameters(credentials: Dict[str, str], topic_name: str ):
+    """Construct parameter dictionary needed to stark consumer/producer with the action."""
+    logger.info(f"Credentials: {credentials}")
+    assert "kafka" in credentials
+    action_data = {"servers": credentials["kafka"]["endpoints"], "username": credentials["kafka"]["username"], "password": credentials["kafka"]["password"], "topic_name" : topic_name}
+    if "consumer-group-prefix" in credentials["kafka"]:
+        action_data["consumer_group_prefix"]= credentials["kafka"]["consumer-group-prefix"]
+    return action_data
+
+async def fetch_action_start_process(unit: Unit, action_params: Dict[str, str]) -> Dict:
+    """Helper to run an action to fetch connection info.
+
+    Args:
+        unit: The juju unit on which to run the get_credentials action for credentials
+    Returns:
+        A dictionary with the username, password and access info for the service.
+    """
+
+    action = await unit.run_action(action_name="start-process", **action_params)
+    result = await action.wait()
+    return result.results
 
 def get_random_topic() -> str:
     """Return a random topic name."""
