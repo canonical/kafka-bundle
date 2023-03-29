@@ -35,6 +35,22 @@ def check_produced_and_consumed_messages(uris: str, collection_name: str):
         logger.info(f"Number of messages from producer: {producer_collection.count_documents({})}")
         assert consumer_collection.count_documents({}) > 0
         assert producer_collection.count_documents({}) > 0
+        cursor = consumer_collection.find({})
+        for document in cursor:
+            consumed_messages.append((document["origin"], document["content"]))
+
+        cursor = producer_collection.find({})
+        for document in cursor:
+            produced_messages.append((document["origin"], document["content"]))
+
+        logger.info(f"Number of produced messages: {len(produced_messages)}")
+        logger.info(f"Number of unique produced messages: {len(set(produced_messages))}")
+        logger.info(f"Number of consumed messages: {len(consumed_messages)}")
+        logger.info(f"Number of unique consumed messages: {len(set(consumed_messages))}")
+
+        assert len(consumed_messages) >= len(produced_messages)
+        assert abs(len(consumed_messages) - len(produced_messages)) < 3
+
         client.close()
     except Exception as e:
         logger.error("Cannot connect to MongoDB collection.")
