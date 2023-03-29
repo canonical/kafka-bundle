@@ -120,7 +120,7 @@ async def test_test_app_actually_set_up(
 
         assert consumer_parameters_2 != consumer_parameters_1
 
-    producer_1 = await deploy_test_app(role="producer", topic_name=TOPIC, num_messages=2000)
+    producer_1 = await deploy_test_app(role="producer", topic_name=TOPIC, num_messages=2500)
     assert ops_test.model.applications[producer_1].status == "active"
 
     if integrator:
@@ -168,7 +168,7 @@ async def test_test_app_actually_set_up(
 
     # deploy new producer
 
-    producer_2 = await deploy_test_app(role="producer", topic_name=TOPIC)
+    producer_2 = await deploy_test_app(role="producer", topic_name=TOPIC, num_messages=2000)
     assert ops_test.model.applications[producer_2].status == "active"
     if integrator:
         assert producer_parameters_2
