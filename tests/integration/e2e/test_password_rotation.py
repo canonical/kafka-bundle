@@ -54,48 +54,91 @@ async def test_cluster_is_deployed_successfully(
 
 
 @pytest.mark.abort_on_fail
-async def test_test_app_actually_set_up(ops_test: OpsTest, deploy_test_app, deploy_data_integrator, kafka, integrator):
-    producer_parameters = None
-    consumer_parameters = None
-    
+async def test_test_app_actually_set_up(
+    ops_test: OpsTest, deploy_test_app, deploy_data_integrator, kafka, integrator
+):
+    producer_parameters_1 = None
+    producer_parameters_2 = None
+
+    consumer_parameters_1 = None
+    consumer_parameters_2 = None
+
     if integrator:
-        data_integrator_producer = await deploy_data_integrator({"topic-name": TOPIC, "extra-user-roles": "producer"})
-
-        await ops_test.model.add_relation(data_integrator_producer, kafka)
-        await ops_test.model.wait_for_idle(
-        apps=[data_integrator_producer, kafka], idle_period=30, status="active", timeout=1800
+        data_integrator_producer_1 = await deploy_data_integrator(
+            {"topic-name": TOPIC, "extra-user-roles": "producer"}
         )
-        producer_credentials = await fetch_action_get_credentials(ops_test.model.applications[data_integrator_producer].units[0])
-        logger.info(f"Credentials from producer DI: {producer_credentials}")
-        producer_parameters = get_action_parameters(producer_credentials, TOPIC)
-        logger.info(f"Producer action parameters: {producer_parameters}")
-
-        data_integrator_consumer = await deploy_data_integrator({"topic-name": TOPIC, "extra-user-roles": "consumer", "consumer-group-prefix":"cg"})
-        await ops_test.model.add_relation(data_integrator_consumer, kafka)
+        await ops_test.model.add_relation(data_integrator_producer_1, kafka)
         await ops_test.model.wait_for_idle(
-        apps=[data_integrator_consumer, kafka], idle_period=30, status="active", timeout=1800
+            apps=[data_integrator_producer_1, kafka], idle_period=30, status="active", timeout=1800
         )
-        consumer_credentials = await fetch_action_get_credentials(ops_test.model.applications[data_integrator_consumer].units[0])
-        logger.info(f"Credentials form consumer DI: {consumer_credentials}")
-        consumer_parameters = get_action_parameters(consumer_credentials, TOPIC)
-        logger.info(f"Consumer action parameters: {consumer_parameters}")
+        producer_credentials_1 = await fetch_action_get_credentials(
+            ops_test.model.applications[data_integrator_producer_1].units[0]
+        )
+        producer_parameters_1 = get_action_parameters(producer_credentials_1, TOPIC)
+        logger.info(f"Producer 1 action parameters: {producer_parameters_1}")
+
+        data_integrator_producer_2 = await deploy_data_integrator(
+            {"topic-name": TOPIC, "extra-user-roles": "producer"}
+        )
+        await ops_test.model.add_relation(data_integrator_producer_2, kafka)
+        await ops_test.model.wait_for_idle(
+            apps=[data_integrator_producer_2, kafka], idle_period=30, status="active", timeout=1800
+        )
+        producer_credentials_2 = await fetch_action_get_credentials(
+            ops_test.model.applications[data_integrator_producer_2].units[0]
+        )
+        producer_parameters_2 = get_action_parameters(producer_credentials_2, TOPIC)
+        logger.info(f"Producer 2 action parameters: {producer_parameters_2}")
+
+        assert producer_parameters_2 != producer_parameters_1
+
+        data_integrator_consumer_1 = await deploy_data_integrator(
+            {"topic-name": TOPIC, "extra-user-roles": "consumer", "consumer-group-prefix": "cg"}
+        )
+        await ops_test.model.add_relation(data_integrator_consumer_1, kafka)
+        await ops_test.model.wait_for_idle(
+            apps=[data_integrator_consumer_1, kafka], idle_period=30, status="active", timeout=1800
+        )
+        consumer_credentials_1 = await fetch_action_get_credentials(
+            ops_test.model.applications[data_integrator_consumer_1].units[0]
+        )
+        consumer_parameters_1 = get_action_parameters(consumer_credentials_1, TOPIC)
+        logger.info(f"Consumer 1 action parameters: {consumer_parameters_1}")
+
+        data_integrator_consumer_2 = await deploy_data_integrator(
+            {"topic-name": TOPIC, "extra-user-roles": "consumer", "consumer-group-prefix": "cg"}
+        )
+        await ops_test.model.add_relation(data_integrator_consumer_2, kafka)
+        await ops_test.model.wait_for_idle(
+            apps=[data_integrator_consumer_2, kafka], idle_period=30, status="active", timeout=1800
+        )
+        consumer_credentials_2 = await fetch_action_get_credentials(
+            ops_test.model.applications[data_integrator_consumer_2].units[0]
+        )
+        consumer_parameters_2 = get_action_parameters(consumer_credentials_2, TOPIC)
+        logger.info(f"Consumer 2 action parameters: {consumer_parameters_2}")
+
+        assert consumer_parameters_2 != consumer_parameters_1
 
     producer_1 = await deploy_test_app(role="producer", topic_name=TOPIC, num_messages=2000)
     assert ops_test.model.applications[producer_1].status == "active"
-    
-    if integrator:
-        assert producer_parameters
-        pid = await fetch_action_start_process(ops_test.model.applications[producer_1].units[0], producer_parameters)
-        logger.info(f"Producer process started with pid: {pid}")
 
+    if integrator:
+        assert producer_parameters_1
+        pid = await fetch_action_start_process(
+            ops_test.model.applications[producer_1].units[0], producer_parameters_1
+        )
+        logger.info(f"Producer process started with pid: {pid}")
 
     consumer_1 = await deploy_test_app(
         role="consumer", topic_name=TOPIC, consumer_group_prefix="cg"
     )
     assert ops_test.model.applications[consumer_1].status == "active"
     if integrator:
-        assert consumer_parameters
-        pid = await fetch_action_start_process(ops_test.model.applications[consumer_1].units[0], consumer_parameters)
+        assert consumer_parameters_1
+        pid = await fetch_action_start_process(
+            ops_test.model.applications[consumer_1].units[0], consumer_parameters_1
+        )
         logger.info(f"Consumer process started with pid: {pid}")
 
     await asyncio.sleep(100)
@@ -107,8 +150,10 @@ async def test_test_app_actually_set_up(ops_test: OpsTest, deploy_test_app, depl
     )
     assert ops_test.model.applications[consumer_2].status == "active"
     if integrator:
-        assert consumer_parameters
-        pid = await fetch_action_start_process(ops_test.model.applications[consumer_2].units[0], consumer_parameters)
+        assert consumer_parameters_2
+        pid = await fetch_action_start_process(
+            ops_test.model.applications[consumer_2].units[0], consumer_parameters_2
+        )
         logger.info(f"Consumer process started with pid: {pid}")
 
     await asyncio.sleep(100)
@@ -126,8 +171,10 @@ async def test_test_app_actually_set_up(ops_test: OpsTest, deploy_test_app, depl
     producer_2 = await deploy_test_app(role="producer", topic_name=TOPIC)
     assert ops_test.model.applications[producer_2].status == "active"
     if integrator:
-        assert producer_parameters
-        pid = await fetch_action_start_process(ops_test.model.applications[producer_2].units[0], producer_parameters)
+        assert producer_parameters_2
+        pid = await fetch_action_start_process(
+            ops_test.model.applications[producer_2].units[0], producer_parameters_2
+        )
         logger.info(f"Producer process started with pid: {pid}")
 
     await asyncio.sleep(100)

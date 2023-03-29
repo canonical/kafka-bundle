@@ -13,10 +13,8 @@ from typing import Dict, Literal, Optional
 
 import pytest
 from literals import (
-    CLIENT_CHARM_NAME,
     DATABASE_CHARM_NAME,
     KAFKA_CHARM_NAME,
-    KAFKA_TEST_APP_CHARM_NAME,
     TLS_CHARM_NAME,
     TLS_REL_NAME,
     ZOOKEEPER_CHARM_NAME,
@@ -45,7 +43,9 @@ def pytest_addoption(parser):
         default=TLS_CHARM_NAME,
     )
 
-    parser.addoption("--integrator", action="store_true", help="set usage of data-integrator for e2e tests")
+    parser.addoption(
+        "--integrator", action="store_true", help="set usage of data-integrator for e2e tests"
+    )
 
 
 def pytest_generate_tests(metafunc):
@@ -166,7 +166,7 @@ async def deploy_data_integrator(ops_test: OpsTest, kafka):
         logger.info(f"{generated_app_name=} - {apps=}")
         await ops_test.model.deploy(
             # CLIENT_CHARM_NAME,
-            "/home/ubuntu/git/data-integrator/data-integrator_ubuntu-22.04-amd64.charm", 
+            "/home/ubuntu/git/data-integrator/data-integrator_ubuntu-22.04-amd64.charm",
             application_name=generated_app_name,
             num_units=1,
             series="jammy",
