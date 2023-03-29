@@ -57,13 +57,15 @@ async def test_cluster_is_deployed_successfully(
 async def test_test_app_actually_set_up(
     ops_test: OpsTest, deploy_test_app, deploy_data_integrator, kafka, integrator
 ):
+    # producer credentials
     producer_parameters_1 = None
     producer_parameters_2 = None
-
+    # consumer credentials
     consumer_parameters_1 = None
     consumer_parameters_2 = None
 
     if integrator:
+        # get credentials for producers and consumers
         data_integrator_producer_1 = await deploy_data_integrator(
             {"topic-name": TOPIC, "extra-user-roles": "producer"}
         )
@@ -125,6 +127,7 @@ async def test_test_app_actually_set_up(
 
     if integrator:
         assert producer_parameters_1
+        # start producer
         pid = await fetch_action_start_process(
             ops_test.model.applications[producer_1].units[0], producer_parameters_1
         )
@@ -136,6 +139,7 @@ async def test_test_app_actually_set_up(
     assert ops_test.model.applications[consumer_1].status == "active"
     if integrator:
         assert consumer_parameters_1
+        # start consumer
         pid = await fetch_action_start_process(
             ops_test.model.applications[consumer_1].units[0], consumer_parameters_1
         )
@@ -151,6 +155,7 @@ async def test_test_app_actually_set_up(
     assert ops_test.model.applications[consumer_2].status == "active"
     if integrator:
         assert consumer_parameters_2
+        # start second consumer
         pid = await fetch_action_start_process(
             ops_test.model.applications[consumer_2].units[0], consumer_parameters_2
         )
@@ -172,6 +177,7 @@ async def test_test_app_actually_set_up(
     assert ops_test.model.applications[producer_2].status == "active"
     if integrator:
         assert producer_parameters_2
+        # start second producer
         pid = await fetch_action_start_process(
             ops_test.model.applications[producer_2].units[0], producer_parameters_2
         )

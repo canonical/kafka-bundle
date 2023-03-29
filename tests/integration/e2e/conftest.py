@@ -14,7 +14,9 @@ from typing import Dict, Literal, Optional
 import pytest
 from literals import (
     DATABASE_CHARM_NAME,
+    INTEGRATOR_CHARM_NAME,
     KAFKA_CHARM_NAME,
+    KAFKA_TEST_APP_CHARM_NAME,
     TLS_CHARM_NAME,
     TLS_REL_NAME,
     ZOOKEEPER_CHARM_NAME,
@@ -165,12 +167,11 @@ async def deploy_data_integrator(ops_test: OpsTest, kafka):
 
         logger.info(f"{generated_app_name=} - {apps=}")
         await ops_test.model.deploy(
-            # CLIENT_CHARM_NAME,
-            "/home/ubuntu/git/data-integrator/data-integrator_ubuntu-22.04-amd64.charm",
+            INTEGRATOR_CHARM_NAME,
             application_name=generated_app_name,
             num_units=1,
             series="jammy",
-            # channel="edge",
+            channel="edge",
             config=config,
         )
         await ops_test.model.wait_for_idle(apps=[generated_app_name])
@@ -218,12 +219,11 @@ async def deploy_test_app(ops_test: OpsTest, kafka, certificates, tls, integrato
 
         # todo substitute with the published charm
         await ops_test.model.deploy(
-            # KAFKA_TEST_APP_CHARM_NAME,
-            "/home/ubuntu/git/kafka-test-app/kafka-test-app_ubuntu-22.04-amd64.charm",
+            KAFKA_TEST_APP_CHARM_NAME,
             application_name=generated_app_name,
             num_units=1,
             series="jammy",
-            # channel="edge",
+            channel="edge",
             config=config,
         )
         await ops_test.model.wait_for_idle(
@@ -268,7 +268,6 @@ async def deploy_test_app(ops_test: OpsTest, kafka, certificates, tls, integrato
         logger.info(f"tearing down {app}")
         # check if application is in the
         if app in ops_test.model.applications:
-
             await ops_test.model.applications[app].remove()
             await ops_test.model.wait_for_idle(
                 apps=[kafka], idle_period=10, status="active", timeout=1800
