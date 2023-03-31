@@ -47,6 +47,9 @@ def check_produced_and_consumed_messages(uris: str, collection_name: str):
         logger.info(f"Number of unique produced messages: {len(set(produced_messages))}")
         logger.info(f"Number of consumed messages: {len(consumed_messages)}")
         logger.info(f"Number of unique consumed messages: {len(set(consumed_messages))}")
+        if len(consumed_messages) < len(produced_messages):
+            missing_elem = list(set(produced_messages) - set(consumed_messages))
+            logger.error(missing_elem)
 
         assert len(consumed_messages) >= len(produced_messages)
         assert abs(len(consumed_messages) - len(produced_messages)) < 3
@@ -96,6 +99,20 @@ async def fetch_action_start_process(unit: Unit, action_params: Dict[str, str]) 
         A dictionary with the result of the action.
     """
     action = await unit.run_action(action_name="start-process", **action_params)
+    result = await action.wait()
+    return result.results
+
+
+async def fetch_action_stop_process(unit: Unit) -> Dict:
+    """Helper to run an action to fetch connection info.
+
+    Args:
+        unit: the target unit.
+
+    Returns:
+        A dictionary with the result of the action.
+    """
+    action = await unit.run_action(action_name="stop-process")
     result = await action.wait()
     return result.results
 

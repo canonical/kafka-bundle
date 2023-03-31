@@ -12,6 +12,7 @@ from tests.integration.e2e.helpers import (
     check_produced_and_consumed_messages,
     fetch_action_get_credentials,
     fetch_action_start_process,
+    fetch_action_stop_process,
     get_action_parameters,
     get_random_topic,
 )
@@ -165,7 +166,10 @@ async def test_test_app_actually_set_up(
 
     # remove first consumer
 
-    await ops_test.model.applications[consumer_1].remove()
+    # await ops_test.model.applications[consumer_1].remove()
+    pid = await fetch_action_stop_process(ops_test.model.applications[consumer_1].units[0])
+    logger.info(f"Consumer 1 process stopped with pid: {pid}")
+
     await ops_test.model.wait_for_idle(
         apps=[KAFKA_CHARM_NAME], idle_period=10, status="active", timeout=1800
     )
@@ -186,6 +190,18 @@ async def test_test_app_actually_set_up(
     await asyncio.sleep(100)
 
     # destroy producer and consumer during teardown.
+
+    if integrator:
+        # stop process
+        pid = await fetch_action_stop_process(ops_test.model.applications[producer_2].units[0])
+        logger.info(f"Producer process stopped with pid: {pid}")
+        pid = await fetch_action_stop_process(ops_test.model.applications[producer_1].units[0])
+        logger.info(f"Producer process stopped with pid: {pid}")
+
+        logger.info("HERE!!!!")
+        await asyncio.sleep(1000)
+
+    # get logs here
 
 
 @pytest.mark.abort_on_fail
