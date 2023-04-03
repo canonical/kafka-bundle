@@ -89,7 +89,7 @@ def get_action_parameters(credentials: Dict[str, str], topic_name: str):
 
 
 async def fetch_action_start_process(unit: Unit, action_params: Dict[str, str]) -> Dict:
-    """Helper to run an action to fetch connection info.
+    """Helper to run an action to start consumer/producer.
 
     Args:
         unit: the target unit.
@@ -104,7 +104,7 @@ async def fetch_action_start_process(unit: Unit, action_params: Dict[str, str]) 
 
 
 async def fetch_action_stop_process(unit: Unit) -> Dict:
-    """Helper to run an action to fetch connection info.
+    """Helper to run an action to stop consumer/producer.
 
     Args:
         unit: the target unit.

@@ -78,8 +78,6 @@ async def test_test_app_actually_set_up(
             ops_test.model.applications[data_integrator_producer_1].units[0]
         )
         producer_parameters_1 = get_action_parameters(producer_credentials_1, TOPIC)
-        logger.info(f"Producer 1 action parameters: {producer_parameters_1}")
-
         data_integrator_producer_2 = await deploy_data_integrator(
             {"topic-name": TOPIC, "extra-user-roles": "producer"}
         )
@@ -91,7 +89,6 @@ async def test_test_app_actually_set_up(
             ops_test.model.applications[data_integrator_producer_2].units[0]
         )
         producer_parameters_2 = get_action_parameters(producer_credentials_2, TOPIC)
-        logger.info(f"Producer 2 action parameters: {producer_parameters_2}")
 
         assert producer_parameters_2 != producer_parameters_1
 
@@ -106,8 +103,6 @@ async def test_test_app_actually_set_up(
             ops_test.model.applications[data_integrator_consumer_1].units[0]
         )
         consumer_parameters_1 = get_action_parameters(consumer_credentials_1, TOPIC)
-        logger.info(f"Consumer 1 action parameters: {consumer_parameters_1}")
-
         data_integrator_consumer_2 = await deploy_data_integrator(
             {"topic-name": TOPIC, "extra-user-roles": "consumer", "consumer-group-prefix": "cg"}
         )
@@ -119,7 +114,6 @@ async def test_test_app_actually_set_up(
             ops_test.model.applications[data_integrator_consumer_2].units[0]
         )
         consumer_parameters_2 = get_action_parameters(consumer_credentials_2, TOPIC)
-        logger.info(f"Consumer 2 action parameters: {consumer_parameters_2}")
 
         assert consumer_parameters_2 != consumer_parameters_1
 
@@ -127,8 +121,8 @@ async def test_test_app_actually_set_up(
     assert ops_test.model.applications[producer_1].status == "active"
 
     if integrator:
-        assert producer_parameters_1
         # start producer
+        assert producer_parameters_1
         pid = await fetch_action_start_process(
             ops_test.model.applications[producer_1].units[0], producer_parameters_1
         )
@@ -138,9 +132,10 @@ async def test_test_app_actually_set_up(
         role="consumer", topic_name=TOPIC, consumer_group_prefix="cg"
     )
     assert ops_test.model.applications[consumer_1].status == "active"
+
     if integrator:
-        assert consumer_parameters_1
         # start consumer
+        assert consumer_parameters_1
         pid = await fetch_action_start_process(
             ops_test.model.applications[consumer_1].units[0], consumer_parameters_1
         )
@@ -165,8 +160,6 @@ async def test_test_app_actually_set_up(
     await asyncio.sleep(100)
 
     # remove first consumer
-
-    # await ops_test.model.applications[consumer_1].remove()
     pid = await fetch_action_stop_process(ops_test.model.applications[consumer_1].units[0])
     logger.info(f"Consumer 1 process stopped with pid: {pid}")
 
@@ -198,10 +191,9 @@ async def test_test_app_actually_set_up(
         pid = await fetch_action_stop_process(ops_test.model.applications[producer_1].units[0])
         logger.info(f"Producer process stopped with pid: {pid}")
 
-        logger.info("HERE!!!!")
-        await asyncio.sleep(1000)
+        await asyncio.sleep(60)
 
-    # get logs here
+    # destroy producer and consumer during teardown.
 
 
 @pytest.mark.abort_on_fail

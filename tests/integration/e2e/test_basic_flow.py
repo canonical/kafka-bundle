@@ -61,11 +61,11 @@ async def test_cluster_is_deployed_successfully(
 async def test_test_app_actually_set_up(
     ops_test: OpsTest, deploy_test_app, kafka, deploy_data_integrator, integrator
 ):
-    logger.info(f"Integrator: {integrator}")
-    # deploy integrators and get credentials
+    # consumer and producer params when deploying with data-integrator
     producer_parameters = None
     consumer_parameters = None
     if integrator:
+        # deploy integrators and get credentials
         data_integrator_producer = await deploy_data_integrator(
             {"topic-name": TOPIC, "extra-user-roles": "producer"}
         )
@@ -78,9 +78,7 @@ async def test_test_app_actually_set_up(
         producer_credentials = await fetch_action_get_credentials(
             ops_test.model.applications[data_integrator_producer].units[0]
         )
-        logger.info(f"Credentials from producer DI: {producer_credentials}")
         producer_parameters = get_action_parameters(producer_credentials, TOPIC)
-        logger.info(f"Producer action parameters: {producer_parameters}")
 
         data_integrator_consumer = await deploy_data_integrator(
             {"topic-name": TOPIC, "extra-user-roles": "consumer"}
@@ -92,15 +90,15 @@ async def test_test_app_actually_set_up(
         consumer_credentials = await fetch_action_get_credentials(
             ops_test.model.applications[data_integrator_consumer].units[0]
         )
-        logger.info(f"Credentials form consumer DI: {consumer_credentials}")
         consumer_parameters = get_action_parameters(consumer_credentials, TOPIC)
-        logger.info(f"Consumer action parameters: {consumer_parameters}")
+        assert producer_parameters != consumer_parameters
 
     # deploy producer and consumer
     producer = await deploy_test_app(role="producer", topic_name=TOPIC)
     assert ops_test.model.applications[producer].status == "active"
 
     if integrator:
+        # start producer with action
         assert producer_parameters
         pid = await fetch_action_start_process(
             ops_test.model.applications[producer].units[0], producer_parameters
@@ -111,6 +109,7 @@ async def test_test_app_actually_set_up(
     assert ops_test.model.applications[consumer].status == "active"
 
     if integrator:
+        # start consumer with action
         assert consumer_parameters
         pid = await fetch_action_start_process(
             ops_test.model.applications[consumer].units[0], consumer_parameters
@@ -128,6 +127,7 @@ async def test_test_app_actually_set_up(
     )
 
     if integrator:
+        # start producer process on new units
         assert producer_parameters
         pid_1 = await fetch_action_start_process(
             ops_test.model.applications[producer].units[1], producer_parameters
@@ -140,7 +140,6 @@ async def test_test_app_actually_set_up(
 
     await asyncio.sleep(100)
 
-    # scale up consumer
     logger.info("Scale up consumer")
     await ops_test.model.applications[consumer].add_units(count=2)
     await ops_test.model.block_until(lambda: len(ops_test.model.applications[consumer].units) == 3)
@@ -149,6 +148,7 @@ async def test_test_app_actually_set_up(
     )
 
     if integrator:
+        # start consumer process on new units
         assert consumer_parameters
         pid_1 = await fetch_action_start_process(
             ops_test.model.applications[consumer].units[1], consumer_parameters
