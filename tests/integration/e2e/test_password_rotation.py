@@ -127,6 +127,13 @@ async def test_test_app_actually_set_up(
             ops_test.model.applications[producer_1].units[0], producer_parameters_1
         )
         logger.info(f"Producer process started with pid: {pid}")
+    else:
+        # Relate with Kafka and automatically start first producer
+        await ops_test.model.add_relation(producer_1, kafka)
+        await ops_test.model.wait_for_idle(
+            apps=[producer_1, kafka], idle_period=30, status="active", timeout=1800
+        )
+        logger.info(f"Producer {producer_1} related to Kafka")
 
     consumer_1 = await deploy_test_app(
         role="consumer", topic_name=TOPIC, consumer_group_prefix="cg"
@@ -140,6 +147,13 @@ async def test_test_app_actually_set_up(
             ops_test.model.applications[consumer_1].units[0], consumer_parameters_1
         )
         logger.info(f"Consumer process started with pid: {pid}")
+    else:
+        # Relate with Kafka and automatically start first consumer
+        await ops_test.model.add_relation(consumer_1, kafka)
+        await ops_test.model.wait_for_idle(
+            apps=[consumer_1, kafka], idle_period=30, status="active", timeout=1800
+        )
+        logger.info(f"Consumer {consumer_1} related to Kafka")
 
     await asyncio.sleep(100)
 
@@ -156,12 +170,26 @@ async def test_test_app_actually_set_up(
             ops_test.model.applications[consumer_2].units[0], consumer_parameters_2
         )
         logger.info(f"Consumer process started with pid: {pid}")
+    else:
+        # Relate with Kafka and automatically start second consumer
+        await ops_test.model.add_relation(consumer_2, kafka)
+        await ops_test.model.wait_for_idle(
+            apps=[consumer_2, kafka], idle_period=30, status="active", timeout=1800
+        )
+        logger.info(f"Consumer {consumer_2} related to Kafka")
 
     await asyncio.sleep(100)
 
     # remove first consumer
-    pid = await fetch_action_stop_process(ops_test.model.applications[consumer_1].units[0])
-    logger.info(f"Consumer 1 process stopped with pid: {pid}")
+    if integrator:
+        pid = await fetch_action_stop_process(ops_test.model.applications[consumer_1].units[0])
+        logger.info(f"Consumer 1 process stopped with pid: {pid}")
+    else:
+        await ops_test.model.applications[consumer_1].remove_relation(
+            f"{consumer_1}:kafka-cluster", f"{kafka}"
+        )
+        await ops_test.model.wait_for_idle(apps=[consumer_1, kafka], idle_period=10)
+        logger.info(f"Consumer {consumer_1} unrelate from Kafka")
 
     await ops_test.model.wait_for_idle(
         apps=[KAFKA_CHARM_NAME], idle_period=10, status="active", timeout=1800
@@ -179,6 +207,13 @@ async def test_test_app_actually_set_up(
             ops_test.model.applications[producer_2].units[0], producer_parameters_2
         )
         logger.info(f"Producer process started with pid: {pid}")
+    else:
+        # Relate with Kafka and automatically start first producer
+        await ops_test.model.add_relation(producer_2, kafka)
+        await ops_test.model.wait_for_idle(
+            apps=[producer_2, kafka], idle_period=30, status="active", timeout=1800
+        )
+        logger.info(f"Producer {producer_2} related to Kafka")
 
     await asyncio.sleep(100)
 
@@ -192,6 +227,18 @@ async def test_test_app_actually_set_up(
         logger.info(f"Producer process stopped with pid: {pid}")
 
         await asyncio.sleep(60)
+    else:
+        # stop producers
+        await ops_test.model.applications[producer_1].remove_relation(
+            f"{producer_1}:kafka-cluster", f"{kafka}"
+        )
+        await ops_test.model.wait_for_idle(apps=[producer_1, kafka], idle_period=10)
+        logger.info(f"Producer {producer_1} unrelate from Kafka")
+        await ops_test.model.applications[producer_2].remove_relation(
+            f"{producer_2}:kafka-cluster", f"{kafka}"
+        )
+        await ops_test.model.wait_for_idle(apps=[producer_2, kafka], idle_period=10)
+        logger.info(f"Producer {producer_2} unrelate from Kafka")
 
     # destroy producer and consumer during teardown.
 

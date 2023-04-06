@@ -248,13 +248,6 @@ async def deploy_test_app(ops_test: OpsTest, kafka, certificates, tls, integrato
             timeout=1800,
         )
 
-        # Relate with Kafka
-        if not integrator:
-            await ops_test.model.add_relation(generated_app_name, kafka)
-            await ops_test.model.wait_for_idle(
-                apps=[generated_app_name, kafka], idle_period=30, status="active", timeout=1800
-            )
-
         return generated_app_name
 
     logger.info(f"setting up test_app - current apps {apps}")

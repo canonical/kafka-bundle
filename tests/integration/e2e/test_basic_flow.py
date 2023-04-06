@@ -104,6 +104,13 @@ async def test_test_app_actually_set_up(
             ops_test.model.applications[producer].units[0], producer_parameters
         )
         logger.info(f"Producer process started with pid: {pid}")
+    else:
+        # Relate with Kafka and automatically start producer
+        await ops_test.model.add_relation(producer, kafka)
+        await ops_test.model.wait_for_idle(
+            apps=[producer, kafka], idle_period=30, status="active", timeout=1800
+        )
+        logger.info(f"Producer {producer} related to Kafka")
 
     consumer = await deploy_test_app(role="consumer", topic_name=TOPIC)
     assert ops_test.model.applications[consumer].status == "active"
@@ -115,6 +122,13 @@ async def test_test_app_actually_set_up(
             ops_test.model.applications[consumer].units[0], consumer_parameters
         )
         logger.info(f"Consumer process started with pid: {pid}")
+    else:
+        # Relate with Kafka and automatically start consumer
+        await ops_test.model.add_relation(consumer, kafka)
+        await ops_test.model.wait_for_idle(
+            apps=[consumer, kafka], idle_period=30, status="active", timeout=1800
+        )
+        logger.info(f"Consumer {consumer} related to Kafka")
 
     await asyncio.sleep(100)
 
