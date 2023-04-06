@@ -178,7 +178,9 @@ async def test_test_app_actually_set_up(
     logger.info("Scale down consumer")
     await ops_test.model.applications[consumer].destroy_units(f"{consumer}/2")
     await ops_test.model.applications[consumer].destroy_units(f"{consumer}/1")
-    await ops_test.model.wait_for_idle(apps=[consumer], status="active", timeout=1200, wait_for_exact_units=1)
+    await ops_test.model.wait_for_idle(
+        apps=[consumer], status="active", timeout=1200, wait_for_exact_units=1
+    )
 
     logger.info("End scale down")
 
