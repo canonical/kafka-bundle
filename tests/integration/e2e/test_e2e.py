@@ -42,8 +42,8 @@ async def test_clients_actually_set_up(ops_test: OpsTest, deploy_data_integrator
     await ops_test.model.wait_for_idle(
         apps=[producer, KAFKA_CHARM_NAME], idle_period=30, status="active", timeout=1800
     )
-
     await ops_test.model.add_relation(consumer, KAFKA_CHARM_NAME)
+
     await ops_test.model.wait_for_idle(
         apps=[consumer, KAFKA_CHARM_NAME], idle_period=30, status="active", timeout=1800
     )

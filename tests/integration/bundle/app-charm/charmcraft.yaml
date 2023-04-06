@@ -9,6 +9,7 @@ parts:
       - libssl-dev
       - rustc
       - cargo
+      - pkg-config
     charm-binary-python-packages:
       - jsonschema
 bases:
