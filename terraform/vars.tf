@@ -13,23 +13,26 @@ variable "cloud" {
 variable "kafka_cluster" {
   description = "Manages the Kafka applications to deploy"
   type = map(object({
-    units   = number
-    channel = string
-    series  = string
-    config  = map(string)
+    units     = number
+    channel   = string
+    series    = string
+    config    = map(string)
+    relations = list(string)
   }))
   default = {
     "kafka" = {
-      units   = 1
-      channel = "edge"
-      series  = "jammy"
-      config  = {}
+      units     = 1
+      channel   = "edge"
+      series    = "jammy"
+      config    = {}
+      relations = ["data-integrator:kafka"]
     },
     "zookeeper" = {
-      units   = 1
-      channel = "edge"
-      series  = "jammy"
-      config  = {}
+      units     = 1
+      channel   = "edge"
+      series    = "jammy"
+      config    = {}
+      relations = ["kafka:zookeeper"]
     },
     "data-integrator" = {
       units   = 1
@@ -39,6 +42,7 @@ variable "kafka_cluster" {
         topic-name       = "default"
         extra-user-roles = "admin"
       }
+      relations = []
     },
   }
 }
