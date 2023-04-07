@@ -45,8 +45,8 @@ variable "kafka_cluster" {
 
 variable "disable_tls" {
   description = "Do not enable TLS for the cluster"
-  type = bool
-  default = false
+  type        = bool
+  default     = false
 }
 
 variable "tls_config" {
