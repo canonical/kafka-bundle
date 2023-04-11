@@ -47,7 +47,7 @@ def pytest_addoption(parser):
     parser.addoption(
         "--integrator",
         action="store_true",
-        help="this parameter use credentials extracted from the data-integrator to run e2e tests.",
+        help="set usage of credentials provided by the data-integrator.",
     )
 
 
