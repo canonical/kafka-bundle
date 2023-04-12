@@ -13,55 +13,16 @@ variable "cloud" {
 variable "kafka_cluster" {
   description = "Manages the Kafka applications to deploy"
   type = map(object({
-    units     = number
-    channel   = string
-    series    = string
-    config    = map(string)
-    relations = list(string)
+    units     = optional(number, 1)
+    channel   = optional(string, "edge")
+    series    = optional(string, "jammy")
+    config    = optional(map(string), {})
+    relations = optional(list(string), [])
   }))
-  default = {
-    "kafka" = {
-      units     = 1
-      channel   = "edge"
-      series    = "jammy"
-      config    = {}
-      relations = ["data-integrator:kafka"]
-    },
-    "zookeeper" = {
-      units     = 1
-      channel   = "edge"
-      series    = "jammy"
-      config    = {}
-      relations = ["kafka:zookeeper"]
-    },
-    "data-integrator" = {
-      units   = 1
-      channel = "edge"
-      series  = "jammy"
-      config = {
-        topic-name       = "default"
-        extra-user-roles = "admin"
-      }
-      relations = []
-    },
-  }
 }
 
 variable "disable_tls" {
   description = "Do not enable TLS for the cluster"
   type        = bool
   default     = false
-}
-
-variable "tls_config" {
-  description = "Base64 encoded certificate and CA to create sign internal certificates for the Kafka cluster."
-  type = object({
-    certificate                       = optional(string)
-    ca                                = optional(string)
-    ca-common-name                    = optional(string, "Kafka")
-    generate-self-signed-certificates = bool
-  })
-  default = {
-    generate-self-signed-certificates = true
-  }
 }

@@ -6,7 +6,10 @@ locals {
       units     = 1
       channel   = "edge"
       series    = "jammy"
-      config    = local.tls_config
+      config    = {
+                generate-self-signed-certificates = true
+                ca-common-name = "Kafka"
+      }
       relations = ["zookeeper:certificates", "kafka:certificates"]
     }
   }
