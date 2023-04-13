@@ -29,9 +29,6 @@ jobs:
           - '--tls'
           - '--integrator'
     name: ${{ matrix.tox-environments }}
-    needs:
-      - lint
-      - build
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
