@@ -30,7 +30,7 @@ on:
     needs:
       - lint
       - build
-    runs-on: ubuntu-latets
+    runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
       - name: Run integration e2e tests
