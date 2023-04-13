@@ -21,9 +21,9 @@ jobs:
           - integration-e2e-basic-flow
           - integration-e2e-password-rotation
         options:
-          - ''
-          - '--tls'
-          - '--integrator'
+          - 
+          - --tls
+          - --integrator
     name: ${{ matrix.tox-environments }}
     runs-on: ubuntu-latest
     timeout-minutes: 120
