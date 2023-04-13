@@ -29,6 +29,6 @@ jobs:
     timeout-minutes: 120
     steps:
       - name: Run integration e2e tests
-        run: echo "-e ${{ matrix.tox-environments }} -- -m '${{ steps.select-tests.outputs.mark_expression }} {{matrix.options}}' "
+        run: echo "-e ${{ matrix.tox-environments }} -- -m '${{ steps.select-tests.outputs.mark_expression }} ${{matrix.options}}' "
         env:
           CI_PACKED_CHARMS: ${{ needs.build.outputs.charms }}
