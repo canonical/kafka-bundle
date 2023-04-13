@@ -45,7 +45,9 @@ def pytest_addoption(parser):
     )
 
     parser.addoption(
-        "--integrator", action="store_true", help="set usage of data-integrator for e2e tests"
+        "--integrator",
+        action="store_true",
+        help="set usage of credentials provided by the data-integrator.",
     )
 
 
@@ -189,7 +191,7 @@ async def deploy_data_integrator(ops_test: OpsTest, kafka):
 
 
 @pytest.fixture(scope="function")
-async def deploy_test_app(ops_test: OpsTest, kafka, certificates, tls, integrator):
+async def deploy_test_app(ops_test: OpsTest, kafka, certificates, tls):
     """Factory fixture for deploying + tearing down client applications."""
     # tracks deployed app names for teardown later
     apps = []

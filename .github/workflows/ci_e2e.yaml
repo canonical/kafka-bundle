@@ -7,12 +7,8 @@ concurrency:
   cancel-in-progress: true
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
   schedule:
-    - cron: '53 0 * * *' # Daily at 00:53 UTC
+    - cron: '53 0 * * SAT' # Every Saturday at 00:53 UTC
 
 jobs:
   lint:
@@ -32,20 +28,24 @@ jobs:
     name: Build charms
     uses: canonical/data-platform-workflows/.github/workflows/build_charms_with_cache.yaml@v2
 
-  integration-test:
+  e2e-tests:
     strategy:
       fail-fast: false
       max-parallel: 1
       matrix:
         tox-environments:
-          - integration-bundle
-          - integration-e2e
-          - integration-e2e-tls
-    name: ${{ matrix.tox-environments }}
+          - integration-e2e-basic-flow
+          - integration-e2e-password-rotation
+        options:
+          - 
+          - --tls
+          - --integrator
+          - --tls --integrator
+    name: ${{ matrix.tox-environments }}-${{matrix.options}}
     needs:
       - lint
       - build
-    runs-on: ubuntu-latest
+    runs-on: Ubuntu_4C_16G
     timeout-minutes: 120
     steps:
       - name: Checkout
@@ -55,7 +55,7 @@ jobs:
         uses: charmed-kubernetes/actions-operator@main
         with:
           provider: lxd
-          bootstrap-options: "--agent-version 2.9.38"
+          bootstrap-options: "--agent-version 2.9.42"
       - name: Download packed charm(s)
         uses: actions/download-artifact@v3
         with:
@@ -71,7 +71,7 @@ jobs:
             echo Skipping unstable tests
             echo "mark_expression=not unstable" >> $GITHUB_OUTPUT
           fi
-      - name: Run integration tests
-        run: tox run -e ${{ matrix.tox-environments }} -- -m '${{ steps.select-tests.outputs.mark_expression }}'
+      - name: Run integration e2e tests
+        run: tox run -e ${{ matrix.tox-environments }} -- -m '${{ steps.select-tests.outputs.mark_expression }}' ${{matrix.options}}
         env:
           CI_PACKED_CHARMS: ${{ needs.build.outputs.charms }}
