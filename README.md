@@ -7,31 +7,45 @@ The steps outlined below are based on the assumption that you are deploying the 
 
 ### Install and Configure Dependencies
 ```bash
+# (required) installing lxd and juju
 sudo snap install lxd --classic
 sudo snap install juju --classic
+
+# (optional) installing terraform
+sudo apt install gpg
+wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+sudo apt update
+sudo apt install terraform
 ```
 
-### Create a [Juju controller](https://juju.is/docs/olm/create-a-controller)
+### Create a [Juju controller](https://juju.is/docs/olm/create-a-controller) on LXD
 ```bash
 juju bootstrap localhost 
 ```
 
-### Create a Model in Juju
-```bash
-juju add-model kafka
-juju switch kafka
-```
-###Deploy the Bundle
-```bash
-juju deploy kafka-bundle --channel=edge
+### Deploying a Charmed Kafka cluster
+If looking for a simple Charmed Kafka cluster environment to experiment and develop with, there are multiple supported methods one can use.
 
-## Production Storage
+##### Deploying using Terraform
+```bash
+cd terraform/dev
+terraform init
+terraform apply
+```
+
+##### Deploying using Juju
+```bash
+juju add-model dev && juju switch dev
+juju deploy kafka-bundle
+```
+
+## Production Configuration
 For certain workloads, you may wish to provision more storage. The supported production storage configuration is as follows:
 - 12x 1TB storage volumes per Kafka broker
 - 1x 10GB storage volume per ZooKeeper server
 
-### Deploying production storage
-To deploy the bundle with the supported production storage attached, you may do the following:
-```bash
-juju deploy kafka-bundle --overlay ./overlays/production.yaml
-```
+You can see example production-ready configurations here:
+- [Terraform production `tfvars` configuration](https://github.com/canonical/kafka-bundle/blob/main/terraform/prod/prod.auto.tfvars)
+    - NOTE - Currently does not support defining multiple storage volumes at deploy-time. These will need to be added manually with `juju add-storage kafka -n 11` for production
+- [Juju Bundle production overlays](https://github.com/canonical/kafka-bundle/blob/main/overlays/production.yaml)
