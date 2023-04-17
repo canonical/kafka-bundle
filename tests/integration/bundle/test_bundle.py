@@ -95,7 +95,7 @@ async def test_apps_up_and_running(ops_test: OpsTest, usernames):
     usernames.update(returned_usernames)
 
     bootstrap_server = f"{ops_test.model.applications[KAFKA].units[0].public_address}:9093"
-    
+
     for username in usernames:
         check_user(
             username=username,
