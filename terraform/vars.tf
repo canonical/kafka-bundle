@@ -10,19 +10,58 @@ variable "cloud" {
   default     = "localhost"
 }
 
-variable "kafka_cluster" {
-  description = "Manages the Kafka applications to deploy"
-  type = map(object({
-    units     = optional(number, 1)
-    channel   = optional(string, "edge")
-    series    = optional(string, "jammy")
-    config    = optional(map(string), {})
-    relations = optional(list(string), [])
-  }))
+variable "kafka" {
+  description = "Defines the Kafka application and machine configuration"
+  type = object({
+    units                = optional(number, 1)
+    channel              = optional(string, "edge")
+    series               = optional(string, "jammy")
+    config               = optional(map(string), {})
+    cpu_core_count       = optional(number, 2)
+    memory_gb            = optional(number, 2)
+    root_disk_storage_gb = optional(number, 1)
+  })
+  default = {}
 }
 
-variable "disable_tls" {
-  description = "Do not enable TLS for the cluster"
-  type        = bool
-  default     = false
+variable "zookeeper" {
+  description = "Defines the ZooKeeper application and machine configuration"
+  type = object({
+    units                = optional(number, 3)
+    channel              = optional(string, "edge")
+    series               = optional(string, "jammy")
+    config               = optional(map(string), {})
+    cpu_core_count       = optional(number, 2)
+    memory_gb            = optional(number, 2)
+    root_disk_storage_gb = optional(number, 1)
+  })
+  default = {}
+}
+
+variable "tls" {
+  description = "Defines the TLS application configuration"
+  type = object({
+    units   = optional(number, 1)
+    channel = optional(string, "edge")
+    series  = optional(string, "jammy")
+    config = optional(map(string), {
+      generate-self-signed-certificates = true
+      ca-common-name                    = "Kafka"
+    })
+  })
+  default = {}
+}
+
+variable "integrator" {
+  description = "Defines the Integrator application configuration"
+  type = object({
+    units   = optional(number, 1)
+    channel = optional(string, "edge")
+    series  = optional(string, "jammy")
+    config = optional(map(string), {
+      topic-name       = "default"
+      extra-user-roles = "admin"
+    })
+  })
+  default = {}
 }
