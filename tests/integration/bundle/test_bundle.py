@@ -94,17 +94,19 @@ async def test_apps_up_and_running(ops_test: OpsTest, usernames):
     )
     usernames.update(returned_usernames)
 
+    bootstrap_server = f"{ops_test.model.applications[KAFKA].units[0].public_address}:9093"
+    
     for username in usernames:
         check_user(
             username=username,
-            zookeeper_uri=zookeeper_uri,
+            bootstrap_server=bootstrap_server,
             model_full_name=ops_test.model_full_name,
             unit_name=f"{KAFKA}/0",
         )
 
     for acl in load_acls(
         model_full_name=ops_test.model_full_name,
-        zookeeper_uri=zookeeper_uri,
+        bootstrap_server=bootstrap_server,
         unit_name=f"{KAFKA}/0",
     ):
         assert acl.username in usernames
