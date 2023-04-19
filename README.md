@@ -12,11 +12,7 @@ sudo snap install lxd --classic
 sudo snap install juju --classic
 
 # (optional) installing terraform
-sudo apt install gpg
-wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-sudo apt update
-sudo apt install terraform
+sudo snap install terraform
 ```
 
 ### Create a [Juju controller](https://juju.is/docs/olm/create-a-controller) on LXD
