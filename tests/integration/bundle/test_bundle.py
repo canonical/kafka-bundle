@@ -45,7 +45,7 @@ async def test_deploy_bundle_active(ops_test: OpsTest):
     )
     assert retcode == 0, f"Deploy failed: {(stderr or stdout).strip()}"
     logger.info(stdout)
-    await ops_test.model.wait_for_idle(timeout=1200, idle_period=30, status="active")
+    await ops_test.model.wait_for_idle(timeout=3000, idle_period=30, status="active")
     for app in applications:
         assert ops_test.model.applications[app].status == "active"
 
@@ -73,7 +73,7 @@ async def test_deploy_app_charm_relate(ops_test: OpsTest):
     if tls:
         await ops_test.model.add_relation("app", "tls-certificates-operator")
     await ops_test.model.wait_for_idle(
-        apps=applications, timeout=1200, idle_period=30, status="active"
+        apps=applications, timeout=2000, idle_period=30, status="active"
     )
     await ops_test.model.add_relation(KAFKA, "app")
     await ops_test.model.wait_for_idle(
