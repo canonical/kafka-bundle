@@ -15,7 +15,13 @@ from tests.integration.bundle.kafka_helpers import (
     load_acls,
     ping_servers,
 )
-from tests.integration.bundle.literals import APP_CHARM_PATH, BUNDLE_PATH, KAFKA, ZOOKEEPER
+from tests.integration.bundle.literals import (
+    APP_CHARM_PATH,
+    BUNDLE_PATH,
+    KAFKA,
+    TLS_PORT,
+    ZOOKEEPER,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +100,7 @@ async def test_apps_up_and_running(ops_test: OpsTest, usernames):
     )
     usernames.update(returned_usernames)
 
-    bootstrap_server = f"{ops_test.model.applications[KAFKA].units[0].public_address}:9093"
+    bootstrap_server = f"{ops_test.model.applications[KAFKA].units[0].public_address}:{TLS_PORT}"
 
     for username in usernames:
         check_user(
