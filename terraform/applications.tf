@@ -10,6 +10,7 @@ resource "juju_application" "kafka" {
     series  = var.kafka.series
   }
 
+  # loops over machine ids looking like lh:2:0, grabs juju machine id 2
   placement = join(",", [for machine in juju_machine.kafka : split(":", machine.id)[1]])
 
   config = var.kafka.config
@@ -27,6 +28,7 @@ resource "juju_application" "zookeeper" {
     series  = var.zookeeper.series
   }
 
+  # loops over machine ids looking like lh:2:0, grabs juju machine id 2
   placement = join(",", [for machine in juju_machine.zookeeper : split(":", machine.id)[1]])
 
   config = var.zookeeper.config
