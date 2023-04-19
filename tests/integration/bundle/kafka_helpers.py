@@ -7,19 +7,16 @@ from subprocess import PIPE, CalledProcessError, check_output
 from typing import Any, Dict, List, Set, Tuple
 
 import yaml
-from charms.kafka.v0.kafka_snap import SNAP_CONFIG_PATH
 from pytest_operator.plugin import OpsTest
+from tests.integration.bundle.literals import KAFKA_CLIENT_PROPERTIES, ZOOKEEPER_CONF_PATH
 
 from .auth import Acl, KafkaAuth
 
 logger = logging.getLogger(__name__)
 
 
-def load_acls(model_full_name: str, zookeeper_uri: str, unit_name: str) -> Set[Acl]:
-    if "k8s" in unit_name:
-        command = f"JUJU_MODEL={model_full_name} juju ssh --container kafka {unit_name} 'KAFKA_OPTS=-Djava.security.auth.login.config=/data/kafka/config/kafka-jaas.cfg ./opt/kafka/bin/kafka-acls.sh --authorizer-properties zookeeper.connect={zookeeper_uri} --list --zk-tls-config-file=/data/kafka/config/server.properties'"
-    else:
-        command = f"JUJU_MODEL={model_full_name} juju ssh kafka/0 'charmed-kafka.acls --authorizer-properties zookeeper.connect={zookeeper_uri} --list --zk-tls-config-file={SNAP_CONFIG_PATH}server.properties'"
+def load_acls(model_full_name: str, bootstrap_server: str, unit_name: str) -> Set[Acl]:
+    command = f"JUJU_MODEL={model_full_name} juju ssh {unit_name} sudo -i 'charmed-kafka.acls --bootstrap-server {bootstrap_server} --command-config {KAFKA_CLIENT_PROPERTIES} --list'"
     try:
         result = check_output(
             command,
@@ -58,11 +55,8 @@ def load_super_users(model_full_name: str, unit_name: str) -> List[str]:
     return []
 
 
-def check_user(model_full_name: str, username: str, zookeeper_uri: str, unit_name: str) -> None:
-    if "k8s" in unit_name:
-        command = f"JUJU_MODEL={model_full_name} juju ssh --container kafka {unit_name} 'KAFKA_OPTS=-Djava.security.auth.login.config=/data/kafka/config/kafka-jaas.cfg ./opt/kafka/bin/kafka-configs.sh --zookeeper {zookeeper_uri} --describe --entity-type users --entity-name {username} --zk-tls-config-file=/data/kafka/config/server.properties'"
-    else:
-        command = f"JUJU_MODEL={model_full_name} juju ssh {unit_name} 'charmed-kafka.configs --zookeeper {zookeeper_uri} --describe --entity-type users --entity-name {username} --zk-tls-config-file={SNAP_CONFIG_PATH}server.properties'"
+def check_user(model_full_name: str, username: str, bootstrap_server: str, unit_name: str) -> None:
+    command = f"JUJU_MODEL={model_full_name} juju ssh {unit_name} sudo -i 'charmed-kafka.configs --bootstrap-server {bootstrap_server} --command-config {KAFKA_CLIENT_PROPERTIES} --describe --entity-type users --entity-name {username}'"
     try:
         result = check_output(
             command,
@@ -110,7 +104,7 @@ def get_zookeeper_connection(unit_name: str, model_full_name: str) -> Tuple[List
 
 def check_properties(model_full_name: str, unit: str):
     properties = check_output(
-        f"JUJU_MODEL={model_full_name} juju exec cat /var/snap/zookeeper/common/conf/zoo.cfg --unit {unit}",
+        f"JUJU_MODEL={model_full_name} juju exec cat {ZOOKEEPER_CONF_PATH}/zoo.cfg --unit {unit}",
         stderr=PIPE,
         shell=True,
         universal_newlines=True,

@@ -15,7 +15,13 @@ from tests.integration.bundle.kafka_helpers import (
     load_acls,
     ping_servers,
 )
-from tests.integration.bundle.literals import APP_CHARM_PATH, BUNDLE_PATH, KAFKA, ZOOKEEPER
+from tests.integration.bundle.literals import (
+    APP_CHARM_PATH,
+    BUNDLE_PATH,
+    KAFKA,
+    TLS_PORT,
+    ZOOKEEPER,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +45,7 @@ async def test_deploy_bundle_active(ops_test: OpsTest):
     )
     assert retcode == 0, f"Deploy failed: {(stderr or stdout).strip()}"
     logger.info(stdout)
-    await ops_test.model.wait_for_idle(timeout=1200, idle_period=30, status="active")
+    await ops_test.model.wait_for_idle(timeout=3000, idle_period=30, status="active")
     for app in applications:
         assert ops_test.model.applications[app].status == "active"
 
@@ -67,7 +73,7 @@ async def test_deploy_app_charm_relate(ops_test: OpsTest):
     if tls:
         await ops_test.model.add_relation("app", "tls-certificates-operator")
     await ops_test.model.wait_for_idle(
-        apps=applications, timeout=1200, idle_period=30, status="active"
+        apps=applications, timeout=2000, idle_period=30, status="active"
     )
     await ops_test.model.add_relation(KAFKA, "app")
     await ops_test.model.wait_for_idle(
@@ -94,17 +100,19 @@ async def test_apps_up_and_running(ops_test: OpsTest, usernames):
     )
     usernames.update(returned_usernames)
 
+    bootstrap_server = f"{ops_test.model.applications[KAFKA].units[0].public_address}:{TLS_PORT}"
+
     for username in usernames:
         check_user(
             username=username,
-            zookeeper_uri=zookeeper_uri,
+            bootstrap_server=bootstrap_server,
             model_full_name=ops_test.model_full_name,
             unit_name=f"{KAFKA}/0",
         )
 
     for acl in load_acls(
         model_full_name=ops_test.model_full_name,
-        zookeeper_uri=zookeeper_uri,
+        bootstrap_server=bootstrap_server,
         unit_name=f"{KAFKA}/0",
     ):
         assert acl.username in usernames
