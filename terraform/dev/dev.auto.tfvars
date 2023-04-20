@@ -1,0 +1,2 @@
+model = "dev"
+cloud = "localhost"

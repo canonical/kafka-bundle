@@ -38,6 +38,7 @@ jobs:
       max-parallel: 1
       matrix:
         tox-environments:
+          - integration-terraform
           - integration-bundle
           - integration-e2e
           - integration-e2e-tls
