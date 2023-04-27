@@ -11,7 +11,7 @@ jobs:
     name: Update bundle
     uses: canonical/data-platform-workflows/.github/workflows/update_bundle.yaml@v2
     with:
-      path-to-bundle-file: releases/latest/kafka/bundle.yaml
+      path-to-bundle-file: releases/3/kafka/bundle.yaml
       reviewers: marcoppenheimer,deusebio
     secrets:
       token: ${{ secrets.PAT }}
