@@ -4,4 +4,4 @@
 .pytest_cache
 *.tfstate*
 .terraform*
-
+.vscode/

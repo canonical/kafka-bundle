@@ -7,8 +7,11 @@ import random
 import string
 from typing import Dict
 
+from juju.controller import Controller
+from juju.model import Model
 from juju.unit import Unit
 from pymongo import MongoClient
+from pytest_operator.plugin import OpsTest
 
 logger = logging.getLogger()
 
@@ -120,3 +123,14 @@ async def fetch_action_stop_process(unit: Unit) -> Dict:
 def get_random_topic() -> str:
     """Return a random topic name."""
     return f"topic-{''.join(random.choices(string.ascii_lowercase, k=4))}"
+
+
+async def get_or_add_model(ops_test: OpsTest, controller: Controller, model_name: str) -> Model:
+    if model_name not in await controller.get_models():
+        await controller.add_model(model_name)
+        ctl_name = controller.controller_name
+        await ops_test.track_model(
+            f"{ctl_name}-{model_name}", cloud_name=ctl_name, model_name=model_name, keep=False
+        )
+
+    return await controller.get_model(model_name)

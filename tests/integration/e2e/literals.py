@@ -8,6 +8,7 @@ INTEGRATOR_CHARM_NAME = "data-integrator"
 TLS_CHARM_NAME = "tls-certificates-operator"
 KAFKA_CHARM_NAME = "kafka"
 ZOOKEEPER_CHARM_NAME = "zookeeper"
+GRAFANA_AGENT_CHARM_NAME = "grafana-agent"
 
 TLS_REL_NAME = "certificates"
 

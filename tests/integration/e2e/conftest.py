@@ -6,11 +6,13 @@
 
 import asyncio
 import logging
+import os
 import random
 import string
 from typing import Dict, Literal, Optional
 
 import pytest
+from juju.controller import Controller
 from literals import (
     DATABASE_CHARM_NAME,
     INTEGRATOR_CHARM_NAME,
@@ -21,6 +23,7 @@ from literals import (
     ZOOKEEPER_CHARM_NAME,
 )
 from pytest_operator.plugin import OpsTest
+from tests.integration.e2e.helpers import get_or_add_model
 
 logger = logging.getLogger(__name__)
 
@@ -270,3 +273,24 @@ async def deploy_test_app(ops_test: OpsTest, kafka, certificates, tls):
             logger.info(f"App: {app} already removed!")
 
     await ops_test.model.wait_for_idle(apps=[kafka], idle_period=30, status="active", timeout=1800)
+
+
+@pytest.fixture(scope="function")
+async def lxd_setup(ops_test: OpsTest):
+    # NOTE: not too happy with connecting each time we start a test
+    lxd_ctl_name = os.environ["LXD_CONTROLLER"]
+    lxd_ctl = Controller()
+    await lxd_ctl.connect(lxd_ctl_name)
+    lxd_mdl = await get_or_add_model(ops_test, lxd_ctl, ops_test.model_name)
+
+    return (lxd_ctl, lxd_mdl)
+
+
+@pytest.fixture(scope="function")
+async def k8s_setup(ops_test: OpsTest):
+    k8s_ctl_name = os.environ["K8S_CONTROLLER"]
+    k8s_ctl = Controller()
+    await k8s_ctl.connect(k8s_ctl_name)
+    k8s_mdl = await get_or_add_model(ops_test, k8s_ctl, ops_test.model_name)
+
+    return (k8s_ctl, k8s_mdl)
