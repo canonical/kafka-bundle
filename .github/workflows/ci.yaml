@@ -42,6 +42,7 @@ jobs:
           - integration-bundle
           - integration-e2e
           - integration-e2e-tls
+          - integration-e2e-cos
     name: ${{ matrix.tox-environments }}
     needs:
       - lint
