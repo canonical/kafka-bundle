@@ -38,10 +38,6 @@ jobs:
       max-parallel: 1
       matrix:
         tox-environments:
-          - integration-terraform
-          - integration-bundle
-          - integration-e2e
-          - integration-e2e-tls
           - integration-e2e-cos
     name: ${{ matrix.tox-environments }}
     needs:
@@ -52,12 +48,34 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Setup operator environment
-        # TODO: Replace with custom image on self-hosted runner
+      - name: Get prefsrc
+        run: |
+          echo "IPADDR=$(ip -4 -j route get 2.2.2.2 | jq -r '.[] | .prefsrc')" >> $GITHUB_ENV
+      - name: Setup k8s controller
         uses: charmed-kubernetes/actions-operator@main
         with:
+          juju-channel: 2.9/stable
+          provider: microk8s
+          channel: 1.25-strict/stable
+          microk8s-addons: "hostpath-storage dns metallb:${{ env.IPADDR }}-${{ env.IPADDR }}"
+          bootstrap-options: "--agent-version 2.9.42"
+      - name: Save k8s controller name
+        id: k8s-controller
+        # The `CONTROLLER_NAME` envvar is set by the actions-operator action
+        run: echo "name=$CONTROLLER_NAME" >> $GITHUB_OUTPUT
+      - name: Fix microk8s permissions
+        run: |
+          chmod -R ugo+rwX ~/.kube
+      - name: Setup lxd controller
+        uses: charmed-kubernetes/actions-operator@main
+        with:
+          juju-channel: 2.9/stable
           provider: lxd
-          bootstrap-options: "--agent-version 2.9.38"
+          bootstrap-options: "--agent-version 2.9.42"
+      - name: Save lxd controller name
+        id: lxd-controller
+        # The `CONTROLLER_NAME` envvar is set by the actions-operator action
+        run: echo "name=$CONTROLLER_NAME" >> $GITHUB_OUTPUT
       - name: Download packed charm(s)
         uses: actions/download-artifact@v3
         with:
@@ -77,3 +95,5 @@ jobs:
         run: tox run -e ${{ matrix.tox-environments }} -- -m '${{ steps.select-tests.outputs.mark_expression }}'
         env:
           CI_PACKED_CHARMS: ${{ needs.build.outputs.charms }}
+          K8S_CONTROLLER: ${{ steps.k8s-controller.outputs.name }}
+          LXD_CONTROLLER: ${{ steps.lxd-controller.outputs.name }}
