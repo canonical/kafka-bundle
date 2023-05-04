@@ -38,6 +38,7 @@ jobs:
       max-parallel: 1
       matrix:
         tox-environments:
+          # TODO: remember to add the rest of tests after cos test is stable
           - integration-e2e-cos
     name: ${{ matrix.tox-environments }}
     needs:

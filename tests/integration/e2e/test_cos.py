@@ -47,14 +47,16 @@ async def test_deploy_cos(k8s_setup):
         raise
 
     await k8s_mdl.wait_for_idle(
-        apps=["loki", "grafana", "prometheus", "catalogue", "traefik", "alertmanager"], idle_period=30, timeout=3600
+        apps=["loki", "grafana", "prometheus", "catalogue", "traefik", "alertmanager"],
+        idle_period=30,
+        timeout=3600,
     )
     for _, app in k8s_mdl.applications:
         assert app.status == "active"
 
 
 @pytest.mark.abort_on_fail
-async def test_build_and_deploy_machine_charms(lxd_setup):
+async def test_deploy_machine_charms(lxd_setup):
     _, lxd_mdl = lxd_setup
     await asyncio.gather(
         lxd_mdl.deploy(
