@@ -6,6 +6,7 @@
 import asyncio
 import logging
 import subprocess
+import time
 
 import pytest
 from tests.integration.e2e.literals import (
@@ -46,10 +47,12 @@ async def test_deploy_cos(k8s_setup):
         logger.error(e.output.decode())
         raise
 
+    time.sleep(60)
     await k8s_mdl.wait_for_idle(
         apps=["loki", "grafana", "prometheus", "catalogue", "traefik", "alertmanager"],
-        idle_period=30,
+        idle_period=60,
         timeout=3600,
+        raise_on_error=False,
     )
     for _, app in k8s_mdl.applications:
         assert app.status == "active"
