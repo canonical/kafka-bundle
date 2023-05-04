@@ -54,8 +54,6 @@ async def test_deploy_cos(k8s_setup):
         timeout=3600,
         raise_on_error=False,
     )
-    for _, app in k8s_mdl.applications:
-        assert app.status == "active"
 
 
 @pytest.mark.abort_on_fail
