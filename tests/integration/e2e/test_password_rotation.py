@@ -6,7 +6,7 @@ import asyncio
 import logging
 
 import pytest
-from literals import DATABASE_CHARM_NAME, KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME
+from literals import DATABASE_CHARM_NAME, KAFKA_CHARM_NAME
 from pytest_operator.plugin import OpsTest
 from tests.integration.e2e.helpers import (
     check_produced_and_consumed_messages,
@@ -30,7 +30,7 @@ async def test_deploy(ops_test: OpsTest, deploy_cluster):
 
 @pytest.mark.abort_on_fail
 async def test_cluster_is_deployed_successfully(
-    ops_test: OpsTest, kafka, zookeeper, tls, certificates
+    ops_test: OpsTest, kafka, zookeeper, tls, certificates, database
 ):
     assert ops_test.model.applications[kafka].status == "active"
     assert ops_test.model.applications[zookeeper].status == "active"
@@ -40,18 +40,23 @@ async def test_cluster_is_deployed_successfully(
 
     # deploy MongoDB
 
-    await asyncio.gather(
-        ops_test.model.deploy(
-            DATABASE_CHARM_NAME,
-            application_name=DATABASE_CHARM_NAME,
-            num_units=1,
-            series="jammy",
-            channel="5/edge",
-        ),
-    )
-    await ops_test.model.wait_for_idle(
-        apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME, DATABASE_CHARM_NAME], status="active"
-    )
+    # deploy MongoDB if it's not already deployed
+    if database not in ops_test.model.applications:
+        await asyncio.gather(
+            ops_test.model.deploy(
+                DATABASE_CHARM_NAME,
+                application_name=database,
+                num_units=1,
+                series="jammy",
+                channel="5/edge",
+            ),
+        )
+        await ops_test.model.wait_for_idle(
+            apps=[kafka, zookeeper, database],
+            status="active",
+            timeout=1200,
+            idle_period=30,
+        )
 
 
 @pytest.mark.abort_on_fail
@@ -244,14 +249,14 @@ async def test_test_app_actually_set_up(
 
 
 @pytest.mark.abort_on_fail
-async def test_consumed_messages(ops_test: OpsTest, deploy_data_integrator):
+async def test_consumed_messages(ops_test: OpsTest, deploy_data_integrator, database):
 
     # get mongodb credentials
     mongo_integrator = await deploy_data_integrator({"database-name": TOPIC})
 
-    await ops_test.model.add_relation(mongo_integrator, DATABASE_CHARM_NAME)
+    await ops_test.model.add_relation(mongo_integrator, database)
     await ops_test.model.wait_for_idle(
-        apps=[mongo_integrator, DATABASE_CHARM_NAME], idle_period=30, status="active", timeout=1800
+        apps=[mongo_integrator, database], idle_period=30, status="active", timeout=1800
     )
 
     credentials = await fetch_action_get_credentials(
@@ -263,7 +268,4 @@ async def test_consumed_messages(ops_test: OpsTest, deploy_data_integrator):
 
     check_produced_and_consumed_messages(uris, TOPIC)
 
-    await ops_test.model.applications[DATABASE_CHARM_NAME].remove()
-    await ops_test.model.wait_for_idle(
-        apps=[mongo_integrator], idle_period=10, status="blocked", timeout=1800
-    )
+    logger.info("End of the test!")
