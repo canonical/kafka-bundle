@@ -36,7 +36,7 @@ PEER = "cluster"
 REL_NAME = "kafka-client"
 ZK = "zookeeper"
 
-TOPIC_NAME="test-topic"
+TOPIC_NAME = "test-topic"
 
 
 class ApplicationCharm(CharmBase):
