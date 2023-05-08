@@ -20,7 +20,9 @@ from charms.tls_certificates_interface.v1.tls_certificates import (
     generate_csr,
     generate_private_key,
 )
-from kafka import KafkaConsumer, KafkaProducer
+from kafka.admin import NewTopic
+from kafka.errors import TopicAlreadyExistsError
+from kafka import KafkaConsumer, KafkaProducer, KafkaAdminClient
 from ops.charm import ActionEvent, CharmBase, RelationEvent
 from ops.framework import EventBase
 from ops.main import main
@@ -33,6 +35,8 @@ CHARM_KEY = "app"
 PEER = "cluster"
 REL_NAME = "kafka-client"
 ZK = "zookeeper"
+
+TOPIC_NAME="test-topic"
 
 
 class ApplicationCharm(CharmBase):
@@ -78,7 +82,7 @@ class ApplicationCharm(CharmBase):
         if not self.unit.is_leader():
             return
         event.relation.data[self.app].update(
-            {"extra-user-roles": "producer,consumer", "topic": "test-topic"}
+            {"extra-user-roles": "producer,consumer", "topic": TOPIC_NAME}
         )
 
     def _make_admin(self, event: ActionEvent) -> None:
@@ -135,6 +139,30 @@ class ApplicationCharm(CharmBase):
         username = relation.data[app].get("username", "")
         password = relation.data[app].get("password", "")
         group_id = relation.data[app].get("consumer-group-prefix")
+
+        kafka_admin = KafkaAdminClient(
+            client_id=username,
+            bootstrap_servers=servers,
+            ssl_check_hostname=False,
+            sasl_plain_username=username,
+            sasl_plain_password=password,
+            sasl_mechanism="SCRAM-SHA-512",
+            security_protocol="SASL_SSL" if private_key else "SASL_PLAINTEXT",
+            ssl_cafile="/tmp/ca.pem" if private_key else None,
+            ssl_certfile="/tmp/server.pem" if private_key else None,
+            ssl_keyfile="/tmp/server.key" if private_key else None,
+        )
+
+        topic = NewTopic(
+            name=TOPIC_NAME,
+            num_partitions=1,
+            replication_factor=1,
+        )
+
+        try:
+            kafka_admin.create_topics([topic], validate_only=False)
+        except TopicAlreadyExistsError:
+            logger.info("Topic already exists")
 
         tasks = [
             Producer(
@@ -247,7 +275,7 @@ class Producer(threading.Thread):
         )
 
         for _ in range(15):
-            producer.send("test-topic", b"test-message")
+            producer.send(TOPIC_NAME, b"test-message")
             time.sleep(1)
 
         producer.close()
@@ -277,7 +305,7 @@ class Consumer(threading.Thread):
     def run(self):
         logger.info("starting consumer...")
         consumer = KafkaConsumer(
-            "test-topic",
+            TOPIC_NAME,
             bootstrap_servers=self.servers,
             sasl_plain_username=self.username,
             sasl_plain_password=self.password,
