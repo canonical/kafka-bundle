@@ -5,6 +5,7 @@
 """Collection of globals common to the Kafka bundle."""
 
 BUNDLE_PATH = "releases/3/kafka/bundle.yaml"
+BUNDLE_BUILD = "build/kafka-bundle.zip"
 APP_CHARM_PATH = "tests/integration/bundle/app-charm"
 ZOOKEEPER = "zookeeper"
 KAFKA = "kafka"

@@ -3,6 +3,7 @@
 # See LICENSE file for licensing details.
 
 import logging
+import os
 from pathlib import Path
 
 import pytest
@@ -18,10 +19,12 @@ from tests.integration.bundle.kafka_helpers import (
 from tests.integration.bundle.literals import (
     APP_CHARM_PATH,
     BUNDLE_PATH,
+    BUNDLE_BUILD,
     KAFKA,
     TLS_PORT,
     ZOOKEEPER,
 )
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -40,8 +43,10 @@ async def test_deploy_bundle_active(ops_test: OpsTest):
     for app in bundle_data["applications"]:
         applications.append(app)
 
+    file = BUNDLE_BUILD if os.path.exists(f"./{BUNDLE_BUILD}") else BUNDLE_PATH
+
     retcode, stdout, stderr = await ops_test.run(
-        *["juju", "deploy", "--trust", "-m", ops_test.model_full_name, f"./{BUNDLE_PATH}"]
+        *["juju", "deploy", "--trust", "-m", ops_test.model_full_name, f"./{file}"]
     )
     assert retcode == 0, f"Deploy failed: {(stderr or stdout).strip()}"
     logger.info(stdout)
