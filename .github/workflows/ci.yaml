@@ -16,10 +16,30 @@ on:
 
 jobs:
 
-  build:
-    name: Build charms
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Install tox
+        # TODO: Consider replacing with custom image on self-hosted runner OR pinning version
+        run: python3 -m pip install tox
+      - name: Run linters
+        run: make lint
+
+  build:
+    name: Build charms
+    uses: canonical/data-platform-workflows/.github/workflows/build_charms_with_cache.yaml@v2
+
+  pack:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs:
+      - lint
+      - build
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -44,6 +64,7 @@ jobs:
     name: ${{ matrix.tox-environments }}
     needs:
       - build
+      - pack
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
