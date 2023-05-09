@@ -43,7 +43,6 @@ jobs:
           - integration-e2e-tls
     name: ${{ matrix.tox-environments }}
     needs:
-      - lint
       - build
     runs-on: ubuntu-latest
     timeout-minutes: 120
