@@ -55,6 +55,8 @@ async def test_cluster_is_deployed_successfully(
             timeout=1200,
             idle_period=30,
         )
+        # teardown database at the end of the test
+        pytest.remove_database = True
 
 
 @pytest.mark.abort_on_fail
@@ -208,5 +210,11 @@ async def test_consumed_messages(ops_test: OpsTest, deploy_data_integrator, data
     uris = credentials[DATABASE_CHARM_NAME]["uris"]
 
     check_produced_and_consumed_messages(uris, TOPIC)
+
+    if pytest.remove_database:
+        await ops_test.model.applications[database].remove()
+        await ops_test.model.wait_for_idle(
+            apps=[mongo_integrator], idle_period=10, status="blocked", timeout=1800
+        )
 
     logger.info("End of the test!")

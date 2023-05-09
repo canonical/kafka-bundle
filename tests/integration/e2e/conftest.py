@@ -122,7 +122,7 @@ async def deploy_cluster(ops_test: OpsTest, tls):
                 apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME],
                 idle_period=10,
                 status="active",
-                timeout=600,
+                timeout=1200,
             )
 
     async def _deploy_tls_cluster():
@@ -281,3 +281,8 @@ async def deploy_test_app(ops_test: OpsTest, kafka, certificates, database, tls)
             logger.info(f"App: {app} already removed!")
 
     await ops_test.model.wait_for_idle(apps=[kafka], idle_period=30, status="active", timeout=1800)
+
+
+def pytest_configure():
+    """Pytest configuration parameters."""
+    pytest.remove_database = False
