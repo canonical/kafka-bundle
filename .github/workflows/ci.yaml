@@ -34,7 +34,7 @@ jobs:
     uses: canonical/data-platform-workflows/.github/workflows/build_charms_with_cache.yaml@v2
 
   pack:
-    name: Lint
+    name: Pack Bundle
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs:
