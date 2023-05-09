@@ -18,13 +18,12 @@ from tests.integration.bundle.kafka_helpers import (
 )
 from tests.integration.bundle.literals import (
     APP_CHARM_PATH,
-    BUNDLE_PATH,
     BUNDLE_BUILD,
+    BUNDLE_PATH,
     KAFKA,
     TLS_PORT,
     ZOOKEEPER,
 )
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
