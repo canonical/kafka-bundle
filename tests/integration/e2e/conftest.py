@@ -50,6 +50,13 @@ def pytest_addoption(parser):
         help="set usage of credentials provided by the data-integrator.",
     )
 
+    parser.addoption(
+        "--database",
+        action="store",
+        help="name of pre-deployed mongoDB instance.",
+        default=DATABASE_CHARM_NAME,
+    )
+
 
 def pytest_generate_tests(metafunc):
     """Processes pytest parsers."""
@@ -72,6 +79,10 @@ def pytest_generate_tests(metafunc):
     integrator = metafunc.config.option.integrator
     if "integrator" in metafunc.fixturenames:
         metafunc.parametrize("integrator", [bool(integrator)], scope="module")
+
+    database = metafunc.config.option.database
+    if "database" in metafunc.fixturenames:
+        metafunc.parametrize("database", [database], scope="module")
 
 
 ### - FIXTURES - ###
@@ -111,7 +122,7 @@ async def deploy_cluster(ops_test: OpsTest, tls):
                 apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME],
                 idle_period=10,
                 status="active",
-                timeout=600,
+                timeout=1200,
             )
 
     async def _deploy_tls_cluster():
@@ -191,7 +202,7 @@ async def deploy_data_integrator(ops_test: OpsTest, kafka):
 
 
 @pytest.fixture(scope="function")
-async def deploy_test_app(ops_test: OpsTest, kafka, certificates, tls):
+async def deploy_test_app(ops_test: OpsTest, kafka, certificates, database, tls):
     """Factory fixture for deploying + tearing down client applications."""
     # tracks deployed app names for teardown later
     apps = []
@@ -242,9 +253,9 @@ async def deploy_test_app(ops_test: OpsTest, kafka, certificates, tls):
             )
 
         # Relate with MongoDB
-        await ops_test.model.add_relation(generated_app_name, DATABASE_CHARM_NAME)
+        await ops_test.model.add_relation(generated_app_name, database)
         await ops_test.model.wait_for_idle(
-            apps=[generated_app_name, DATABASE_CHARM_NAME],
+            apps=[generated_app_name, database],
             idle_period=30,
             status="active",
             timeout=1800,
@@ -270,3 +281,8 @@ async def deploy_test_app(ops_test: OpsTest, kafka, certificates, tls):
             logger.info(f"App: {app} already removed!")
 
     await ops_test.model.wait_for_idle(apps=[kafka], idle_period=30, status="active", timeout=1800)
+
+
+def pytest_configure():
+    """Pytest configuration parameters."""
+    pytest.remove_database = False
