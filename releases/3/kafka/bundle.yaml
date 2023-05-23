@@ -3,7 +3,7 @@ applications:
     channel: 3/edge
     charm: kafka
     num_units: 1
-    revision: 122
+    revision: 123
     series: jammy
   tls-certificates-operator:
     channel: latest/edge
