@@ -3,7 +3,7 @@ applications:
     channel: 3/edge
     charm: kafka
     num_units: 1
-    revision: 119
+    revision: 122
     series: jammy
   tls-certificates-operator:
     channel: latest/edge
@@ -12,7 +12,7 @@ applications:
     options:
       ca-common-name: canonical
       generate-self-signed-certificates: true
-    revision: 23
+    revision: 24
     series: jammy
   zookeeper:
     channel: 3/edge
