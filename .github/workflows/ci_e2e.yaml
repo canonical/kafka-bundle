@@ -29,6 +29,9 @@ jobs:
     name: Build charms
     uses: canonical/data-platform-workflows/.github/workflows/build_charms_with_cache.yaml@v2
 
+  integration-test:
+    uses: ./.github/workflows/ci.yaml
+
   e2e-tests:
     strategy:
       fail-fast: false

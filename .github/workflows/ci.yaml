@@ -7,14 +7,12 @@ concurrency:
   cancel-in-progress: true
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
   schedule:
     - cron: '53 0 * * *' # Daily at 00:53 UTC
 
 jobs:
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
@@ -26,11 +24,29 @@ jobs:
         # TODO: Consider replacing with custom image on self-hosted runner OR pinning version
         run: python3 -m pip install tox
       - name: Run linters
-        run: tox run -e lint
+        run: make lint
 
   build:
     name: Build charms
     uses: canonical/data-platform-workflows/.github/workflows/build_charms_with_cache.yaml@v2
+
+  pack:
+    name: Pack Bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs:
+      - lint
+      - build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Install dependencies
+        run: |
+          sudo snap install charmcraft --classic
+          python3 -m pip install tox
+      - name: Pack bundle
+        run: |
+          make build
 
   integration-test:
     strategy:
@@ -44,8 +60,8 @@ jobs:
           - integration-e2e-tls
     name: ${{ matrix.tox-environments }}
     needs:
-      - lint
       - build
+      - pack
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:

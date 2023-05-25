@@ -1,4 +1,4 @@
-name: Release to 3/edge
+name: Release to Charmhub
 
 on:
   push:
@@ -6,33 +6,24 @@ on:
       - main
 
 jobs:
-  publish-machine-bundle:
-    name: Publish machine bundle
+  integration-test:
+    uses: ./.github/workflows/ci.yaml
+
+  publish-bundle:
+    name: Publish bundle
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    needs:
+      - integration-test
+    env:
+      CHARMCRAFT_AUTH: ${{ secrets.CHARMHUB_TOKEN }}
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       - name: Install dependencies
-        run: |
-          sudo snap install charmcraft --classic
+        run: sudo snap install charmcraft --classic
       - name: Pack and publish bundle
         run: |
-          set -ex
-          # Use a temporary directory to support publishing any of the bundles in this root dir
-          BUILD_DIR=.bundle_build
-          mkdir $BUILD_DIR
-          cp ./releases/3/kafka/* $BUILD_DIR/
-          cd $BUILD_DIR
-          # FIXME: token will expire on 2023-10-27
-          export CHARMCRAFT_AUTH=${{ secrets.CHARMCRAFT_AUTH }}
-          charmcraft pack --destructive-mode
-          charmcraft upload ./*.zip
-          export REVISION=$(charmcraft revisions kafka-bundle 2>&1 | awk 'NR==2 {print $1}')
-          charmcraft release kafka-bundle --revision $REVISION --channel=3/edge
-      - name: Dump logs
-        if: failure()
-        run: |
-          printenv | sed 's;=.*;;' | sort
-          awk '{print}' /home/runner/snap/charmcraft/common/cache/charmcraft/log/*.log
-
-
+          make release
