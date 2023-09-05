@@ -81,10 +81,10 @@ def get_action_parameters(credentials: Dict[str, str], topic_name: str):
         "servers": credentials["kafka"]["endpoints"],
         "username": credentials["kafka"]["username"],
         "password": credentials["kafka"]["password"],
-        "topic_name": topic_name,
+        "topic-name": topic_name,
     }
     if "consumer-group-prefix" in credentials["kafka"]:
-        action_data["consumer_group_prefix"] = credentials["kafka"]["consumer-group-prefix"]
+        action_data["consumer-group-prefix"] = credentials["kafka"]["consumer-group-prefix"]
     return action_data
 
 
