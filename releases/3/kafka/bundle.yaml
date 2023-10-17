@@ -6,7 +6,7 @@ applications:
     revision: 133
     series: jammy
   tls-certificates-operator:
-    channel: latest/edge
+    channel: legacy/stable
     charm: tls-certificates-operator
     num_units: 1
     options:
