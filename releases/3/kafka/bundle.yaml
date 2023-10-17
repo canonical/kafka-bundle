@@ -12,7 +12,7 @@ applications:
     options:
       ca-common-name: canonical
       generate-self-signed-certificates: true
-    revision: 27
+    revision: 22
     series: jammy
   zookeeper:
     channel: 3/edge
