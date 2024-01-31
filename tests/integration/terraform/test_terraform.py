@@ -41,22 +41,28 @@ async def test_deploy_terraform_active(ops_test: OpsTest):
     controller_addresses = ",".join(get_value(obj=controller_credentials, key="api-endpoints"))
     ca_cert = get_value(obj=controller_credentials, key="ca-cert")
 
-    print(ops_test.model_full_name)
-
     command = f"terraform init && terraform import juju_model.kafka {ops_test.model_name} && terraform apply -auto-approve -var 'model={ops_test.model_name}'"
-    subprocess.check_output(
-        command,
-        stderr=subprocess.PIPE,
-        shell=True,
-        universal_newlines=True,
-        cwd="terraform/dev",
-        env={
-            "JUJU_CONTROLLER_ADDRESSES": str(controller_addresses),
-            "JUJU_USERNAME": str(username),
-            "JUJU_PASSWORD": str(password),
-            "JUJU_CA_CERT": str(ca_cert),
-        },
-    )
+
+    try:
+        subprocess.check_output(
+            command,
+            stderr=subprocess.PIPE,
+            shell=True,
+            universal_newlines=True,
+            cwd="terraform/dev",
+            env={
+                "JUJU_CONTROLLER_ADDRESSES": str(controller_addresses),
+                "JUJU_USERNAME": str(username),
+                "JUJU_PASSWORD": str(password),
+                "JUJU_CA_CERT": str(ca_cert),
+            },
+        )
+    except subprocess.CalledProcessError as e:
+        logger.info(e.output)
+        logger.info(e.stdout)
+        logger.info(e.stderr)
+        raise e
+
     await ops_test.model.wait_for_idle(
         apps=["kafka", "zookeeper"], timeout=2000, idle_period=30, status="active"
     )
