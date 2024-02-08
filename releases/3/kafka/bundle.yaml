@@ -24,9 +24,9 @@ issues: https://github.com/canonical/kafka-bundle/issues/new
 name: kafka-bundle
 relations:
 - - zookeeper:certificates
-  - tls-certificates-operator:certificates
+  - self-signed-certificates:certificates
 - - kafka:certificates
-  - tls-certificates-operator:certificates
+  - self-signed-certificates:certificates
 - - kafka:zookeeper
   - zookeeper:zookeeper
 series: jammy
