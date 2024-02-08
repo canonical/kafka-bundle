@@ -45,7 +45,7 @@ variable "tls" {
     channel = optional(string, "edge")
     series  = optional(string, "jammy")
     config = optional(map(string), {
-      ca-common-name                    = "Kafka"
+      ca-common-name = "Kafka"
     })
   })
   default = {}

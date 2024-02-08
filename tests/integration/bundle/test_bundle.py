@@ -21,9 +21,9 @@ from tests.integration.bundle.literals import (
     BUNDLE_BUILD,
     BUNDLE_PATH,
     KAFKA,
+    TLS_CHARM_NAME,
     TLS_PORT,
     ZOOKEEPER,
-    TLS_CHARM_NAME
 )
 
 logger = logging.getLogger(__name__)
