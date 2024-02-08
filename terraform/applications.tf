@@ -40,7 +40,7 @@ resource "juju_application" "tls" {
   units = var.tls.units
 
   charm {
-    name    = "tls-certificates-operator"
+    name    = "self-signed-certificates"
     channel = var.tls.channel
     series  = var.tls.series
   }

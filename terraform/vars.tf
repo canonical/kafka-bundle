@@ -42,10 +42,9 @@ variable "tls" {
   description = "Defines the TLS application configuration"
   type = object({
     units   = optional(number, 1)
-    channel = optional(string, "stable")
+    channel = optional(string, "edge")
     series  = optional(string, "jammy")
     config = optional(map(string), {
-      generate-self-signed-certificates = true
       ca-common-name                    = "Kafka"
     })
   })
