@@ -14,7 +14,7 @@ variable "kafka" {
   description = "Defines the Kafka application and machine configuration"
   type = object({
     units                = optional(number, 1)
-    channel              = optional(string, "edge")
+    channel              = optional(string, "3/edge")
     series               = optional(string, "jammy")
     config               = optional(map(string), {})
     cpu_core_count       = optional(number, 2)
@@ -28,7 +28,7 @@ variable "zookeeper" {
   description = "Defines the ZooKeeper application and machine configuration"
   type = object({
     units                = optional(number, 3)
-    channel              = optional(string, "edge")
+    channel              = optional(string, "3/edge")
     series               = optional(string, "jammy")
     config               = optional(map(string), {})
     cpu_core_count       = optional(number, 2)
