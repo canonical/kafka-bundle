@@ -15,6 +15,7 @@ variable "kafka" {
   type = object({
     units                = optional(number, 1)
     channel              = optional(string, "3/edge")
+    base                 = optional(string, "ubuntu@22.04")
     series               = optional(string, "jammy")
     config               = optional(map(string), {})
     cpu_core_count       = optional(number, 2)
@@ -29,6 +30,7 @@ variable "zookeeper" {
   type = object({
     units                = optional(number, 3)
     channel              = optional(string, "3/edge")
+    base                 = optional(string, "ubuntu@22.04")
     series               = optional(string, "jammy")
     config               = optional(map(string), {})
     cpu_core_count       = optional(number, 2)
@@ -43,6 +45,7 @@ variable "tls" {
   type = object({
     units   = optional(number, 1)
     channel = optional(string, "edge")
+    base    = optional(string, "ubuntu@22.04")
     series  = optional(string, "jammy")
     config = optional(map(string), {
       ca-common-name = "Kafka"
@@ -56,6 +59,7 @@ variable "integrator" {
   type = object({
     units   = optional(number, 1)
     channel = optional(string, "edge")
+    base    = optional(string, "ubuntu@22.04")
     series  = optional(string, "jammy")
     config = optional(map(string), {
       topic-name       = "default"

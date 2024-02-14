@@ -7,11 +7,10 @@ resource "juju_application" "kafka" {
   charm {
     name    = "kafka"
     channel = var.kafka.channel
-    series  = var.kafka.series
+    base    = var.kafka.base
   }
 
-  # loops over machine ids looking like lh:2:0, grabs juju machine id 2
-  placement = join(",", [for machine in juju_machine.kafka : split(":", machine.id)[1]])
+  placement = join(",", juju_machine.kafka[*].machine_id)
 
   config = var.kafka.config
 }
@@ -25,11 +24,10 @@ resource "juju_application" "zookeeper" {
   charm {
     name    = "zookeeper"
     channel = var.zookeeper.channel
-    series  = var.zookeeper.series
+    base    = var.zookeeper.base
   }
 
-  # loops over machine ids looking like lh:2:0, grabs juju machine id 2
-  placement = join(",", [for machine in juju_machine.zookeeper : split(":", machine.id)[1]])
+  placement = join(",", juju_machine.zookeeper[*].machine_id)
 
   config = var.zookeeper.config
 }
@@ -42,7 +40,7 @@ resource "juju_application" "tls" {
   charm {
     name    = "self-signed-certificates"
     channel = var.tls.channel
-    series  = var.tls.series
+    base    = var.tls.base
   }
 
   config = var.tls.config
@@ -56,7 +54,7 @@ resource "juju_application" "integrator" {
   charm {
     name    = "data-integrator"
     channel = var.integrator.channel
-    series  = var.integrator.series
+    base    = var.integrator.base
   }
 
   config = var.integrator.config
