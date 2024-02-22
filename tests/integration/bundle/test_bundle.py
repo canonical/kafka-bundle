@@ -21,6 +21,7 @@ from tests.integration.bundle.literals import (
     BUNDLE_BUILD,
     BUNDLE_PATH,
     KAFKA,
+    TLS_CHARM_NAME,
     TLS_PORT,
     ZOOKEEPER,
 )
@@ -70,13 +71,13 @@ async def test_deploy_app_charm_relate(ops_test: OpsTest):
     tls = False
     for app in bundle_data["applications"]:
         applications.append(app)
-        if "tls-certificates-operator" in app:
+        if TLS_CHARM_NAME in app:
             tls = True
 
     app_charm = await ops_test.build_charm(APP_CHARM_PATH)
     await ops_test.model.deploy(app_charm, application_name="app", num_units=1)
     if tls:
-        await ops_test.model.add_relation("app", "tls-certificates-operator")
+        await ops_test.model.add_relation("app", TLS_CHARM_NAME)
     await ops_test.model.wait_for_idle(
         apps=applications, timeout=2000, idle_period=30, status="active"
     )

@@ -54,7 +54,7 @@ jobs:
       max-parallel: 1
       matrix:
         tox-environments:
-          - integration-terraform
+          # - integration-terraform  # disabled until https://github.com/juju/terraform-provider-juju/issues/376 is resolved and released
           - integration-bundle
           - integration-e2e
           - integration-e2e-tls

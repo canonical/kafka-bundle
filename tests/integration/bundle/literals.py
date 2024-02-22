@@ -9,6 +9,7 @@ BUNDLE_BUILD = "build/kafka-bundle.zip"
 APP_CHARM_PATH = "tests/integration/bundle/app-charm"
 ZOOKEEPER = "zookeeper"
 KAFKA = "kafka"
+TLS_CHARM_NAME = "self-signed-certificates"
 
 ZOOKEEPER_CONF_PATH = "/var/snap/charmed-zookeeper/current/etc/zookeeper"
 KAFKA_CLIENT_PROPERTIES = "/var/snap/charmed-kafka/current/etc/kafka/client.properties"
