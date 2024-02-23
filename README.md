@@ -1,4 +1,7 @@
-# Kafka Bundle
+# Charmed Kafka Bundle
+[![Charmhub](https://charmhub.io/kafka-bundle/badge.svg)](https://charmhub.io/kafka-bundle)
+[![Release](https://github.com/canonical/kafka-bundle/actions/workflows/release.yaml/badge.svg)](https://github.com/canonical/kafka-bundle/actions/workflows/release.yaml)
+[![Tests](https://github.com/canonical/kafka-bundle/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/canonical/kafka-bundle/actions/workflows/ci.yaml)
 
 This repository contains the machine charm bundles for Kafka.
 
