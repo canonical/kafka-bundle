@@ -3,7 +3,7 @@ applications:
     channel: 3/candidate
     charm: kafka
     num_units: 1
-    revision: 153
+    revision: 156
     series: jammy
   self-signed-certificates:
     channel: latest/edge
