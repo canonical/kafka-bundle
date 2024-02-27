@@ -1,6 +1,6 @@
 # Copyright 2023 Canonical Ltd.
 # See LICENSE file for licensing details.
-name: Tests
+name: Tests (End-to-End)
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -8,6 +8,7 @@ concurrency:
 
 on:
   workflow_dispatch:
+  workflow_call:
   schedule:
     - cron: '53 0 * * SAT' # Every Saturday at 00:53 UTC
 
@@ -35,7 +36,7 @@ jobs:
   e2e-tests:
     strategy:
       fail-fast: false
-      max-parallel: 1
+      max-parallel: 10
       matrix:
         tox-environments:
           - integration-e2e-basic-flow
@@ -49,7 +50,7 @@ jobs:
     needs:
       - lint
       - build
-    runs-on: Ubuntu_4C_16G
+    runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
       - name: Checkout
