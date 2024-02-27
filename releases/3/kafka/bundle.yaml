@@ -1,6 +1,6 @@
 applications:
   kafka:
-    channel: 3/edge
+    channel: 3/candidate
     charm: kafka
     num_units: 1
     revision: 153
@@ -14,10 +14,10 @@ applications:
     revision: 88
     series: jammy
   zookeeper:
-    channel: 3/edge
+    channel: 3/candidate
     charm: zookeeper
     num_units: 3
-    revision: 124
+    revision: 126
     series: jammy
 description: A fast, secure and fault-tolerant Apache Kafka, supported by Apache ZooKeeper
 issues: https://github.com/canonical/kafka-bundle/issues/new
