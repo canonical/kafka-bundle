@@ -6,6 +6,9 @@ on:
       - main
 
 jobs:
+  integration-test:
+    uses: ./.github/workflows/ci.yaml
+
   integration-test-e2e:
     uses: ./.github/workflows/ci_e2e.yaml
 

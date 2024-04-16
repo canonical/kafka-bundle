@@ -8,6 +8,7 @@ concurrency:
 
 on:
   workflow_dispatch:
+  pull_request:
   workflow_call:
   schedule:
     - cron: '53 0 * * SAT' # Every Saturday at 00:53 UTC
