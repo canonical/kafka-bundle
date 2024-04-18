@@ -16,7 +16,7 @@ jobs:
     timeout-minutes: 5
     needs:
       - integration-test
-      # - integration-test-e2e
+      - integration-test-e2e
     env:
       CHARMCRAFT_AUTH: ${{ secrets.CHARMHUB_TOKEN }}
     steps:
