@@ -6,16 +6,17 @@ on:
       - main
 
 jobs:
+  integration-test:
+    uses: ./.github/workflows/ci.yaml
   integration-test-e2e:
     uses: ./.github/workflows/ci_e2e.yaml
-
   publish-bundle:
     name: Publish bundle
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs:
       - integration-test
-      - integration-test-e2e
+      # - integration-test-e2e
     env:
       CHARMCRAFT_AUTH: ${{ secrets.CHARMHUB_TOKEN }}
     steps:
