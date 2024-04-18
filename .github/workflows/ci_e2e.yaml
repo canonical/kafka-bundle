@@ -7,6 +7,7 @@ concurrency:
   cancel-in-progress: true
 
 on:
+  pull_request:
   workflow_dispatch:
   workflow_call:
   schedule:
@@ -47,7 +48,7 @@ jobs:
     needs:
       - lint
       - build
-    runs-on: ubuntu-latest
+    runs-on: ["self-hosted", "linux", "X64", "jammy", "large"]
     timeout-minutes: 120
     steps:
       - name: Checkout
