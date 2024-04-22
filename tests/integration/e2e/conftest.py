@@ -104,14 +104,14 @@ async def deploy_cluster(ops_test: OpsTest, tls):
                 application_name=KAFKA_CHARM_NAME,
                 num_units=1,
                 series="jammy",
-                channel="edge",
+                channel="3/edge",
             ),
             ops_test.model.deploy(
                 ZOOKEEPER_CHARM_NAME,
                 application_name=ZOOKEEPER_CHARM_NAME,
                 num_units=1,
                 series="jammy",
-                channel="edge",
+                channel="3/edge",
             ),
         )
         await ops_test.model.wait_for_idle(apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME])
