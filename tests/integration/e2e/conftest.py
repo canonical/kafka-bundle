@@ -115,8 +115,7 @@ async def deploy_cluster(ops_test: OpsTest, tls):
             ),
         )
         await ops_test.model.wait_for_idle(
-            apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME],
-            timeout=3600
+            apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME], timeout=3600
         )
 
         async with ops_test.fast_forward(fast_interval="30s"):
@@ -143,9 +142,7 @@ async def deploy_cluster(ops_test: OpsTest, tls):
             channel="edge",
             config={"ca-common-name": "Canonical"},
         )
-        await ops_test.model.wait_for_idle(
-            apps=[TLS_CHARM_NAME], timeout=1200
-        )
+        await ops_test.model.wait_for_idle(apps=[TLS_CHARM_NAME], timeout=1200)
 
         # block until non-tls cluster completion
         await deploy_non_tls
@@ -191,9 +188,7 @@ async def deploy_data_integrator(ops_test: OpsTest, kafka):
             channel="edge",
             config=config,
         )
-        await ops_test.model.wait_for_idle(
-            apps=[generated_app_name], timeout=3600
-        )
+        await ops_test.model.wait_for_idle(apps=[generated_app_name], timeout=3600)
 
         return generated_app_name
 
@@ -205,9 +200,7 @@ async def deploy_data_integrator(ops_test: OpsTest, kafka):
         logger.info(f"tearing down {app}")
         await ops_test.model.applications[app].remove()
 
-    await ops_test.model.wait_for_idle(
-        apps=[kafka], idle_period=30, status="active", timeout=1800
-    )
+    await ops_test.model.wait_for_idle(apps=[kafka], idle_period=30, status="active", timeout=1800)
 
 
 @pytest.fixture(scope="function")
@@ -248,8 +241,7 @@ async def deploy_test_app(ops_test: OpsTest, kafka, certificates, database, tls)
             config=config,
         )
         await ops_test.model.wait_for_idle(
-            apps=[generated_app_name], idle_period=20, status="active",
-            timeout=3600
+            apps=[generated_app_name], idle_period=20, status="active", timeout=3600
         )
 
         # Relate with TLS operator
@@ -290,9 +282,7 @@ async def deploy_test_app(ops_test: OpsTest, kafka, certificates, database, tls)
         else:
             logger.info(f"App: {app} already removed!")
 
-    await ops_test.model.wait_for_idle(
-        apps=[kafka], idle_period=30, status="active", timeout=1800
-    )
+    await ops_test.model.wait_for_idle(apps=[kafka], idle_period=30, status="active", timeout=1800)
 
 
 def pytest_configure():
