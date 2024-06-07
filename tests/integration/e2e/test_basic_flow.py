@@ -74,7 +74,8 @@ async def test_test_app_actually_set_up(
 
         await ops_test.model.add_relation(data_integrator_producer, kafka)
         await ops_test.model.wait_for_idle(
-            apps=[data_integrator_producer, kafka], idle_period=30, status="active", timeout=1800
+            apps=[data_integrator_producer, kafka], idle_period=30,
+            status="active", timeout=1800
         )
 
         producer_credentials = await fetch_action_get_credentials(
@@ -87,7 +88,8 @@ async def test_test_app_actually_set_up(
         )
         await ops_test.model.add_relation(data_integrator_consumer, kafka)
         await ops_test.model.wait_for_idle(
-            apps=[data_integrator_consumer, kafka], idle_period=30, status="active", timeout=1800
+            apps=[data_integrator_consumer, kafka], idle_period=30,
+            status="active", timeout=1800
         )
         consumer_credentials = await fetch_action_get_credentials(
             ops_test.model.applications[data_integrator_consumer].units[0]
@@ -110,7 +112,8 @@ async def test_test_app_actually_set_up(
         # Relate with Kafka and automatically start producer
         await ops_test.model.add_relation(producer, kafka)
         await ops_test.model.wait_for_idle(
-            apps=[producer, kafka], idle_period=30, status="active", timeout=1800
+            apps=[producer, kafka], idle_period=30,
+            status="active", timeout=1800
         )
         logger.info(f"Producer {producer} related to Kafka")
 
@@ -128,7 +131,8 @@ async def test_test_app_actually_set_up(
         # Relate with Kafka and automatically start consumer
         await ops_test.model.add_relation(consumer, kafka)
         await ops_test.model.wait_for_idle(
-            apps=[consumer, kafka], idle_period=30, status="active", timeout=1800
+            apps=[consumer, kafka], idle_period=30,
+            status="active", timeout=1800
         )
         logger.info(f"Consumer {consumer} related to Kafka")
 
@@ -199,7 +203,8 @@ async def test_consumed_messages(ops_test: OpsTest, deploy_data_integrator, data
 
     await ops_test.model.add_relation(mongo_integrator, database)
     await ops_test.model.wait_for_idle(
-        apps=[mongo_integrator, database], idle_period=30, status="active", timeout=1800
+        apps=[mongo_integrator, database], idle_period=30,
+        status="active", timeout=1800
     )
 
     credentials = await fetch_action_get_credentials(
@@ -214,7 +219,8 @@ async def test_consumed_messages(ops_test: OpsTest, deploy_data_integrator, data
     if pytest.remove_database:
         await ops_test.model.applications[database].remove()
         await ops_test.model.wait_for_idle(
-            apps=[mongo_integrator], idle_period=10, status="blocked", timeout=1800
+            apps=[mongo_integrator], idle_period=10,
+            status="blocked", timeout=1800
         )
 
     logger.info("End of the test!")
