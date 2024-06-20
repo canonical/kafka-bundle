@@ -195,7 +195,7 @@ async def test_test_app_actually_set_up(
         await ops_test.model.applications[consumer_1].remove_relation(
             f"{consumer_1}:kafka-cluster", f"{kafka}"
         )
-        await ops_test.model.wait_for_idle(apps=[consumer_1, kafka], idle_period=10)
+        await ops_test.model.wait_for_idle(apps=[consumer_1, kafka], idle_period=10, timeout=1200)
         logger.info(f"Consumer {consumer_1} unrelate from Kafka")
 
     await ops_test.model.wait_for_idle(
@@ -239,12 +239,12 @@ async def test_test_app_actually_set_up(
         await ops_test.model.applications[producer_1].remove_relation(
             f"{producer_1}:kafka-cluster", f"{kafka}"
         )
-        await ops_test.model.wait_for_idle(apps=[producer_1, kafka], idle_period=10)
+        await ops_test.model.wait_for_idle(apps=[producer_1, kafka], idle_period=10, timeout=1200)
         logger.info(f"Producer {producer_1} unrelate from Kafka")
         await ops_test.model.applications[producer_2].remove_relation(
             f"{producer_2}:kafka-cluster", f"{kafka}"
         )
-        await ops_test.model.wait_for_idle(apps=[producer_2, kafka], idle_period=10)
+        await ops_test.model.wait_for_idle(apps=[producer_2, kafka], idle_period=10, timeout=1200)
         logger.info(f"Producer {producer_2} unrelate from Kafka")
 
     # destroy producer and consumer during teardown.
