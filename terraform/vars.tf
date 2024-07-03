@@ -14,7 +14,7 @@ variable "kafka" {
   description = "Defines the Kafka application and machine configuration"
   type = object({
     units                = optional(number, 1)
-    channel              = optional(string, "3/edge")
+    channel              = optional(string, "3/stable")
     base                 = optional(string, "ubuntu@22.04")
     series               = optional(string, "jammy")
     config               = optional(map(string), {})
@@ -29,7 +29,7 @@ variable "zookeeper" {
   description = "Defines the ZooKeeper application and machine configuration"
   type = object({
     units                = optional(number, 3)
-    channel              = optional(string, "3/edge")
+    channel              = optional(string, "3/stable/sf")
     base                 = optional(string, "ubuntu@22.04")
     series               = optional(string, "jammy")
     config               = optional(map(string), {})
