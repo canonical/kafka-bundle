@@ -44,7 +44,7 @@ variable "tls" {
   description = "Defines the TLS application configuration"
   type = object({
     units   = optional(number, 1)
-    channel = optional(string, "edge")
+    channel = optional(string, "stable")
     base    = optional(string, "ubuntu@22.04")
     series  = optional(string, "jammy")
     config = optional(map(string), {
