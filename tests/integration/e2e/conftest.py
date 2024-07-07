@@ -139,7 +139,7 @@ async def deploy_cluster(ops_test: OpsTest, tls):
             application_name=TLS_CHARM_NAME,
             num_units=1,
             series="jammy",
-            channel="edge",
+            channel="stable",
             config={"ca-common-name": "Canonical"},
         )
         await ops_test.model.wait_for_idle(apps=[TLS_CHARM_NAME], timeout=1200)
