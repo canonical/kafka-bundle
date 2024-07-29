@@ -143,7 +143,7 @@ def get_zookeeper_connection(
 
     data = get_kafka_zk_relation_data(model_full_name, owner, unit_name)
 
-    return list(data["username"]), data["uri"]
+    return list(data["username"]), data["uris"]
 
 
 def check_properties(model_full_name: str, unit: str):
