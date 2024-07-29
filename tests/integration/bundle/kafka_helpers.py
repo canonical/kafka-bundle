@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # Copyright 2023 Canonical Ltd.
 # See LICENSE file for licensing details.
+import json
 import logging
 import re
 from subprocess import PIPE, CalledProcessError, check_output
 from typing import Any, Dict, List, Set, Tuple
 
-import json
 import yaml
 from pytest_operator.plugin import OpsTest
 from tests.integration.bundle.literals import KAFKA_CLIENT_PROPERTIES, ZOOKEEPER_CONF_PATH
@@ -107,9 +107,8 @@ def get_secret_by_label(model_full_name: str, label: str, owner: str) -> dict[st
     secret_data = json.loads(secrets_data_raw)
     return secret_data[secret_id]["content"]["Data"]
 
-def get_kafka_zk_relation_data(
-    model_full_name: str, owner: str, unit_name: str
-) -> dict[str, str]:
+
+def get_kafka_zk_relation_data(model_full_name: str, owner: str, unit_name: str) -> dict[str, str]:
     unit_data = show_unit(unit_name, model_full_name)
 
     relation_name = "zookeeper"
@@ -138,11 +137,14 @@ def get_kafka_zk_relation_data(
     return kafka_zk_relation_data | user_secret | tls_secret
 
 
-def get_zookeeper_connection(unit_name: str, owner: str, model_full_name: str) -> Tuple[List[str], str]:
+def get_zookeeper_connection(
+    unit_name: str, owner: str, model_full_name: str
+) -> Tuple[List[str], str]:
 
     data = get_kafka_zk_relation_data(model_full_name, owner, unit_name)
 
     return list(data["username"]), data["uri"]
+
 
 def check_properties(model_full_name: str, unit: str):
     properties = check_output(
