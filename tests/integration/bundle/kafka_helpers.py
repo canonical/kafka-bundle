@@ -6,6 +6,7 @@ import re
 from subprocess import PIPE, CalledProcessError, check_output
 from typing import Any, Dict, List, Set, Tuple
 
+import json
 import yaml
 from pytest_operator.plugin import OpsTest
 from tests.integration.bundle.literals import KAFKA_CLIENT_PROPERTIES, ZOOKEEPER_CONF_PATH
@@ -81,26 +82,67 @@ def show_unit(unit_name: str, model_full_name: str) -> Any:
     return yaml.safe_load(result)
 
 
-def get_zookeeper_connection(unit_name: str, model_full_name: str) -> Tuple[List[str], str]:
-    result = show_unit(unit_name=unit_name, model_full_name=model_full_name)
+def get_secret_by_label(model_full_name: str, label: str, owner: str) -> dict[str, str]:
+    secrets_meta_raw = check_output(
+        f"JUJU_MODEL={model_full_name} juju list-secrets --format json",
+        stderr=PIPE,
+        shell=True,
+        universal_newlines=True,
+    ).strip()
+    secrets_meta = json.loads(secrets_meta_raw)
 
-    relations_info = result[unit_name]["relation-info"]
+    for secret_id in secrets_meta:
+        if owner and not secrets_meta[secret_id]["owner"] == owner:
+            continue
+        if secrets_meta[secret_id]["label"] == label:
+            break
 
-    usernames = []
-    zookeeper_uri = ""
-    for info in relations_info:
-        if info["endpoint"] == "cluster":
-            for key in info["application-data"].keys():
-                if re.match(r"(relation\-[\d]+)", key):
-                    usernames.append(key)
-        if info["endpoint"] == "zookeeper":
-            zookeeper_uri = info["application-data"]["uris"]
+    secrets_data_raw = check_output(
+        f"JUJU_MODEL={model_full_name} juju show-secret --format json --reveal {secret_id}",
+        stderr=PIPE,
+        shell=True,
+        universal_newlines=True,
+    )
 
-    if zookeeper_uri and usernames:
-        return usernames, zookeeper_uri
-    else:
-        raise Exception("config not found")
+    secret_data = json.loads(secrets_data_raw)
+    return secret_data[secret_id]["content"]["Data"]
 
+def get_kafka_zk_relation_data(
+    model_full_name: str, owner: str, unit_name: str
+) -> dict[str, str]:
+    unit_data = show_unit(unit_name, model_full_name)
+
+    relation_name = "zookeeper"
+
+    kafka_zk_relation_data = {}
+    for info in unit_data[unit_name]["relation-info"]:
+        if info["endpoint"] == relation_name:
+            kafka_zk_relation_data["relation-id"] = info["relation-id"]
+
+            # initially collects all non-secret keys
+            kafka_zk_relation_data.update(dict(info["application-data"]))
+
+    user_secret = get_secret_by_label(
+        model_full_name,
+        label=f"{relation_name}.{kafka_zk_relation_data['relation-id']}.user.secret",
+        owner=owner,
+    )
+
+    tls_secret = get_secret_by_label(
+        model_full_name,
+        label=f"{relation_name}.{kafka_zk_relation_data['relation-id']}.tls.secret",
+        owner=owner,
+    )
+
+    # overrides to secret keys if found
+    return kafka_zk_relation_data | user_secret | tls_secret
+
+
+def get_zookeeper_connection(unit_name: str, owner: str, model_full_name: str) -> Tuple[List[str], str]:
+
+    data = get_kafka_zk_relation_data(model_full_name, owner, unit_name)
+
+    return list(data["username"]), data["uri"]
 
 def check_properties(model_full_name: str, unit: str):
     properties = check_output(
@@ -110,21 +152,6 @@ def check_properties(model_full_name: str, unit: str):
         universal_newlines=True,
     )
     return properties.splitlines()
-
-
-def get_kafka_zk_relation_data(unit_name: str, model_full_name: str) -> Dict[str, str]:
-    result = show_unit(unit_name=unit_name, model_full_name=model_full_name)
-    relations_info = result[unit_name]["relation-info"]
-
-    zk_relation_data = {}
-    for info in relations_info:
-        if info["endpoint"] == "zookeeper":
-            zk_relation_data["chroot"] = info["application-data"]["chroot"]
-            zk_relation_data["endpoints"] = info["application-data"]["endpoints"]
-            zk_relation_data["password"] = info["application-data"]["password"]
-            zk_relation_data["uris"] = info["application-data"]["uris"]
-            zk_relation_data["username"] = info["application-data"]["username"]
-    return zk_relation_data
 
 
 def srvr(host: str) -> Dict:
