@@ -15,7 +15,7 @@ from .auth import Acl, KafkaAuth
 
 logger = logging.getLogger(__name__)
 
-class NoSecretFound(Exception):
+class NoSecretFoundError(Exception):
 
     def __init__(self, owner: str, label:str):
         self.owner = owner
@@ -110,7 +110,7 @@ def get_secret_by_label(model_full_name: str, label: str, owner: str) -> dict[st
         )
 
     if len(secret_ids)==0:
-        raise NoSecretFound(owner=owner ,label=label)
+        raise NoSecretFoundError(owner=owner, label=label)
 
     secret_id = secret_ids[0]
 
@@ -144,7 +144,7 @@ def get_kafka_zk_relation_data(model_full_name: str, owner: str, unit_name: str)
             label=f"{relation_name}.{kafka_zk_relation_data['relation-id']}.user.secret",
             owner=owner,
         )
-    except NoSecretFound:
+    except NoSecretFoundError:
         logger.warning("ZooKeeper relation data is not using secrets for users.")
         user_secret = {}
 
@@ -154,7 +154,7 @@ def get_kafka_zk_relation_data(model_full_name: str, owner: str, unit_name: str)
             label=f"{relation_name}.{kafka_zk_relation_data['relation-id']}.tls.secret",
             owner=owner,
         )
-    except NoSecretFound:
+    except NoSecretFoundError:
         logger.warning("ZooKeeper relation data is not using secrets for tls.")
         tls_secret = {}
 
@@ -183,7 +183,7 @@ def get_peer_relation_data(model_full_name: str, unit_name: str) -> dict[str, st
             label=f"{relation_name}.{owner}.app",
             owner=owner,
         )
-    except NoSecretFound:
+    except NoSecretFoundError:
         logger.warning("Peer relation data is not using secrets for users.")
         user_secret = {}
 
@@ -193,7 +193,7 @@ def get_peer_relation_data(model_full_name: str, unit_name: str) -> dict[str, st
             label=f"{relation_name}.{owner}.unit",
             owner=unit_name,
         )
-    except NoSecretFound:
+    except NoSecretFoundError:
         logger.warning("Peer relation data is not using secrets for tls.")
         tls_secret = {}
 

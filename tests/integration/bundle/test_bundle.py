@@ -12,10 +12,10 @@ from pytest_operator.plugin import OpsTest
 from tests.integration.bundle.kafka_helpers import (
     check_properties,
     check_user,
+    get_kafka_users,
     get_zookeeper_connection,
     load_acls,
     ping_servers,
-    get_kafka_users
 )
 from tests.integration.bundle.literals import (
     APP_CHARM_PATH,
