@@ -91,11 +91,24 @@ def get_secret_by_label(model_full_name: str, label: str, owner: str) -> dict[st
     ).strip()
     secrets_meta = json.loads(secrets_meta_raw)
 
-    for secret_id in secrets_meta:
-        if owner and not secrets_meta[secret_id]["owner"] == owner:
-            continue
-        if secrets_meta[secret_id]["label"] == label:
-            break
+    secret_ids = [
+        secret_id
+        for secret_id in secrets_meta
+        if owner and secrets_meta[secret_id]["owner"] == owner
+        if secrets_meta[secret_id]["label"] == label
+    ]
+
+    if len(secret_ids)>1:
+        raise ValueError(
+            f"Multiple secrets carry the same (label, owner) combination: ({label}, {owner})"
+        )
+
+    if len(secret_ids)==0:
+        raise ValueError(
+            f"Secrets with (label, owner) combination: ({label}, {owner}) not found"
+        )
+
+    secret_id = secret_ids[0]
 
     secrets_data_raw = check_output(
         f"JUJU_MODEL={model_full_name} juju show-secret --format json --reveal {secret_id}",
@@ -137,6 +150,37 @@ def get_kafka_zk_relation_data(model_full_name: str, owner: str, unit_name: str)
     return kafka_zk_relation_data | user_secret | tls_secret
 
 
+def get_peer_relation_data(model_full_name: str, unit_name: str) -> dict[str, str]:
+
+    owner, *_ = unit_name.split("/")
+    unit_data = show_unit(unit_name, model_full_name)
+
+    relation_name = "cluster"
+
+    relation_data = {}
+    for info in unit_data[unit_name]["relation-info"]:
+        if info["endpoint"] == relation_name:
+            relation_data["relation-id"] = info["relation-id"]
+
+            # initially collects all non-secret keys
+            relation_data.update(dict(info["application-data"]))
+
+    user_secret = get_secret_by_label(
+        model_full_name,
+        label=f"{relation_name}.{owner}.app",
+        owner=owner,
+    )
+
+    tls_secret = get_secret_by_label(
+        model_full_name,
+        label=f"{relation_name}.{owner}.unit",
+        owner=unit_name,
+    )
+
+    # overrides to secret keys if found
+    return relation_data | user_secret | tls_secret
+
+
 def get_zookeeper_connection(
     unit_name: str, owner: str, model_full_name: str
 ) -> Tuple[List[str], str]:
@@ -144,6 +188,18 @@ def get_zookeeper_connection(
     data = get_kafka_zk_relation_data(model_full_name, owner, unit_name)
 
     return [data["username"]], data["uris"]
+
+
+def get_kafka_users(
+        unit_name: str, model_full_name: str
+):
+    data = get_peer_relation_data(model_full_name, unit_name)
+
+    return [
+        key
+        for key in data
+        if re.match(r"(relation\-[\d]+)", key)
+    ]
 
 
 def check_properties(model_full_name: str, unit: str):
