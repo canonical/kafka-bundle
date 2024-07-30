@@ -15,6 +15,12 @@ from .auth import Acl, KafkaAuth
 
 logger = logging.getLogger(__name__)
 
+class NoSecretFound(Exception):
+
+    def __init__(self, owner: str, label:str):
+        self.owner = owner
+        self.label = label
+
 
 def load_acls(model_full_name: str, bootstrap_server: str, unit_name: str) -> Set[Acl]:
     command = f"JUJU_MODEL={model_full_name} juju ssh {unit_name} sudo -i 'charmed-kafka.acls --bootstrap-server {bootstrap_server} --command-config {KAFKA_CLIENT_PROPERTIES} --list'"
@@ -104,9 +110,7 @@ def get_secret_by_label(model_full_name: str, label: str, owner: str) -> dict[st
         )
 
     if len(secret_ids)==0:
-        raise ValueError(
-            f"Secrets with (label, owner) combination: ({label}, {owner}) not found"
-        )
+        raise NoSecretFound(owner=owner ,label=label)
 
     secret_id = secret_ids[0]
 
@@ -134,17 +138,25 @@ def get_kafka_zk_relation_data(model_full_name: str, owner: str, unit_name: str)
             # initially collects all non-secret keys
             kafka_zk_relation_data.update(dict(info["application-data"]))
 
-    user_secret = get_secret_by_label(
-        model_full_name,
-        label=f"{relation_name}.{kafka_zk_relation_data['relation-id']}.user.secret",
-        owner=owner,
-    )
+    try:
+        user_secret = get_secret_by_label(
+            model_full_name,
+            label=f"{relation_name}.{kafka_zk_relation_data['relation-id']}.user.secret",
+            owner=owner,
+        )
+    except NoSecretFound:
+        logger.warning("ZooKeeper relation data is not using secrets for users.")
+        user_secret = {}
 
-    tls_secret = get_secret_by_label(
-        model_full_name,
-        label=f"{relation_name}.{kafka_zk_relation_data['relation-id']}.tls.secret",
-        owner=owner,
-    )
+    try:
+        tls_secret = get_secret_by_label(
+            model_full_name,
+            label=f"{relation_name}.{kafka_zk_relation_data['relation-id']}.tls.secret",
+            owner=owner,
+        )
+    except NoSecretFound:
+        logger.warning("ZooKeeper relation data is not using secrets for tls.")
+        tls_secret = {}
 
     # overrides to secret keys if found
     return kafka_zk_relation_data | user_secret | tls_secret
@@ -165,17 +177,25 @@ def get_peer_relation_data(model_full_name: str, unit_name: str) -> dict[str, st
             # initially collects all non-secret keys
             relation_data.update(dict(info["application-data"]))
 
-    user_secret = get_secret_by_label(
-        model_full_name,
-        label=f"{relation_name}.{owner}.app",
-        owner=owner,
-    )
+    try:
+        user_secret = get_secret_by_label(
+            model_full_name,
+            label=f"{relation_name}.{owner}.app",
+            owner=owner,
+        )
+    except NoSecretFound:
+        logger.warning("Peer relation data is not using secrets for users.")
+        user_secret = {}
 
-    tls_secret = get_secret_by_label(
-        model_full_name,
-        label=f"{relation_name}.{owner}.unit",
-        owner=unit_name,
-    )
+    try:
+        tls_secret = get_secret_by_label(
+            model_full_name,
+            label=f"{relation_name}.{owner}.unit",
+            owner=unit_name,
+        )
+    except NoSecretFound:
+        logger.warning("Peer relation data is not using secrets for tls.")
+        tls_secret = {}
 
     # overrides to secret keys if found
     return relation_data | user_secret | tls_secret
