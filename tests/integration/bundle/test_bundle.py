@@ -107,11 +107,9 @@ async def test_apps_up_and_running(ops_test: OpsTest, usernames):
     )
 
     assert zookeeper_uri
-    assert len(zookeeper_usernames)>0
+    assert len(zookeeper_usernames) > 0
 
-    usernames.update(
-        get_kafka_users(f"{KAFKA}/0", ops_test.model_full_name)
-    )
+    usernames.update(get_kafka_users(f"{KAFKA}/0", ops_test.model_full_name))
 
     bootstrap_server = f"{ops_test.model.applications[KAFKA].units[0].public_address}:{TLS_PORT}"
 

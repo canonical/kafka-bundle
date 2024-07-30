@@ -15,9 +15,9 @@ from .auth import Acl, KafkaAuth
 
 logger = logging.getLogger(__name__)
 
-class NoSecretFoundError(Exception):
 
-    def __init__(self, owner: str, label:str):
+class NoSecretFoundError(Exception):
+    def __init__(self, owner: str, label: str):
         self.owner = owner
         self.label = label
 
@@ -104,12 +104,12 @@ def get_secret_by_label(model_full_name: str, label: str, owner: str) -> dict[st
         if secrets_meta[secret_id]["label"] == label
     ]
 
-    if len(secret_ids)>1:
+    if len(secret_ids) > 1:
         raise ValueError(
             f"Multiple secrets carry the same (label, owner) combination: ({label}, {owner})"
         )
 
-    if len(secret_ids)==0:
+    if len(secret_ids) == 0:
         raise NoSecretFoundError(owner=owner, label=label)
 
     secret_id = secret_ids[0]
@@ -210,16 +210,10 @@ def get_zookeeper_connection(
     return [data["username"]], data["uris"]
 
 
-def get_kafka_users(
-        unit_name: str, model_full_name: str
-):
+def get_kafka_users(unit_name: str, model_full_name: str):
     data = get_peer_relation_data(model_full_name, unit_name)
 
-    return [
-        key
-        for key in data
-        if re.match(r"(relation\-[\d]+)", key)
-    ]
+    return [key for key in data if re.match(r"(relation\-[\d]+)", key)]
 
 
 def check_properties(model_full_name: str, unit: str):
