@@ -112,6 +112,7 @@ async def deploy_cluster(ops_test: OpsTest, tls):
                 num_units=1,
                 series="jammy",
                 channel="3/edge",
+                revision=145,
             ),
         )
         await ops_test.model.wait_for_idle(
