@@ -51,12 +51,17 @@ jobs:
       fail-fast: false
       max-parallel: 5
       matrix:
-        tox-environments:
+        tox-environment:
           # - integration-terraform  # disabled until https://github.com/juju/terraform-provider-juju/issues/376 is resolved and released
           - integration-bundle
           - integration-e2e
           - integration-e2e-tls
-    name: ${{ matrix.tox-environments }}
+        juju:
+          - snap_channel: "3.4/stable"
+            agent: "3.4.2"
+          - snap_channel: "3.6/beta"
+            agent: "3.6-beta2"
+    name: ${{ matrix.tox-environment }}_${{ matrix.juju.agent || matrix.juju.snap_channel }}
     needs:
       - build
       - pack
@@ -70,8 +75,8 @@ jobs:
         uses: charmed-kubernetes/actions-operator@main
         with:
           provider: lxd
-          juju-channel: 3.4/stable
-          bootstrap-options: "--agent-version 3.4.2"
+          juju-channel: ${{ matrix.juju.snap_channel }}
+          bootstrap-options: "--agent-version ${{ matrix.juju.agent }}"
       - name: Download packed charm(s)
         uses: actions/download-artifact@v3
         with:
@@ -88,6 +93,6 @@ jobs:
             echo "mark_expression=not unstable" >> $GITHUB_OUTPUT
           fi
       - name: Run integration tests
-        run: tox run -e ${{ matrix.tox-environments }} -- -m '${{ steps.select-tests.outputs.mark_expression }}'
+        run: tox run -e ${{ matrix.tox-environment }} -- -m '${{ steps.select-tests.outputs.mark_expression }}'
         env:
           CI_PACKED_CHARMS: ${{ needs.build.outputs.charms }}
