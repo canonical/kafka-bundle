@@ -3,7 +3,7 @@ applications:
     channel: 3/edge
     charm: kafka
     num_units: 1
-    revision: 177
+    revision: 183
     series: jammy
   self-signed-certificates:
     channel: latest/stable
@@ -17,7 +17,7 @@ applications:
     channel: 3/edge
     charm: zookeeper
     num_units: 3
-    revision: 137
+    revision: 147
     series: jammy
 description: A fast, secure and fault-tolerant Apache Kafka, supported by Apache ZooKeeper
 issues: https://github.com/canonical/kafka-bundle/issues/new

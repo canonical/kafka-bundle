@@ -5,6 +5,7 @@
 import logging
 import random
 import string
+from subprocess import PIPE, check_output
 from typing import Dict
 
 from juju.unit import Unit
@@ -120,3 +121,29 @@ async def fetch_action_stop_process(unit: Unit) -> Dict:
 def get_random_topic() -> str:
     """Return a random topic name."""
     return f"topic-{''.join(random.choices(string.ascii_lowercase, k=4))}"
+
+
+def write_topic_message_size_config(
+    model_full_name: str, app_name: str, topic: str, size: int
+) -> None:
+    result = check_output(
+        f"JUJU_MODEL={model_full_name} juju ssh {app_name}/0 sudo -i 'charmed-kafka.configs --bootstrap-server localhost:9092 "
+        f"--entity-type topics --entity-name {topic} --alter --add-config max.message.bytes={size} --command-config /var/snap/charmed-kafka/current/etc/kafka/client.properties'",
+        stderr=PIPE,
+        shell=True,
+        universal_newlines=True,
+    )
+
+    assert f"Completed updating config for topic {topic}." in result
+
+
+def read_topic_config(model_full_name: str, app_name: str, topic: str) -> str:
+    result = check_output(
+        f"JUJU_MODEL={model_full_name} juju ssh {app_name}/0 sudo -i 'charmed-kafka.configs --bootstrap-server localhost:9092 "
+        f"--entity-type topics --entity-name {topic} --describe --command-config /var/snap/charmed-kafka/current/etc/kafka/client.properties'",
+        stderr=PIPE,
+        shell=True,
+        universal_newlines=True,
+    )
+
+    return result

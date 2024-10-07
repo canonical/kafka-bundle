@@ -35,6 +35,7 @@ jobs:
         tox-environments:
           - integration-e2e-basic-flow
           - integration-e2e-password-rotation
+          - integration-e2e-backup
         options:
           - 
           - --tls
