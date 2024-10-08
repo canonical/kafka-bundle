@@ -5,7 +5,7 @@
 import logging
 import random
 import string
-from subprocess import PIPE, check_output
+from subprocess import PIPE, STDOUT, CalledProcessError, check_output
 from typing import Dict
 
 from juju.unit import Unit
@@ -123,27 +123,50 @@ def get_random_topic() -> str:
     return f"topic-{''.join(random.choices(string.ascii_lowercase, k=4))}"
 
 
+def create_topic(model_full_name: str, app_name: str, topic: str) -> None:
+    try:
+        check_output(
+            f"JUJU_MODEL={model_full_name} juju ssh {app_name}/0 sudo -i 'charmed-kafka.topics --create --topic {topic} --bootstrap-server localhost:19092 "
+            f"--command-config /var/snap/charmed-kafka/current/etc/kafka/client.properties'",
+            stderr=STDOUT,
+            shell=True,
+            universal_newlines=True,
+        )
+
+    except CalledProcessError as e:
+        logger.error(f"command '{e.cmd}' return with error (code {e.returncode}): {e.output}")
+        raise
+
+
 def write_topic_message_size_config(
     model_full_name: str, app_name: str, topic: str, size: int
 ) -> None:
-    result = check_output(
-        f"JUJU_MODEL={model_full_name} juju ssh {app_name}/0 sudo -i 'charmed-kafka.configs --bootstrap-server localhost:9092 "
-        f"--entity-type topics --entity-name {topic} --alter --add-config max.message.bytes={size} --command-config /var/snap/charmed-kafka/current/etc/kafka/client.properties'",
-        stderr=PIPE,
-        shell=True,
-        universal_newlines=True,
-    )
+    try:
+        result = check_output(
+            f"JUJU_MODEL={model_full_name} juju ssh {app_name}/0 sudo -i 'charmed-kafka.configs --bootstrap-server localhost:19092 "
+            f"--entity-type topics --entity-name {topic} --alter --add-config max.message.bytes={size} --command-config /var/snap/charmed-kafka/current/etc/kafka/client.properties'",
+            stderr=STDOUT,
+            shell=True,
+            universal_newlines=True,
+        )
 
+    except CalledProcessError as e:
+        logger.error(f"command '{e.cmd}' return with error (code {e.returncode}): {e.output}")
+        raise
     assert f"Completed updating config for topic {topic}." in result
 
 
 def read_topic_config(model_full_name: str, app_name: str, topic: str) -> str:
-    result = check_output(
-        f"JUJU_MODEL={model_full_name} juju ssh {app_name}/0 sudo -i 'charmed-kafka.configs --bootstrap-server localhost:9092 "
-        f"--entity-type topics --entity-name {topic} --describe --command-config /var/snap/charmed-kafka/current/etc/kafka/client.properties'",
-        stderr=PIPE,
-        shell=True,
-        universal_newlines=True,
-    )
+    try:
+        result = check_output(
+            f"JUJU_MODEL={model_full_name} juju ssh {app_name}/0 sudo -i 'charmed-kafka.configs --bootstrap-server localhost:19092 "
+            f"--entity-type topics --entity-name {topic} --describe --command-config /var/snap/charmed-kafka/current/etc/kafka/client.properties'",
+            stderr=PIPE,
+            shell=True,
+            universal_newlines=True,
+        )
 
+    except CalledProcessError as e:
+        logger.error(f"command '{e.cmd}' return with error (code {e.returncode}): {e.output}")
+        raise
     return result

@@ -13,6 +13,7 @@ import pytest_microceph
 from mypy_boto3_s3.service_resource import Bucket
 from pytest_operator.plugin import OpsTest
 from tests.integration.e2e.helpers import (
+    create_topic,
     get_random_topic,
     read_topic_config,
     write_topic_message_size_config,
@@ -66,7 +67,12 @@ async def test_deploy(ops_test: OpsTest, deploy_cluster):
 
 @pytest.mark.abort_on_fail
 async def test_set_up_deployment(
-    ops_test: OpsTest, kafka, zookeeper, deploy_data_integrator, cloud_configs, cloud_credentials
+    ops_test: OpsTest,
+    kafka,
+    zookeeper,
+    cloud_configs,
+    cloud_credentials,
+    s3_bucket,
 ):
     assert ops_test.model.applications[kafka].status == "active"
     assert ops_test.model.applications[zookeeper].status == "active"
@@ -93,32 +99,24 @@ async def test_set_up_deployment(
     # bucket exists
     assert s3_bucket.meta.client.head_bucket(Bucket=s3_bucket.name)
 
-    logger.info("Creating producer")
-
-    data_integrator_producer = await deploy_data_integrator(
-        {"topic-name": TOPIC, "extra-user-roles": "producer"}
-    )
-
-    await ops_test.model.add_relation(data_integrator_producer, kafka)
-    await ops_test.model.wait_for_idle(
-        apps=[data_integrator_producer, kafka], idle_period=30, status="active", timeout=1800
-    )
-
 
 @pytest.mark.abort_on_fail
 async def test_create_restore_backup(ops_test: OpsTest, s3_bucket: Bucket, kafka, zookeeper):
 
-    logger.info("Creating initial backup")
-
     initial_size = 123_123
     updated_size = 456_456
+
+    logger.info("Creating topic")
+
+    create_topic(model_full_name=ops_test.model_full_name, app_name=kafka, topic=TOPIC)
     write_topic_message_size_config(
         model_full_name=ops_test.model_full_name, app_name=kafka, topic=TOPIC, size=initial_size
     )
-
     assert f"max.message.bytes={initial_size}" in read_topic_config(
         model_full_name=ops_test.model_full_name, app_name=kafka, topic=TOPIC
     )
+
+    logger.info("Creating initial backup")
 
     for unit in ops_test.model.applications[zookeeper].units:
         if await unit.is_leader_from_status():
@@ -151,3 +149,6 @@ async def test_create_restore_backup(ops_test: OpsTest, s3_bucket: Bucket, kafka
     assert f"max.message.bytes={initial_size}" in read_topic_config(
         model_full_name=ops_test.model_full_name, app_name=kafka, topic=TOPIC
     )
+
+    assert ops_test.model.applications[kafka].status == "active"
+    assert ops_test.model.applications[zookeeper].status == "active"
