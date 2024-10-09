@@ -131,11 +131,21 @@ def create_topic(model_full_name: str, app_name: str, topic: str) -> None:
         app_name: Kafka app name in the Juju model
         topic: the desired topic to configure
     """
-    container = "--container kafka" if SUBSTRATE == "k8s" else ""
+    if SUBSTRATE == "k8s":
+        container_arg = "--container kafka"
+        sudo_arg = ""
+        bin_cmd = "/opt/kafka/bin/kafka-topics.sh"
+        config_file = "/etc/kafka/client.properties"
+    else:
+        container_arg = ""
+        sudo_arg = "sudo -i"
+        bin_cmd = "charmed-kafka.topics"
+        config_file = "/var/snap/charmed-kafka/current/etc/kafka/client.properties"
+
     try:
         check_output(
-            f"JUJU_MODEL={model_full_name} juju ssh {container} {app_name}/0 sudo -i 'charmed-kafka.topics --create --topic {topic} --bootstrap-server localhost:19092 "
-            f"--command-config /var/snap/charmed-kafka/current/etc/kafka/client.properties'",
+            f"JUJU_MODEL={model_full_name} juju ssh {container_arg} {app_name}/0 {sudo_arg} '{bin_cmd} --create --topic {topic} --bootstrap-server localhost:19092 "
+            f"--command-config {config_file}'",
             stderr=STDOUT,
             shell=True,
             universal_newlines=True,
@@ -157,11 +167,21 @@ def write_topic_message_size_config(
         topic: the desired topic to configure
         size: the maximal message size in bytes
     """
-    container = "--container kafka" if SUBSTRATE == "k8s" else ""
+    if SUBSTRATE == "k8s":
+        container_arg = "--container kafka"
+        sudo_arg = ""
+        bin_cmd = "/opt/kafka/bin/kafka-configs.sh"
+        config_file = "/etc/kafka/client.properties"
+    else:
+        container_arg = ""
+        sudo_arg = "sudo -i"
+        bin_cmd = "charmed-kafka.configs"
+        config_file = "/var/snap/charmed-kafka/current/etc/kafka/client.properties"
+
     try:
         result = check_output(
-            f"JUJU_MODEL={model_full_name} juju ssh {container} {app_name}/0 sudo -i 'charmed-kafka.configs --bootstrap-server localhost:19092 "
-            f"--entity-type topics --entity-name {topic} --alter --add-config max.message.bytes={size} --command-config /var/snap/charmed-kafka/current/etc/kafka/client.properties'",
+            f"JUJU_MODEL={model_full_name} juju ssh {container_arg} {app_name}/0 {sudo_arg} '{bin_cmd} --bootstrap-server localhost:19092 "
+            f"--entity-type topics --entity-name {topic} --alter --add-config max.message.bytes={size} --command-config {config_file}'",
             stderr=STDOUT,
             shell=True,
             universal_newlines=True,
@@ -181,11 +201,21 @@ def read_topic_config(model_full_name: str, app_name: str, topic: str) -> str:
         app_name: Kafka app name in the Juju model
         topic: the desired topic to read the configuration from
     """
-    container = "--container kafka" if SUBSTRATE == "k8s" else ""
+    if SUBSTRATE == "k8s":
+        container_arg = "--container kafka"
+        sudo_arg = ""
+        bin_cmd = "/opt/kafka/bin/kafka-configs.sh"
+        config_file = "/etc/kafka/client.properties"
+    else:
+        container_arg = ""
+        sudo_arg = "sudo -i"
+        bin_cmd = "charmed-kafka.configs"
+        config_file = "/var/snap/charmed-kafka/current/etc/kafka/client.properties"
+
     try:
         result = check_output(
-            f"JUJU_MODEL={model_full_name} juju ssh {container} {app_name}/0 sudo -i 'charmed-kafka.configs --bootstrap-server localhost:19092 "
-            f"--entity-type topics --entity-name {topic} --describe --command-config /var/snap/charmed-kafka/current/etc/kafka/client.properties'",
+            f"JUJU_MODEL={model_full_name} juju ssh {container_arg} {app_name}/0 {sudo_arg} '{bin_cmd} --bootstrap-server localhost:19092 "
+            f"--entity-type topics --entity-name {topic} --describe --command-config {config_file}'",
             stderr=PIPE,
             shell=True,
             universal_newlines=True,
