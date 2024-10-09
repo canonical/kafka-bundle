@@ -6,7 +6,6 @@ import logging
 import random
 import string
 from subprocess import PIPE, STDOUT, CalledProcessError, check_output
-from typing import Dict
 
 from juju.unit import Unit
 from pymongo import MongoClient
@@ -62,7 +61,7 @@ def check_produced_and_consumed_messages(uris: str, collection_name: str):
         raise e
 
 
-async def fetch_action_get_credentials(unit: Unit) -> Dict:
+async def fetch_action_get_credentials(unit: Unit) -> dict:
     """Helper to run an action to fetch connection info.
 
     Args:
@@ -75,7 +74,7 @@ async def fetch_action_get_credentials(unit: Unit) -> Dict:
     return result.results
 
 
-def get_action_parameters(credentials: Dict[str, str], topic_name: str):
+def get_action_parameters(credentials: dict, topic_name: str):
     """Construct parameter dictionary needed to stark consumer/producer with the action."""
     logger.info(f"Credentials: {credentials}")
     assert "kafka" in credentials
@@ -90,7 +89,7 @@ def get_action_parameters(credentials: Dict[str, str], topic_name: str):
     return action_data
 
 
-async def fetch_action_start_process(unit: Unit, action_params: Dict[str, str]) -> Dict:
+async def fetch_action_start_process(unit: Unit, action_params: dict[str, str]) -> dict:
     """Helper to run an action to start consumer/producer.
 
     Args:
@@ -105,7 +104,7 @@ async def fetch_action_start_process(unit: Unit, action_params: Dict[str, str]) 
     return result.results
 
 
-async def fetch_action_stop_process(unit: Unit) -> Dict:
+async def fetch_action_stop_process(unit: Unit) -> dict:
     """Helper to run an action to stop consumer/producer.
 
     Args:
@@ -125,6 +124,13 @@ def get_random_topic() -> str:
 
 
 def create_topic(model_full_name: str, app_name: str, topic: str) -> None:
+    """Helper to create a topic.
+
+    Args:
+        model_full_name: Juju model
+        app_name: Kafka app name in the Juju model
+        topic: the desired topic to configure
+    """
     container = "--container kafka" if SUBSTRATE == "k8s" else ""
     try:
         check_output(
@@ -143,6 +149,14 @@ def create_topic(model_full_name: str, app_name: str, topic: str) -> None:
 def write_topic_message_size_config(
     model_full_name: str, app_name: str, topic: str, size: int
 ) -> None:
+    """Helper to configure a topic's message max size.
+
+    Args:
+        model_full_name: Juju model
+        app_name: Kafka app name in the Juju model
+        topic: the desired topic to configure
+        size: the maximal message size in bytes
+    """
     container = "--container kafka" if SUBSTRATE == "k8s" else ""
     try:
         result = check_output(
