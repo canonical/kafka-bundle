@@ -152,7 +152,7 @@ def create_topic(model_full_name: str, app_name: str, topic: str) -> None:
     args = _get_exec_args_params()
     try:
         check_output(
-            f"JUJU_MODEL={model_full_name} juju ssh {args.container_arg} {app_name}/0 {args.sudo_arg} "
+            f"JUJU_MODEL={model_full_name} juju ssh {args.container_arg} {app_name}/leader {args.sudo_arg} "
             f"'{args.bin_cmd.format(sub='topics')} --create --topic {topic} --bootstrap-server localhost:19092 "
             f"--command-config {args.config_file}'",
             stderr=STDOUT,
@@ -179,7 +179,7 @@ def write_topic_message_size_config(
     args = _get_exec_args_params()
     try:
         result = check_output(
-            f"JUJU_MODEL={model_full_name} juju ssh {args.container_arg} {app_name}/0 {args.sudo_arg} "
+            f"JUJU_MODEL={model_full_name} juju ssh {args.container_arg} {app_name}/leader {args.sudo_arg} "
             f"'{args.bin_cmd.format(sub='configs')} --bootstrap-server localhost:19092 "
             f"--entity-type topics --entity-name {topic} --alter --add-config max.message.bytes={size} --command-config {args.config_file}'",
             stderr=STDOUT,
@@ -204,7 +204,7 @@ def read_topic_config(model_full_name: str, app_name: str, topic: str) -> str:
     args = _get_exec_args_params()
     try:
         result = check_output(
-            f"JUJU_MODEL={model_full_name} juju ssh {args.container_arg} {app_name}/0 {args.sudo_arg} "
+            f"JUJU_MODEL={model_full_name} juju ssh {args.container_arg} {app_name}/leader {args.sudo_arg} "
             f"'{args.bin_cmd.format(sub='configs')} --bootstrap-server localhost:19092 "
             f"--entity-type topics --entity-name {topic} --describe --command-config {args.config_file}'",
             stderr=PIPE,
