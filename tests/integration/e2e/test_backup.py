@@ -18,7 +18,7 @@ from tests.integration.e2e.helpers import (
     read_topic_config,
     write_topic_message_size_config,
 )
-from tests.integration.e2e.literals import KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME
+from tests.integration.e2e.literals import ZOOKEEPER_CHARM_NAME
 
 logger = logging.getLogger(__name__)
 
@@ -166,39 +166,27 @@ async def test_new_cluster_migration(ops_test: OpsTest, s3_bucket: Bucket, kafka
 
     logging.info("Removing and redeploying apps")
 
-    await ops_test.model.applications[kafka].remove()
     await ops_test.model.applications[zookeeper].remove()
 
-    await asyncio.sleep(60)
-
-    await asyncio.gather(
-        ops_test.model.deploy(
-            KAFKA_CHARM_NAME,
-            application_name=KAFKA_CHARM_NAME,
-            num_units=1,
-            series="jammy",
-            channel="3/edge",
-        ),
-        ops_test.model.deploy(
-            ZOOKEEPER_CHARM_NAME,
-            application_name=ZOOKEEPER_CHARM_NAME,
-            num_units=3,
-            series="jammy",
-            channel="3/edge",
-        ),
+    await ops_test.model.deploy(
+        ZOOKEEPER_CHARM_NAME,
+        application_name="new-zk",
+        num_units=3,
+        series="jammy",
+        channel="3/edge",
     )
-    await ops_test.model.wait_for_idle(apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME], timeout=3600)
+    await ops_test.model.wait_for_idle(apps=[kafka, "new-zk"], timeout=3600)
 
-    await ops_test.model.add_relation(ZOOKEEPER_CHARM_NAME, S3_INTEGRATOR)
+    await ops_test.model.add_relation("new-zk", S3_INTEGRATOR)
     await ops_test.model.wait_for_idle(
-        apps=[zookeeper, S3_INTEGRATOR],
+        apps=["new-zk", S3_INTEGRATOR],
         status="active",
         timeout=1000,
     )
 
     logging.info("Restoring backup")
 
-    for unit in ops_test.model.applications[ZOOKEEPER_CHARM_NAME].units:
+    for unit in ops_test.model.applications["new-zk"].units:
         if await unit.is_leader_from_status():
             leader_unit = unit
 
@@ -211,17 +199,17 @@ async def test_new_cluster_migration(ops_test: OpsTest, s3_bucket: Bucket, kafka
     backup_to_restore = backups[0]["id"]
     list_action = await leader_unit.run_action("restore", **{"backup-id": backup_to_restore})
     await ops_test.model.wait_for_idle(
-        apps=[ZOOKEEPER_CHARM_NAME], status="active", timeout=1000, idle_period=30
+        apps=["new-zk"], status="active", timeout=1000, idle_period=30
     )
 
-    await ops_test.model.add_relation(KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME)
+    await ops_test.model.add_relation(kafka, "new-zk")
     await ops_test.model.wait_for_idle(
-        apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME],
+        apps=[kafka, "new-zk"],
         idle_period=30,
         status="active",
         timeout=1200,
     )
 
     assert f"max.message.bytes={NON_DEFAULT_TOPIC_SIZE}" in read_topic_config(
-        model_full_name=ops_test.model_full_name, app_name=KAFKA_CHARM_NAME, topic=TOPIC
+        model_full_name=ops_test.model_full_name, app_name=kafka, topic=TOPIC
     )
