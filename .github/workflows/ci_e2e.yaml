@@ -3,7 +3,7 @@
 name: Tests (End-to-End)
 
 on:
-  # pull_request:
+  pull_request:
   workflow_dispatch:
   workflow_call:
   schedule:
