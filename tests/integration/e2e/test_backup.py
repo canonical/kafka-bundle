@@ -18,12 +18,16 @@ from tests.integration.e2e.helpers import (
     read_topic_config,
     write_topic_message_size_config,
 )
+from tests.integration.e2e.literals import KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME
 
 logger = logging.getLogger(__name__)
 
 TOPIC = get_random_topic()
 S3_INTEGRATOR = "s3-integrator"
 S3_CHANNEL = "latest/stable"
+
+NON_DEFAULT_TOPIC_SIZE = 123_123
+UPDATED_TOPIC_SIZE = 456_456
 
 
 @pytest.fixture(scope="session")
@@ -101,18 +105,18 @@ async def test_set_up_deployment(
 
 
 @pytest.mark.abort_on_fail
-async def test_create_restore_backup(ops_test: OpsTest, s3_bucket: Bucket, kafka, zookeeper):
-
-    initial_size = 123_123
-    updated_size = 456_456
+async def test_point_in_time_recovery(ops_test: OpsTest, s3_bucket: Bucket, kafka, zookeeper):
 
     logger.info("Creating topic")
 
     create_topic(model_full_name=ops_test.model_full_name, app_name=kafka, topic=TOPIC)
     write_topic_message_size_config(
-        model_full_name=ops_test.model_full_name, app_name=kafka, topic=TOPIC, size=initial_size
+        model_full_name=ops_test.model_full_name,
+        app_name=kafka,
+        topic=TOPIC,
+        size=NON_DEFAULT_TOPIC_SIZE,
     )
-    assert f"max.message.bytes={initial_size}" in read_topic_config(
+    assert f"max.message.bytes={NON_DEFAULT_TOPIC_SIZE}" in read_topic_config(
         model_full_name=ops_test.model_full_name, app_name=kafka, topic=TOPIC
     )
 
@@ -134,10 +138,13 @@ async def test_create_restore_backup(ops_test: OpsTest, s3_bucket: Bucket, kafka
     logger.info("Restoring backup")
 
     write_topic_message_size_config(
-        model_full_name=ops_test.model_full_name, app_name=kafka, topic=TOPIC, size=updated_size
+        model_full_name=ops_test.model_full_name,
+        app_name=kafka,
+        topic=TOPIC,
+        size=UPDATED_TOPIC_SIZE,
     )
 
-    assert f"max.message.bytes={updated_size}" in read_topic_config(
+    assert f"max.message.bytes={UPDATED_TOPIC_SIZE}" in read_topic_config(
         model_full_name=ops_test.model_full_name, app_name=kafka, topic=TOPIC
     )
 
@@ -146,9 +153,75 @@ async def test_create_restore_backup(ops_test: OpsTest, s3_bucket: Bucket, kafka
     await ops_test.model.wait_for_idle(
         apps=[zookeeper, kafka], status="active", timeout=1000, idle_period=30
     )
-    assert f"max.message.bytes={initial_size}" in read_topic_config(
+    assert f"max.message.bytes={NON_DEFAULT_TOPIC_SIZE}" in read_topic_config(
         model_full_name=ops_test.model_full_name, app_name=kafka, topic=TOPIC
     )
 
     assert ops_test.model.applications[kafka].status == "active"
     assert ops_test.model.applications[zookeeper].status == "active"
+
+
+@pytest.mark.abort_on_fail
+async def test_new_cluster_migration(ops_test: OpsTest, s3_bucket: Bucket, kafka, zookeeper):
+
+    logging.info("Removing and redeploying apps")
+
+    await ops_test.model.applications[kafka].remove()
+    await ops_test.model.applications[zookeeper].remove()
+
+    await asyncio.sleep(60)
+
+    await asyncio.gather(
+        ops_test.model.deploy(
+            KAFKA_CHARM_NAME,
+            application_name=KAFKA_CHARM_NAME,
+            num_units=1,
+            series="jammy",
+            channel="3/edge",
+        ),
+        ops_test.model.deploy(
+            ZOOKEEPER_CHARM_NAME,
+            application_name=ZOOKEEPER_CHARM_NAME,
+            num_units=3,
+            series="jammy",
+            channel="3/edge",
+        ),
+    )
+    await ops_test.model.wait_for_idle(apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME], timeout=3600)
+
+    await ops_test.model.add_relation(ZOOKEEPER_CHARM_NAME, S3_INTEGRATOR)
+    await ops_test.model.wait_for_idle(
+        apps=[zookeeper, S3_INTEGRATOR],
+        status="active",
+        timeout=1000,
+    )
+
+    logging.info("Restoring backup")
+
+    for unit in ops_test.model.applications[ZOOKEEPER_CHARM_NAME].units:
+        if await unit.is_leader_from_status():
+            leader_unit = unit
+
+    list_action = await leader_unit.run_action("list-backups")
+    response = await list_action.wait()
+
+    backups = json.loads(response.results.get("backups", "[]"))
+    assert len(backups) == 1
+
+    backup_to_restore = backups[0]["id"]
+    list_action = await leader_unit.run_action("restore", **{"backup-id": backup_to_restore})
+    await ops_test.model.wait_for_idle(
+        apps=[ZOOKEEPER_CHARM_NAME], status="active", timeout=1000, idle_period=30
+    )
+
+    await ops_test.model.add_relation(KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME)
+    await ops_test.model.wait_for_idle(
+        apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME],
+        idle_period=30,
+        status="active",
+        timeout=1200,
+    )
+
+    assert f"max.message.bytes={NON_DEFAULT_TOPIC_SIZE}" in read_topic_config(
+        model_full_name=ops_test.model_full_name, app_name=KAFKA_CHARM_NAME, topic=TOPIC
+    )

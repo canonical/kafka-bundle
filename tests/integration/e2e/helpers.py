@@ -6,12 +6,15 @@ import logging
 import random
 import string
 from subprocess import PIPE, STDOUT, CalledProcessError, check_output
+from typing import NamedTuple
 
 from juju.unit import Unit
 from pymongo import MongoClient
 from tests.integration.e2e.literals import SUBSTRATE
 
 logger = logging.getLogger()
+
+ExecArgs = NamedTuple("ExecArgs", container_arg=str, sudo_arg=str, bin_cmd=str, config_file=str)
 
 
 def check_produced_and_consumed_messages(uris: str, collection_name: str):
@@ -123,6 +126,21 @@ def get_random_topic() -> str:
     return f"topic-{''.join(random.choices(string.ascii_lowercase, k=4))}"
 
 
+def _get_exec_args_params() -> ExecArgs:
+    if SUBSTRATE == "k8s":
+        container_arg = "--container kafka"
+        sudo_arg = ""
+        bin_cmd = "/opt/kafka/bin/kafka-{sub}.sh"
+        config_file = "/etc/kafka/client.properties"
+    else:
+        container_arg = ""
+        sudo_arg = "sudo -i"
+        bin_cmd = "charmed-kafka.{sub}"
+        config_file = "/var/snap/charmed-kafka/current/etc/kafka/client.properties"
+
+    return ExecArgs(container_arg, sudo_arg, bin_cmd, config_file)
+
+
 def create_topic(model_full_name: str, app_name: str, topic: str) -> None:
     """Helper to create a topic.
 
@@ -131,21 +149,12 @@ def create_topic(model_full_name: str, app_name: str, topic: str) -> None:
         app_name: Kafka app name in the Juju model
         topic: the desired topic to configure
     """
-    if SUBSTRATE == "k8s":
-        container_arg = "--container kafka"
-        sudo_arg = ""
-        bin_cmd = "/opt/kafka/bin/kafka-topics.sh"
-        config_file = "/etc/kafka/client.properties"
-    else:
-        container_arg = ""
-        sudo_arg = "sudo -i"
-        bin_cmd = "charmed-kafka.topics"
-        config_file = "/var/snap/charmed-kafka/current/etc/kafka/client.properties"
-
+    args = _get_exec_args_params()
     try:
         check_output(
-            f"JUJU_MODEL={model_full_name} juju ssh {container_arg} {app_name}/0 {sudo_arg} '{bin_cmd} --create --topic {topic} --bootstrap-server localhost:19092 "
-            f"--command-config {config_file}'",
+            f"JUJU_MODEL={model_full_name} juju ssh {args.container_arg} {app_name}/0 {args.sudo_arg} "
+            f"'{args.bin_cmd.format(sub='topics')} --create --topic {topic} --bootstrap-server localhost:19092 "
+            f"--command-config {args.config_file}'",
             stderr=STDOUT,
             shell=True,
             universal_newlines=True,
@@ -167,21 +176,12 @@ def write_topic_message_size_config(
         topic: the desired topic to configure
         size: the maximal message size in bytes
     """
-    if SUBSTRATE == "k8s":
-        container_arg = "--container kafka"
-        sudo_arg = ""
-        bin_cmd = "/opt/kafka/bin/kafka-configs.sh"
-        config_file = "/etc/kafka/client.properties"
-    else:
-        container_arg = ""
-        sudo_arg = "sudo -i"
-        bin_cmd = "charmed-kafka.configs"
-        config_file = "/var/snap/charmed-kafka/current/etc/kafka/client.properties"
-
+    args = _get_exec_args_params()
     try:
         result = check_output(
-            f"JUJU_MODEL={model_full_name} juju ssh {container_arg} {app_name}/0 {sudo_arg} '{bin_cmd} --bootstrap-server localhost:19092 "
-            f"--entity-type topics --entity-name {topic} --alter --add-config max.message.bytes={size} --command-config {config_file}'",
+            f"JUJU_MODEL={model_full_name} juju ssh {args.container_arg} {app_name}/0 {args.sudo_arg} "
+            f"'{args.bin_cmd.format(sub='configs')} --bootstrap-server localhost:19092 "
+            f"--entity-type topics --entity-name {topic} --alter --add-config max.message.bytes={size} --command-config {args.config_file}'",
             stderr=STDOUT,
             shell=True,
             universal_newlines=True,
@@ -201,21 +201,12 @@ def read_topic_config(model_full_name: str, app_name: str, topic: str) -> str:
         app_name: Kafka app name in the Juju model
         topic: the desired topic to read the configuration from
     """
-    if SUBSTRATE == "k8s":
-        container_arg = "--container kafka"
-        sudo_arg = ""
-        bin_cmd = "/opt/kafka/bin/kafka-configs.sh"
-        config_file = "/etc/kafka/client.properties"
-    else:
-        container_arg = ""
-        sudo_arg = "sudo -i"
-        bin_cmd = "charmed-kafka.configs"
-        config_file = "/var/snap/charmed-kafka/current/etc/kafka/client.properties"
-
+    args = _get_exec_args_params()
     try:
         result = check_output(
-            f"JUJU_MODEL={model_full_name} juju ssh {container_arg} {app_name}/0 {sudo_arg} '{bin_cmd} --bootstrap-server localhost:19092 "
-            f"--entity-type topics --entity-name {topic} --describe --command-config {config_file}'",
+            f"JUJU_MODEL={model_full_name} juju ssh {args.container_arg} {app_name}/0 {args.sudo_arg} "
+            f"'{args.bin_cmd.format(sub='configs')} --bootstrap-server localhost:19092 "
+            f"--entity-type topics --entity-name {topic} --describe --command-config {args.config_file}'",
             stderr=PIPE,
             shell=True,
             universal_newlines=True,
