@@ -5,12 +5,16 @@
 import logging
 import random
 import string
-from typing import Dict
+from subprocess import PIPE, STDOUT, CalledProcessError, check_output
+from typing import NamedTuple
 
 from juju.unit import Unit
 from pymongo import MongoClient
+from tests.integration.e2e.literals import KAFKA_INTERNAL_PORT, SUBSTRATE
 
 logger = logging.getLogger()
+
+ExecArgs = NamedTuple("ExecArgs", container_arg=str, sudo_arg=str, bin_cmd=str, config_file=str)
 
 
 def check_produced_and_consumed_messages(uris: str, collection_name: str):
@@ -60,7 +64,7 @@ def check_produced_and_consumed_messages(uris: str, collection_name: str):
         raise e
 
 
-async def fetch_action_get_credentials(unit: Unit) -> Dict:
+async def fetch_action_get_credentials(unit: Unit) -> dict:
     """Helper to run an action to fetch connection info.
 
     Args:
@@ -73,7 +77,7 @@ async def fetch_action_get_credentials(unit: Unit) -> Dict:
     return result.results
 
 
-def get_action_parameters(credentials: Dict[str, str], topic_name: str):
+def get_action_parameters(credentials: dict, topic_name: str):
     """Construct parameter dictionary needed to stark consumer/producer with the action."""
     logger.info(f"Credentials: {credentials}")
     assert "kafka" in credentials
@@ -88,7 +92,7 @@ def get_action_parameters(credentials: Dict[str, str], topic_name: str):
     return action_data
 
 
-async def fetch_action_start_process(unit: Unit, action_params: Dict[str, str]) -> Dict:
+async def fetch_action_start_process(unit: Unit, action_params: dict[str, str]) -> dict:
     """Helper to run an action to start consumer/producer.
 
     Args:
@@ -103,7 +107,7 @@ async def fetch_action_start_process(unit: Unit, action_params: Dict[str, str]) 
     return result.results
 
 
-async def fetch_action_stop_process(unit: Unit) -> Dict:
+async def fetch_action_stop_process(unit: Unit) -> dict:
     """Helper to run an action to stop consumer/producer.
 
     Args:
@@ -120,3 +124,95 @@ async def fetch_action_stop_process(unit: Unit) -> Dict:
 def get_random_topic() -> str:
     """Return a random topic name."""
     return f"topic-{''.join(random.choices(string.ascii_lowercase, k=4))}"
+
+
+def _get_exec_args_params() -> ExecArgs:
+    if SUBSTRATE == "k8s":
+        container_arg = "--container kafka"
+        sudo_arg = ""
+        bin_cmd = "/opt/kafka/bin/kafka-{sub}.sh"
+        config_file = "/etc/kafka/client.properties"
+    else:
+        container_arg = ""
+        sudo_arg = "sudo -i"
+        bin_cmd = "charmed-kafka.{sub}"
+        config_file = "/var/snap/charmed-kafka/current/etc/kafka/client.properties"
+
+    return ExecArgs(container_arg, sudo_arg, bin_cmd, config_file)
+
+
+def create_topic(model_full_name: str, app_name: str, topic: str) -> None:
+    """Helper to create a topic.
+
+    Args:
+        model_full_name: Juju model
+        app_name: Kafka app name in the Juju model
+        topic: the desired topic to configure
+    """
+    args = _get_exec_args_params()
+    try:
+        check_output(
+            f"JUJU_MODEL={model_full_name} juju ssh {args.container_arg} {app_name}/leader {args.sudo_arg} "
+            f"'{args.bin_cmd.format(sub='topics')} --create --topic {topic} --bootstrap-server localhost:{KAFKA_INTERNAL_PORT} "
+            f"--command-config {args.config_file}'",
+            stderr=STDOUT,
+            shell=True,
+            universal_newlines=True,
+        )
+
+    except CalledProcessError as e:
+        logger.error(f"command '{e.cmd}' return with error (code {e.returncode}): {e.output}")
+        raise
+
+
+def write_topic_message_size_config(
+    model_full_name: str, app_name: str, topic: str, size: int
+) -> None:
+    """Helper to configure a topic's message max size.
+
+    Args:
+        model_full_name: Juju model
+        app_name: Kafka app name in the Juju model
+        topic: the desired topic to configure
+        size: the maximal message size in bytes
+    """
+    args = _get_exec_args_params()
+    try:
+        result = check_output(
+            f"JUJU_MODEL={model_full_name} juju ssh {args.container_arg} {app_name}/leader {args.sudo_arg} "
+            f"'{args.bin_cmd.format(sub='configs')} --bootstrap-server localhost:{KAFKA_INTERNAL_PORT} "
+            f"--entity-type topics --entity-name {topic} --alter --add-config max.message.bytes={size} --command-config {args.config_file}'",
+            stderr=STDOUT,
+            shell=True,
+            universal_newlines=True,
+        )
+
+    except CalledProcessError as e:
+        logger.error(f"command '{e.cmd}' return with error (code {e.returncode}): {e.output}")
+        raise
+    assert f"Completed updating config for topic {topic}." in result
+
+
+def read_topic_config(model_full_name: str, app_name: str, topic: str) -> str:
+    """Helper to get a topic's configuration.
+
+    Args:
+        model_full_name: Juju model
+        app_name: Kafka app name in the Juju model
+        topic: the desired topic to read the configuration from
+    """
+    args = _get_exec_args_params()
+    try:
+        result = check_output(
+            f"JUJU_MODEL={model_full_name} juju ssh {args.container_arg} {app_name}/leader {args.sudo_arg} "
+            f"'{args.bin_cmd.format(sub='configs')} --bootstrap-server localhost:{KAFKA_INTERNAL_PORT} "
+            f"--entity-type topics --entity-name {topic} --describe --command-config {args.config_file}'",
+            stderr=PIPE,
+            shell=True,
+            universal_newlines=True,
+        )
+
+    except CalledProcessError as e:
+        logger.error(f"command '{e.cmd}' return with error (code {e.returncode}): {e.output}")
+        raise
+    return result
