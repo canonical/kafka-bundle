@@ -14,3 +14,5 @@ TLS_REL_NAME = "certificates"
 DATABASE_CHARM_NAME = "mongodb"
 KAFKA_TEST_APP_CHARM_NAME = "kafka-test-app"
 SUBSTRATE = "vm"
+
+KAFKA_INTERNAL_PORT = 19092
