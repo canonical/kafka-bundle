@@ -5,3 +5,7 @@
 *.tfstate*
 .terraform*
 .idea
+build/
+parts/
+prime/
+stage/

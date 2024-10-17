@@ -14,7 +14,7 @@ build: clean lint
 	cp $(FOLDER)/charmcraft.yaml $(BUILD_DIRECTORY)
 	cp $(FOLDER)/metadata.yaml $(BUILD_DIRECTORY)
 	cp $(FOLDER)/README.md $(BUILD_DIRECTORY)
-	charmcraft pack --destructive-mode --project-dir $(BUILD_DIRECTORY)
+	charmcraft pack --destructive-mode --project-dir $(BUILD_DIRECTORY) --output $(BUILD_DIRECTORY)
 
 deploy: build
 	juju deploy $(BUILD_DIRECTORY)/bundle.zip
