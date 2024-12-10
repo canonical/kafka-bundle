@@ -51,8 +51,8 @@ jobs:
         juju:
           - snap_channel: "3.4/stable"
             agent: "3.4.2"
-          - snap_channel: "3.6/beta"
-            agent: "3.6-beta2"
+          - snap_channel: "3.6/stable"
+            agent: "3.6.0"
     name: ${{ matrix.tests.tox-environment }}_${{ matrix.tests.tls }}_${{ matrix.juju.agent || matrix.juju.snap_channel }}
     needs:
       - lint
