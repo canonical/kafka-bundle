@@ -69,13 +69,16 @@ jobs:
           fi
       - name: Run integration e2e tests
         run: |
-          export TLS=${{ matrix.tls }}
-          
-          if [ -z "${TLS}" ]; then
-            FLAGS="${{matrix.options}} --tls"
+          if [ -z "${{ matrix.tests.tls }}" ]; then
+            FLAGS="${{matrix.options}}"
           else
             FLAGS="${{matrix.options}} --tls"
           fi
           
-          tox run -e render
-          tox run -e ${{ matrix.tox-environments }} -- -m '${{ steps.select-tests.outputs.mark_expression }}' $FLAGS
+          make build TLS=${{ matrix.tests.tls }}
+          echo "======================"
+          echo "Bundle being deployed:"
+          echo "======================"
+          cat build/bundle.yaml
+          echo "======================"
+          tox run -e ${{ matrix.tests.tox-environment }} -- -m '${{ steps.select-tests.outputs.mark_expression }}' $FLAGS

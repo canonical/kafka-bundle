@@ -1,6 +1,6 @@
-TRACK = 3
+TRACK=3
 TLS=true
-BUILD_DIRECTORY := ./build
+BUILD_DIRECTORY=./build
 FOLDER=./releases/$(TRACK)/kafka
 
 clean:
@@ -12,7 +12,7 @@ lint:
 build: clean lint
 	mkdir -p $(BUILD_DIRECTORY)
 
-	tox -e render
+	TLS=$(TLS) BUILD_DIRECTORY=$(BUILD_DIRECTORY) FOLDER=$(FOLDER) tox -e render
 
 	cd $(BUILD_DIRECTORY) && charmcraft pack --destructive-mode
 

@@ -53,7 +53,7 @@ jobs:
             agent: "3.4.2"
           - snap_channel: "3.6/beta"
             agent: "3.6-beta2"
-    name: ${{ matrix.tox-environment }}_${{ matrix.juju.agent || matrix.juju.snap_channel }}
+    name: ${{ matrix.tests.tox-environment }}_${{ matrix.tests.tls }}_${{ matrix.juju.agent || matrix.juju.snap_channel }}
     needs:
       - lint
     runs-on: ubuntu-latest
@@ -85,13 +85,16 @@ jobs:
           fi
       - name: Run integration tests
         run: | 
-          export TLS=${{ matrix.tls }}
-          
-          if [ -z "${TLS}" ]; then
-            FLAGS="${{matrix.options}} --tls"
+          if [ -z "${{ matrix.tests.tls }}" ]; then
+            FLAGS=""
           else
-            FLAGS="${{matrix.options}} --tls"
+            FLAGS="--tls"
           fi
           
-          tox run -e render
-          tox run -e ${{ matrix.tox-environments }} -- -m '${{ steps.select-tests.outputs.mark_expression }}' $FLAGS
+          make build TLS=${{ matrix.tests.tls }}
+          echo "======================"
+          echo "Bundle being deployed:"
+          echo "======================"
+          cat build/bundle.yaml
+          echo "======================"
+          tox run -e ${{ matrix.tests.tox-environment }} -- -m '${{ steps.select-tests.outputs.mark_expression }}' $FLAGS
