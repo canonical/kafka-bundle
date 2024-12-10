@@ -30,11 +30,12 @@ jobs:
         tox-environments:
           - integration-e2e-basic-flow
           - integration-e2e-password-rotation
+        tls:
+          -
+          - true
         options:
-          - ""
-          - --tls
+          -
           - --integrator
-          - --tls --integrator
         juju:
           - snap_channel: "3.4/stable"
             agent: "3.4.2"
@@ -67,4 +68,14 @@ jobs:
             echo "mark_expression=not unstable" >> $GITHUB_OUTPUT
           fi
       - name: Run integration e2e tests
-        run: tox run -e ${{ matrix.tox-environments }} -- -m '${{ steps.select-tests.outputs.mark_expression }}' ${{matrix.options}}
+        run: |
+          export TLS=${{ matrix.tls }}
+          
+          if [ -z "${TLS}" ]; then
+            FLAGS="${{matrix.options}} --tls"
+          else
+            FLAGS="${{matrix.options}} --tls"
+          fi
+          
+          tox run -e render
+          tox run -e ${{ matrix.tox-environments }} -- -m '${{ steps.select-tests.outputs.mark_expression }}' $FLAGS

@@ -38,12 +38,16 @@ jobs:
       fail-fast: false
       max-parallel: 5
       matrix:
-        tox-environment:
+        tests:
           # - integration-terraform  # disabled until https://github.com/juju/terraform-provider-juju/issues/376 is resolved and released
-          - integration-bundle
-          - integration-e2e
-          - integration-e2e-tls
-          - integration-e2e-backup
+          - tox-environment: integration-bundle
+            tls: ""
+          - tox-environment: integration-e2e
+            tls: ""
+          - tox-environment: integration-e2e
+            tls: "true"
+          - tox-environment: integration-e2e-backup
+            tls: ""
         juju:
           - snap_channel: "3.4/stable"
             agent: "3.4.2"
@@ -80,4 +84,14 @@ jobs:
             echo "mark_expression=not unstable" >> $GITHUB_OUTPUT
           fi
       - name: Run integration tests
-        run: tox run -e ${{ matrix.tox-environment }} -- -m '${{ steps.select-tests.outputs.mark_expression }}'
+        run: | 
+          export TLS=${{ matrix.tls }}
+          
+          if [ -z "${TLS}" ]; then
+            FLAGS="${{matrix.options}} --tls"
+          else
+            FLAGS="${{matrix.options}} --tls"
+          fi
+          
+          tox run -e render
+          tox run -e ${{ matrix.tox-environments }} -- -m '${{ steps.select-tests.outputs.mark_expression }}' $FLAGS

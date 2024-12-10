@@ -31,14 +31,12 @@ package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.10"
-ops = ">=2.0.0"
-kazoo = ">=2.8.0"
-tenacity = ">=8.0.1"
-pure-sasl = ">=0.6.2"
-jsonschema = ">=4.10"
-cryptography = "^42.0.0"
-pydantic = ">=1.10"
-pymongo = "^4.3.3"
+
+[tool.poetry.group.render]
+optional = true
+
+[tool.poetry.group.render.dependencies]
+jinja2-cli = "*"
 
 [tool.poetry.group.fmt]
 optional = true
