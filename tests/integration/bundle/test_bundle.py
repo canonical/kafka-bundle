@@ -18,7 +18,6 @@ from tests.integration.bundle.kafka_helpers import (
 )
 from tests.integration.bundle.literals import (
     APP_CHARM_PATH,
-    BUNDLE_BUILD,
     KAFKA,
     TLS_CHARM_NAME,
     TLS_PORT,
@@ -34,10 +33,25 @@ def usernames():
 
 
 @pytest.mark.abort_on_fail
-async def test_deploy_bundle_active(ops_test: OpsTest):
+async def test_verify_tls_flags_consistency(ops_test: OpsTest, bundle_file, tls):
     """Deploy the bundle."""
-    bundle_file = BUNDLE_BUILD
+    with ZipFile(bundle_file) as fp:
+        bundle_data = yaml.safe_load(fp.read("bundle.yaml"))
 
+    applications = []
+
+    bundle_tls = False
+    for app in bundle_data["applications"]:
+        applications.append(app)
+        if TLS_CHARM_NAME in app:
+            bundle_tls = True
+
+    assert tls == bundle_tls
+
+
+@pytest.mark.abort_on_fail
+async def test_deploy_bundle_active(ops_test: OpsTest, bundle_file, tls):
+    """Deploy the bundle."""
     logger.info(f"Deploying Bundle with file {bundle_file}")
     retcode, stdout, stderr = await ops_test.run(
         *["juju", "deploy", "--trust", "-m", ops_test.model_full_name, f"./{bundle_file}"]
@@ -64,20 +78,12 @@ async def test_active_zookeeper(ops_test: OpsTest):
 
 
 @pytest.mark.abort_on_fail
-async def test_deploy_app_charm_relate(ops_test: OpsTest):
+async def test_deploy_app_charm_relate(ops_test: OpsTest, bundle_file, tls):
     """Deploy dummy app and relate with Kafka and TLS operator."""
-    bundle_file = BUNDLE_BUILD
-
     with ZipFile(bundle_file) as fp:
         bundle_data = yaml.safe_load(fp.read("bundle.yaml"))
 
-    applications = []
-
-    tls = False
-    for app in bundle_data["applications"]:
-        applications.append(app)
-        if TLS_CHARM_NAME in app:
-            tls = True
+    applications = list(bundle_data["applications"].keys())
 
     app_charm = await ops_test.build_charm(APP_CHARM_PATH)
     await ops_test.model.deploy(app_charm, application_name="app", num_units=1)
