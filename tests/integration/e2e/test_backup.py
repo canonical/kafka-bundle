@@ -170,21 +170,17 @@ async def test_new_cluster_migration(ops_test: OpsTest, s3_bucket: Bucket, kafka
 
     data = {
         "channel": zookeeper_status.charm_channel,
-        "revision": zookeeper_status.unknown_fields["charm-rev"]
+        "revision": zookeeper_status.unknown_fields["charm-rev"],
     }
 
     logging.info(f"Fetched current deployment revision: {data}")
 
-    logging.info(f"Removing and redeploying apps")
+    logging.info("Removing and redeploying apps")
 
     await ops_test.model.applications[zookeeper].remove()
 
     await ops_test.model.deploy(
-        ZOOKEEPER_CHARM_NAME,
-        application_name="new-zk",
-        num_units=3,
-        series="jammy",
-        **data
+        ZOOKEEPER_CHARM_NAME, application_name="new-zk", num_units=3, series="jammy", **data
     )
     await ops_test.model.wait_for_idle(apps=[kafka, "new-zk"], timeout=3600)
 
