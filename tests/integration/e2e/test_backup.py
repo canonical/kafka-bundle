@@ -168,9 +168,15 @@ async def test_new_cluster_migration(ops_test: OpsTest, s3_bucket: Bucket, kafka
 
     zookeeper_status = status.applications[zookeeper]
 
+    logger.info(f"status: {zookeeper_status}")
+
+    logger.info(f"charm url: {zookeeper_status.charm}")
+
+    revision = int(zookeeper_status.charm.split("-")[-1])
+
     data = {
         "channel": zookeeper_status.charm_channel,
-        "revision": zookeeper_status.unknown_fields["charm-rev"],
+        "revision": revision,
     }
 
     logging.info(f"Fetched current deployment revision: {data}")
