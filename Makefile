@@ -1,20 +1,20 @@
-TRACK = 3
-BUILD_DIRECTORY := ./build
+TRACK=3
+TLS=true
+BUILD_DIRECTORY=./build
 FOLDER=./releases/$(TRACK)/kafka
 
 clean:
-	rm -rf $(BUILD_DIRECTORY)
+	rm -rf $(BUILD_DIRECTORY) parts prime stage
 
 lint:
 	tox -e lint
 
 build: clean lint
 	mkdir -p $(BUILD_DIRECTORY)
-	cp $(FOLDER)/bundle.yaml $(BUILD_DIRECTORY)/bundle.yaml
-	cp $(FOLDER)/charmcraft.yaml $(BUILD_DIRECTORY)
-	cp $(FOLDER)/metadata.yaml $(BUILD_DIRECTORY)
-	cp $(FOLDER)/README.md $(BUILD_DIRECTORY)
-	charmcraft pack --destructive-mode --project-dir $(BUILD_DIRECTORY) --output $(BUILD_DIRECTORY)
+
+	TLS=$(TLS) BUILD_DIRECTORY=$(BUILD_DIRECTORY) FOLDER=$(FOLDER) tox -e render
+
+	cd $(BUILD_DIRECTORY) && charmcraft pack --destructive-mode
 
 deploy: build
 	juju deploy $(BUILD_DIRECTORY)/bundle.zip

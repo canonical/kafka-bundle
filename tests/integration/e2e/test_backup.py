@@ -164,16 +164,29 @@ async def test_point_in_time_recovery(ops_test: OpsTest, s3_bucket: Bucket, kafk
 @pytest.mark.abort_on_fail
 async def test_new_cluster_migration(ops_test: OpsTest, s3_bucket: Bucket, kafka, zookeeper):
 
+    status = await ops_test.model.get_status()
+
+    zookeeper_status = status.applications[zookeeper]
+
+    logger.info(f"status: {zookeeper_status}")
+
+    logger.info(f"charm url: {zookeeper_status.charm}")
+
+    revision = int(zookeeper_status.charm.split("-")[-1])
+
+    data = {
+        "channel": zookeeper_status.charm_channel,
+        "revision": revision,
+    }
+
+    logging.info(f"Fetched current deployment revision: {data}")
+
     logging.info("Removing and redeploying apps")
 
     await ops_test.model.applications[zookeeper].remove()
 
     await ops_test.model.deploy(
-        ZOOKEEPER_CHARM_NAME,
-        application_name="new-zk",
-        num_units=3,
-        series="jammy",
-        channel="3/edge",
+        ZOOKEEPER_CHARM_NAME, application_name="new-zk", num_units=3, series="jammy", **data
     )
     await ops_test.model.wait_for_idle(apps=[kafka, "new-zk"], timeout=3600)
 

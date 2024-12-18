@@ -4,20 +4,21 @@
 
 """The pytest fixtures to support cmd options for local running and CI/CD."""
 
-import asyncio
 import logging
 import random
 import string
 from typing import Dict, Literal, Optional
+from zipfile import ZipFile
 
 import pytest
+import yaml
 from literals import (
+    BUNDLE_BUILD,
     DATABASE_CHARM_NAME,
     INTEGRATOR_CHARM_NAME,
     KAFKA_CHARM_NAME,
     KAFKA_TEST_APP_CHARM_NAME,
     TLS_CHARM_NAME,
-    TLS_REL_NAME,
     ZOOKEEPER_CHARM_NAME,
 )
 from pytest_operator.plugin import OpsTest
@@ -57,6 +58,13 @@ def pytest_addoption(parser):
         default=DATABASE_CHARM_NAME,
     )
 
+    parser.addoption(
+        "--bundle-file",
+        action="store",
+        help="name of the bundle zip when provided.",
+        default=BUNDLE_BUILD,
+    )
+
 
 def pytest_generate_tests(metafunc):
     """Processes pytest parsers."""
@@ -84,83 +92,35 @@ def pytest_generate_tests(metafunc):
     if "database" in metafunc.fixturenames:
         metafunc.parametrize("database", [database], scope="module")
 
+    bundle_file = metafunc.config.option.bundle_file
+    if "bundle_file" in metafunc.fixturenames:
+        metafunc.parametrize("bundle_file", [bundle_file], scope="module")
+
 
 ### - FIXTURES - ###
 
 
 @pytest.fixture(scope="module")
-async def deploy_cluster(ops_test: OpsTest, tls):
+async def deploy_cluster(ops_test: OpsTest, bundle_file):
     """Fixture for deploying Kafka+ZK clusters."""
     if not ops_test.model:  # avoids a multitude of linting errors
         raise RuntimeError("model not set")
 
-    async def _deploy_non_tls_cluster():
-        if not ops_test.model:  # avoids a multitude of linting errors
-            raise RuntimeError("model not set")
+    logger.info(f"Deploying Bundle with file {bundle_file}")
+    retcode, stdout, stderr = await ops_test.run(
+        *["juju", "deploy", "--trust", "-m", ops_test.model_full_name, f"./{bundle_file}"]
+    )
 
-        await asyncio.gather(
-            ops_test.model.deploy(
-                KAFKA_CHARM_NAME,
-                application_name=KAFKA_CHARM_NAME,
-                num_units=1,
-                series="jammy",
-                channel="3/edge",
-            ),
-            ops_test.model.deploy(
-                ZOOKEEPER_CHARM_NAME,
-                application_name=ZOOKEEPER_CHARM_NAME,
-                num_units=1,
-                series="jammy",
-                channel="3/edge",
-            ),
-        )
+    with ZipFile(bundle_file) as fp:
+        bundle = yaml.safe_load(fp.read("bundle.yaml"))
+
+    async with ops_test.fast_forward(fast_interval="30s"):
         await ops_test.model.wait_for_idle(
-            apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME], timeout=3600
+            apps=list(bundle["applications"].keys()),
+            idle_period=10,
+            status="active",
+            timeout=1800,
         )
-
-        async with ops_test.fast_forward(fast_interval="30s"):
-            await ops_test.model.add_relation(KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME)
-            await ops_test.model.wait_for_idle(
-                apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME],
-                idle_period=10,
-                status="active",
-                timeout=1200,
-            )
-
-    async def _deploy_tls_cluster():
-        if not ops_test.model:  # avoids a multitude of linting errors
-            raise RuntimeError("model not set")
-
-        # start future for slow non-tls cluster deploy
-        deploy_non_tls = asyncio.ensure_future(_deploy_non_tls_cluster())
-
-        await ops_test.model.deploy(
-            TLS_CHARM_NAME,
-            application_name=TLS_CHARM_NAME,
-            num_units=1,
-            series="jammy",
-            channel="stable",
-            config={"ca-common-name": "Canonical"},
-        )
-        await ops_test.model.wait_for_idle(apps=[TLS_CHARM_NAME], timeout=1200)
-
-        # block until non-tls cluster completion
-        await deploy_non_tls
-
-        async with ops_test.fast_forward(fast_interval="30s"):
-            await ops_test.model.add_relation(ZOOKEEPER_CHARM_NAME, TLS_CHARM_NAME)
-            await ops_test.model.add_relation(f"{KAFKA_CHARM_NAME}:{TLS_REL_NAME}", TLS_CHARM_NAME)
-            await ops_test.model.wait_for_idle(
-                apps=[KAFKA_CHARM_NAME, ZOOKEEPER_CHARM_NAME],
-                idle_period=10,
-                status="active",
-                timeout=1800,
-            )
-
-    if tls:  # grabbed from command-line args
-        await _deploy_tls_cluster()
-    else:
-        await _deploy_non_tls_cluster()
 
 
 @pytest.fixture(scope="function")
