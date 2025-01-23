@@ -12,7 +12,7 @@ on:
 jobs:
   lint:
     name: Lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 5
     steps:
       - name: Checkout
@@ -56,7 +56,7 @@ jobs:
     name: ${{ matrix.tests.tox-environment }}_${{ matrix.tests.tls }}_${{ matrix.juju.agent || matrix.juju.snap_channel }}
     needs:
       - lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 120
     steps:
       - name: (GitHub hosted) Free up disk space
