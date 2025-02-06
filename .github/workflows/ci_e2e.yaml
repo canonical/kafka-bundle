@@ -3,11 +3,11 @@
 name: Tests (End-to-End)
 
 on:
-  # pull_request:
-  # workflow_dispatch:
-  # workflow_call:
-  # schedule:
-  #   - cron: "53 0 * * SAT" # Every Saturday at 00:53 UTC
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+  schedule:
+    - cron: "53 0 * * SAT" # Every Saturday at 00:53 UTC
 
 jobs:
   lint:
