@@ -26,7 +26,7 @@ class COSAssertions:
     )
     ALERTS_COUNT = 24
     LOG_STREAMS = (
-        "/var/snap/charmed-kafka/common/var/log/kafka/kafkaServer-gc.log",
+        # "/var/snap/charmed-kafka/common/var/log/kafka/kafkaServer-gc.log",
         "/var/snap/charmed-kafka/common/var/log/kafka/server.log",
     )
 

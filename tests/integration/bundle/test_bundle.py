@@ -268,7 +268,7 @@ async def test_metrics_and_alerts(cos_lite: Model):
 
     assert len(kafka_alerts["rules"]) == COSAssertions.ALERTS_COUNT
 
-    logger.info("Following alert rules are registered:")
+    logger.info(f'{len(kafka_alerts["rules"])} alert rules are registered:')
     for rule in kafka_alerts["rules"]:
         logger.info(f'|__ {rule["name"]}')
 
