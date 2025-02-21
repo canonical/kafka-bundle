@@ -164,13 +164,11 @@ async def test_run_action_produce_consume(ops_test: OpsTest):
 
 
 @pytest.mark.abort_on_fail
-async def test_deploy_charms(testbed: OpsTestbed, cos_lite: Model, test_model: Model):
-
+async def test_deploy_grafana_agent(testbed: OpsTestbed, cos_lite: Model, test_model: Model):
+    """Deploys and activates grafana-agent & COS-lite bundle if not already deployed."""
     await asyncio.gather(
         test_model.deploy(COS.GRAFANA_AGENT, COS.GRAFANA_AGENT, channel="edge"),
     )
-
-    await test_model.wait_for_idle(status="active", idle_period=60, timeout=1800)
 
     await test_model.consume(
         f"{testbed.microk8s_controller}:admin/{cos_lite.name}.{COS.PROMETHEUS_OFFER}"
@@ -187,11 +185,12 @@ async def test_deploy_charms(testbed: OpsTestbed, cos_lite: Model, test_model: M
     await test_model.relate(COS.GRAFANA_AGENT, COS.LOKI_OFFER)
     await test_model.relate(COS.GRAFANA_AGENT, COS.GRAFANA_OFFER)
 
-    await test_model.wait_for_idle(idle_period=30, timeout=600, status="active")
+    await test_model.wait_for_idle(idle_period=30, timeout=1800, status="active")
 
 
 @pytest.mark.abort_on_fail
 async def test_grafana(cos_lite: Model):
+    """Checks Grafana dashboard is created with desired attributes."""
     grafana_unit = cos_lite.applications[COS.GRAFANA].units[0]
     action = await grafana_unit.run_action("get-admin-password")
     response = await action.wait()
@@ -236,6 +235,7 @@ async def test_grafana(cos_lite: Model):
 
 @pytest.mark.abort_on_fail
 async def test_metrics_and_alerts(cos_lite: Model):
+    """Checks alert rules are submitted and metrics are being sent to prometheus."""
     # wait a couple of minutes for metrics to show up
     logging.info("Sleeping for 5 min.")
     await asyncio.sleep(300)
@@ -275,6 +275,7 @@ async def test_metrics_and_alerts(cos_lite: Model):
 
 @pytest.mark.abort_on_fail
 async def test_loki(cos_lite: Model):
+    """Checks log streams are being pushed to loki."""
     traefik_unit = cos_lite.applications[COS.TRAEFIK].units[0]
     action = await traefik_unit.run_action("show-proxied-endpoints")
     response = await action.wait()
