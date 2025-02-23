@@ -4,6 +4,7 @@
 
 import asyncio
 import logging
+import zipfile
 
 import pytest
 from juju.errors import JujuConnectionError
@@ -46,7 +47,25 @@ def pytest_generate_tests(metafunc):
 
 @pytest.fixture(scope="module")
 def testbed(ops_test: OpsTest):
+    """Returns an OpsTestbed instance for handling multi-cloud deployments."""
     return OpsTestbed(ops_test=ops_test)
+
+
+@pytest.fixture(scope="module")
+def cos_overlay(bundle_file, tmp_path_factory):
+    with zipfile.ZipFile(bundle_file) as f:
+        overlay = f.read("cos-overlay.yaml")
+        fn = tmp_path_factory.mktemp("bundle") / "cos-overlay.yaml"
+        open(fn, "wb").write(overlay)
+    return fn
+
+
+@pytest.fixture(scope="module")
+async def lxd_controller(testbed: OpsTestbed):
+    """Returns the VM controller name."""
+    testbed.juju("switch", testbed.lxd_controller, json_output=False)
+    await testbed.get_or_create_model(testbed.lxd_controller, testbed._ops_test.model.name)
+    return testbed.lxd_controller
 
 
 @pytest.fixture(scope="module")

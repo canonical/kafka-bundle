@@ -30,7 +30,6 @@ from tests.integration.bundle.literals import (
     TLS_PORT,
     ZOOKEEPER,
 )
-from tests.integration.bundle.multi_cloud import OpsTestbed
 
 logger = logging.getLogger(__name__)
 
@@ -58,11 +57,24 @@ async def test_verify_tls_flags_consistency(ops_test: OpsTest, bundle_file, tls)
 
 
 @pytest.mark.abort_on_fail
-async def test_deploy_bundle_active(ops_test: OpsTest, bundle_file, tls):
+async def test_deploy_bundle_active(
+    ops_test: OpsTest, cos_lite: Model, lxd_controller, bundle_file, cos_overlay, tls
+):
     """Deploy the bundle."""
-    logger.info(f"Deploying Bundle with file {bundle_file}")
+    logger.info(
+        f"Deploying Bundle with file {bundle_file} and following overlay(s): {cos_overlay}"
+    )
     retcode, stdout, stderr = await ops_test.run(
-        *["juju", "deploy", "--trust", "-m", ops_test.model_full_name, f"./{bundle_file}"]
+        *[
+            "juju",
+            "deploy",
+            "--trust",
+            "-m",
+            ops_test.model_full_name,
+            f"./{bundle_file}",
+            "--overlay",
+            cos_overlay,
+        ]
     )
     assert retcode == 0, f"Deploy failed: {(stderr or stdout).strip()}"
     logger.info(stdout)
@@ -161,31 +173,6 @@ async def test_run_action_produce_consume(ops_test: OpsTest):
 
 
 #  -- COS Integration Tests --
-
-
-@pytest.mark.abort_on_fail
-async def test_deploy_grafana_agent(testbed: OpsTestbed, cos_lite: Model, test_model: Model):
-    """Deploys and activates grafana-agent & COS-lite bundle if not already deployed."""
-    await asyncio.gather(
-        test_model.deploy(COS.GRAFANA_AGENT, COS.GRAFANA_AGENT, channel="edge"),
-    )
-
-    await test_model.consume(
-        f"{testbed.microk8s_controller}:admin/{cos_lite.name}.{COS.PROMETHEUS_OFFER}"
-    )
-    await test_model.consume(
-        f"{testbed.microk8s_controller}:admin/{cos_lite.name}.{COS.LOKI_OFFER}"
-    )
-    await test_model.consume(
-        f"{testbed.microk8s_controller}:admin/{cos_lite.name}.{COS.GRAFANA_OFFER}"
-    )
-
-    await test_model.relate(COS.GRAFANA_AGENT, KAFKA)
-    await test_model.relate(COS.GRAFANA_AGENT, COS.PROMETHEUS_OFFER)
-    await test_model.relate(COS.GRAFANA_AGENT, COS.LOKI_OFFER)
-    await test_model.relate(COS.GRAFANA_AGENT, COS.GRAFANA_OFFER)
-
-    await test_model.wait_for_idle(idle_period=30, timeout=1800, status="active")
 
 
 @pytest.mark.abort_on_fail

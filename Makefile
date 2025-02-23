@@ -1,5 +1,7 @@
 TRACK=3
 TLS=true
+COS_CONTROLLER=microk8s-localhost
+COS_MODEL=cos
 BUILD_DIRECTORY=./build
 FOLDER=./releases/$(TRACK)/kafka
 
@@ -12,7 +14,7 @@ lint:
 build: clean lint
 	mkdir -p $(BUILD_DIRECTORY)
 
-	TLS=$(TLS) BUILD_DIRECTORY=$(BUILD_DIRECTORY) FOLDER=$(FOLDER) tox -e render
+	TLS=$(TLS) BUILD_DIRECTORY=$(BUILD_DIRECTORY) FOLDER=$(FOLDER) COS_CONTROLLER=$(COS_CONTROLLER) COS_MODEL=$(COS_MODEL) tox -e render
 
 	cd $(BUILD_DIRECTORY) && charmcraft pack --destructive-mode
 
