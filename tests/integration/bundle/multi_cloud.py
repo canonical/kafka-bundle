@@ -17,14 +17,14 @@ logger = logging.getLogger(__name__)
 
 
 class OpsTestbed:
-    """Fixture for handling multi-cloud juju deployments."""
+    """Class for handling multi-cloud juju deployments."""
 
     def __init__(self, ops_test: OpsTest):
         self._ops_test = ops_test
         logging.warning("When using Testbed, avoid interacting directly with ops_test.")
         pass
 
-    def exec(self, cmd: str) -> str:
+    def _exec(self, cmd: str) -> str:
         """Executes a command on shell and returns the result."""
         return check_output(
             cmd,
@@ -57,7 +57,7 @@ class OpsTestbed:
     def juju(self, *args, json_output=True) -> dict:
         """Runs a juju command and returns the result in JSON format."""
         _format_json = "" if not json_output else "--format json"
-        res = self.exec(f"juju {' '.join(args)} {_format_json}")
+        res = self._exec(f"juju {' '.join(args)} {_format_json}")
 
         if json_output:
             return json.loads(res)
@@ -91,7 +91,7 @@ class OpsTestbed:
         """Bootstrap juju on microk8s cloud."""
         user_env_var = os.environ.get("USER", "root")
         os.system("sudo apt install -y jq")
-        ip_addr = self.exec("ip -4 -j route get 2.2.2.2 | jq -r '.[] | .prefsrc'").strip()
+        ip_addr = self._exec("ip -4 -j route get 2.2.2.2 | jq -r '.[] | .prefsrc'").strip()
 
         self.run_script(
             f"""
