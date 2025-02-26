@@ -2,12 +2,19 @@
 # Copyright 2023 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+import asyncio
+import json
 import logging
+from datetime import datetime, timedelta, timezone
 from zipfile import ZipFile
 
 import pytest
+import requests
 import yaml
+from juju.model import Model
 from pytest_operator.plugin import OpsTest
+from requests.auth import HTTPBasicAuth
+from tests.integration.bundle.cos_helpers import COS, COSAssertions
 from tests.integration.bundle.kafka_helpers import (
     check_properties,
     check_user,
@@ -50,11 +57,24 @@ async def test_verify_tls_flags_consistency(ops_test: OpsTest, bundle_file, tls)
 
 
 @pytest.mark.abort_on_fail
-async def test_deploy_bundle_active(ops_test: OpsTest, bundle_file, tls):
+async def test_deploy_bundle_active(
+    ops_test: OpsTest, cos_lite: Model, lxd_controller, bundle_file, cos_overlay, tls
+):
     """Deploy the bundle."""
-    logger.info(f"Deploying Bundle with file {bundle_file}")
+    logger.info(
+        f"Deploying Bundle with file {bundle_file} and following overlay(s): {cos_overlay}"
+    )
     retcode, stdout, stderr = await ops_test.run(
-        *["juju", "deploy", "--trust", "-m", ops_test.model_full_name, f"./{bundle_file}"]
+        *[
+            "juju",
+            "deploy",
+            "--trust",
+            "-m",
+            ops_test.model_full_name,
+            f"./{bundle_file}",
+            "--overlay",
+            cos_overlay,
+        ]
     )
     assert retcode == 0, f"Deploy failed: {(stderr or stdout).strip()}"
     logger.info(stdout)
@@ -150,3 +170,125 @@ async def test_run_action_produce_consume(ops_test: OpsTest):
     action = await ops_test.model.units.get("app/0").run_action("produce-consume")
     ran_action = await action.wait()
     assert ran_action.results.get("passed", "") == "true"
+
+
+#  -- COS Integration Tests --
+
+
+@pytest.mark.abort_on_fail
+async def test_grafana(cos_lite: Model):
+    """Checks Grafana dashboard is created with desired attributes."""
+    grafana_unit = cos_lite.applications[COS.GRAFANA].units[0]
+    action = await grafana_unit.run_action("get-admin-password")
+    response = await action.wait()
+
+    grafana_url = response.results.get("url")
+    admin_password = response.results.get("admin-password")
+
+    auth = HTTPBasicAuth("admin", admin_password)
+    dashboards = requests.get(f"{grafana_url}/api/search?query={KAFKA}", auth=auth).json()
+
+    assert dashboards
+
+    match = [dash for dash in dashboards if dash["title"] == COSAssertions.DASHBOARD_TITLE]
+
+    assert match
+
+    app_dashboard = match[0]
+    dashboard_uid = app_dashboard["uid"]
+
+    details = requests.get(f"{grafana_url}/api/dashboards/uid/{dashboard_uid}", auth=auth).json()
+
+    panels = details["dashboard"]["panels"]
+
+    assert len(panels) == COSAssertions.PANELS_COUNT
+
+    panel_titles = [_panel.get("title") for _panel in panels]
+
+    logger.warning(
+        f"{len([i for i in panel_titles if not i])} panels don't have title which might be an issue."
+    )
+    logger.warning(
+        f'{len([i for i in panel_titles if i and i.title() != i])} panels don\'t observe "Panel Title" format.'
+    )
+
+    for item in COSAssertions.PANELS_TO_CHECK:
+        assert item in panel_titles
+
+    logger.info(f"{COSAssertions.DASHBOARD_TITLE} dashboard has following panels:")
+    for panel in panel_titles:
+        logger.info(f"|__ {panel}")
+
+
+@pytest.mark.abort_on_fail
+async def test_metrics_and_alerts(cos_lite: Model):
+    """Checks alert rules are submitted and metrics are being sent to prometheus."""
+    # wait a couple of minutes for metrics to show up
+    logging.info("Sleeping for 5 min.")
+    await asyncio.sleep(300)
+
+    traefik_unit = cos_lite.applications[COS.TRAEFIK].units[0]
+    action = await traefik_unit.run_action("show-proxied-endpoints")
+    response = await action.wait()
+
+    prometheus_url = json.loads(response.results["proxied-endpoints"])[f"{COS.PROMETHEUS}/0"][
+        "url"
+    ]
+
+    # metrics
+
+    response = requests.get(f"{prometheus_url}/api/v1/label/__name__/values").json()
+    metrics = [i for i in response["data"] if KAFKA in i]
+
+    assert metrics, f"No {KAFKA} metrics found!"
+    logger.info(f'{len(metrics)} metrics found for "{KAFKA}" in prometheus.')
+
+    # alerts
+
+    response = requests.get(f"{prometheus_url}/api/v1/rules?type=alert").json()
+
+    match = [group for group in response["data"]["groups"] if KAFKA in group["name"].lower()]
+
+    assert match
+
+    kafka_alerts = match[0]
+
+    assert len(kafka_alerts["rules"]) == COSAssertions.ALERTS_COUNT
+
+    logger.info(f'{len(kafka_alerts["rules"])} alert rules are registered:')
+    for rule in kafka_alerts["rules"]:
+        logger.info(f'|__ {rule["name"]}')
+
+
+@pytest.mark.abort_on_fail
+async def test_loki(cos_lite: Model):
+    """Checks log streams are being pushed to loki."""
+    traefik_unit = cos_lite.applications[COS.TRAEFIK].units[0]
+    action = await traefik_unit.run_action("show-proxied-endpoints")
+    response = await action.wait()
+
+    loki_url = json.loads(response.results["proxied-endpoints"])[f"{COS.LOKI}/0"]["url"]
+
+    endpoint = f"{loki_url}/loki/api/v1/query_range"
+    headers = {"Accept": "application/json"}
+
+    start_time = (datetime.now(timezone.utc) - timedelta(hours=4)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    payload = {"query": f'{{juju_application="{KAFKA}"}} |= ``', "start": start_time}
+
+    response = requests.get(endpoint, params=payload, headers=headers, verify=False)
+    results = response.json()["data"]["result"]
+    streams = [i["stream"]["filename"] for i in results]
+
+    assert len(streams) >= len(COSAssertions.LOG_STREAMS)
+    for _stream in COSAssertions.LOG_STREAMS:
+        assert _stream in streams
+
+    logger.info("Displaying some of the logs pushed to loki:")
+    for item in results:
+        # we should have some logs
+        assert len(item["values"]) > 0, f'No log pushed for {item["stream"]["filename"]}'
+
+        logger.info(f'Stream: {item["stream"]["filename"]}')
+        for _, log in item["values"][:10]:
+            logger.info(f"|__ {log}")
+        logger.info("\n")

@@ -20,9 +20,9 @@ from charms.tls_certificates_interface.v1.tls_certificates import (
     generate_csr,
     generate_private_key,
 )
+from kafka import KafkaAdminClient, KafkaConsumer, KafkaProducer
 from kafka.admin import NewTopic
 from kafka.errors import TopicAlreadyExistsError
-from kafka import KafkaConsumer, KafkaProducer, KafkaAdminClient
 from ops.charm import ActionEvent, CharmBase, RelationEvent
 from ops.framework import EventBase
 from ops.main import main
