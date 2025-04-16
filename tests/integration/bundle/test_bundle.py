@@ -2,17 +2,16 @@
 # Copyright 2023 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-import asyncio
 import json
 import logging
+import time
 from datetime import datetime, timedelta, timezone
 from zipfile import ZipFile
 
+import jubilant
 import pytest
 import requests
 import yaml
-from juju.model import Model
-from pytest_operator.plugin import OpsTest
 from requests.auth import HTTPBasicAuth
 from tests.integration.bundle.cos_helpers import COS, COSAssertions
 from tests.integration.bundle.kafka_helpers import (
@@ -39,8 +38,7 @@ def usernames():
     return set()
 
 
-@pytest.mark.abort_on_fail
-async def test_verify_tls_flags_consistency(ops_test: OpsTest, bundle_file, tls):
+def test_verify_tls_flags_consistency(bundle_file, tls):
     """Deploy the bundle."""
     with ZipFile(bundle_file) as fp:
         bundle_data = yaml.safe_load(fp.read("bundle.yaml"))
@@ -56,103 +54,92 @@ async def test_verify_tls_flags_consistency(ops_test: OpsTest, bundle_file, tls)
     assert tls == bundle_tls
 
 
-@pytest.mark.abort_on_fail
-async def test_deploy_bundle_active(
-    ops_test: OpsTest, cos_lite: Model, lxd_controller, bundle_file, cos_overlay, tls
-):
+def test_deploy_bundle_active(testbed, cos_lite, lxd_controller, bundle_file, cos_overlay, tls):
     """Deploy the bundle."""
     logger.info(
         f"Deploying Bundle with file {bundle_file} and following overlay(s): {cos_overlay}"
     )
-    retcode, stdout, stderr = await ops_test.run(
+
+    testbed.use_vm()
+    testbed.juju_cli(
         *[
-            "juju",
             "deploy",
             "--trust",
             "-m",
-            ops_test.model_full_name,
+            testbed.model,
             f"./{bundle_file}",
             "--overlay",
-            cos_overlay,
-        ]
+            f"{cos_overlay}",
+        ],
+        json_output=False,
     )
-    assert retcode == 0, f"Deploy failed: {(stderr or stdout).strip()}"
-    logger.info(stdout)
 
-    with ZipFile(bundle_file) as fp:
-        bundle = yaml.safe_load(fp.read("bundle.yaml"))
+    testbed.juju.wait(lambda status: jubilant.all_active(status), timeout=1800)
 
-    async with ops_test.fast_forward(fast_interval="30s"):
-        await ops_test.model.wait_for_idle(
-            apps=list(bundle["applications"].keys()),
-            idle_period=10,
-            status="active",
-            timeout=1800,
-        )
+    print([testbed.juju.status().apps])
 
 
-@pytest.mark.abort_on_fail
-async def test_active_zookeeper(ops_test: OpsTest):
+def test_active_zookeeper(testbed):
     """Test the status the correct status of Zookeeper."""
-    assert await ping_servers(ops_test, ZOOKEEPER)
+    zookeeper_hosts = [
+        unit.public_address for unit in testbed.juju.status().apps[ZOOKEEPER].units.values()
+    ]
+    assert ping_servers(zookeeper_hosts)
 
 
-@pytest.mark.abort_on_fail
-async def test_deploy_app_charm_relate(ops_test: OpsTest, bundle_file, tls):
+def test_deploy_app_charm_relate(testbed, bundle_file, tls):
     """Deploy dummy app and relate with Kafka and TLS operator."""
     with ZipFile(bundle_file) as fp:
         bundle_data = yaml.safe_load(fp.read("bundle.yaml"))
 
     applications = list(bundle_data["applications"].keys())
 
-    app_charm = await ops_test.build_charm(APP_CHARM_PATH)
-    await ops_test.model.deploy(app_charm, application_name="app", num_units=1)
+    app_charm = testbed.build_charm(APP_CHARM_PATH)
+    testbed.juju.deploy(app_charm, app="app", num_units=1)
     if tls:
-        await ops_test.model.add_relation("app", TLS_CHARM_NAME)
-    await ops_test.model.wait_for_idle(
-        apps=applications, timeout=2000, idle_period=30, status="active"
-    )
-    await ops_test.model.add_relation(KAFKA, "app")
-    await ops_test.model.wait_for_idle(
-        apps=applications + ["app"], status="active", timeout=1000, idle_period=30
-    )
+        testbed.juju.integrate("app", TLS_CHARM_NAME)
 
-    for app in applications + ["app"]:
-        assert ops_test.model.applications[app].status == "active"
+    testbed.juju.wait(lambda status: jubilant.all_active(status, apps=applications), timeout=2000)
+    testbed.juju.integrate(KAFKA, "app")
+
+    testbed.juju.wait(lambda status: jubilant.all_active(status), timeout=1000)
 
 
-@pytest.mark.abort_on_fail
-async def test_apps_up_and_running(ops_test: OpsTest, usernames):
+def test_apps_up_and_running(testbed, usernames):
     """Test that all apps are up and running."""
-    assert await ping_servers(ops_test, ZOOKEEPER)
+    zookeeper_hosts = [
+        unit.public_address for unit in testbed.juju.status().apps[ZOOKEEPER].units.values()
+    ]
+    assert ping_servers(zookeeper_hosts)
 
-    for unit in ops_test.model.applications[ZOOKEEPER].units:
-        assert "sslQuorum=true" in check_properties(
-            model_full_name=ops_test.model_full_name, unit=unit.name
-        )
+    for unit in testbed.juju.status().apps[ZOOKEEPER].units:
+        assert "sslQuorum=true" in check_properties(model_full_name=testbed.model, unit=unit)
 
     # implicitly tests setting of kafka app data
     zookeeper_usernames, zookeeper_uri = get_zookeeper_connection(
-        unit_name=f"{KAFKA}/0", owner=ZOOKEEPER, model_full_name=ops_test.model_full_name
+        unit_name=f"{KAFKA}/0", owner=ZOOKEEPER, model_full_name=testbed.model
     )
 
     assert zookeeper_uri
     assert len(zookeeper_usernames) > 0
 
-    usernames.update(get_kafka_users(f"{KAFKA}/0", ops_test.model_full_name))
+    usernames.update(get_kafka_users(f"{KAFKA}/0", testbed.model))
 
-    bootstrap_server = f"{ops_test.model.applications[KAFKA].units[0].public_address}:{TLS_PORT}"
+    kafka_unit = next(iter(testbed.juju.status().apps[KAFKA].units))
+    bootstrap_server = (
+        f"{testbed.juju.status().apps[KAFKA].units[kafka_unit].public_address}:{TLS_PORT}"
+    )
 
     for username in usernames:
         check_user(
             username=username,
             bootstrap_server=bootstrap_server,
-            model_full_name=ops_test.model_full_name,
+            model_full_name=testbed.model,
             unit_name=f"{KAFKA}/0",
         )
 
     for acl in load_acls(
-        model_full_name=ops_test.model_full_name,
+        model_full_name=testbed.model,
         bootstrap_server=bootstrap_server,
         unit_name=f"{KAFKA}/0",
     ):
@@ -161,29 +148,29 @@ async def test_apps_up_and_running(ops_test: OpsTest, usernames):
         assert acl.resource_type in ["GROUP", "TOPIC"]
         if acl.resource_type == "TOPIC":
             assert acl.resource_name == "test-topic"
-    assert await ping_servers(ops_test, ZOOKEEPER)
+
+    assert ping_servers(zookeeper_hosts)
 
 
-@pytest.mark.abort_on_fail
-async def test_run_action_produce_consume(ops_test: OpsTest):
+def test_run_action_produce_consume(testbed):
     """Test production and consumption of messages."""
-    action = await ops_test.model.units.get("app/0").run_action("produce-consume")
-    ran_action = await action.wait()
+    ran_action = testbed.juju.run("app/0", "produce-consume")
     assert ran_action.results.get("passed", "") == "true"
 
 
 #  -- COS Integration Tests --
 
 
-@pytest.mark.abort_on_fail
-async def test_grafana(cos_lite: Model):
+def test_grafana(testbed, cos_lite):
     """Checks Grafana dashboard is created with desired attributes."""
-    grafana_unit = cos_lite.applications[COS.GRAFANA].units[0]
-    action = await grafana_unit.run_action("get-admin-password")
-    response = await action.wait()
+    testbed.use_k8s()
+    grafana_unit = next(iter(testbed.juju.status().apps[COS.GRAFANA].units.keys()))
+    action = testbed.juju.run(grafana_unit, "get-admin-password")
 
-    grafana_url = response.results.get("url")
-    admin_password = response.results.get("admin-password")
+    grafana_url = action.results.get("url")
+    admin_password = action.results.get("admin-password")
+
+    print(grafana_url, admin_password)
 
     auth = HTTPBasicAuth("admin", admin_password)
     dashboards = requests.get(f"{grafana_url}/api/search?query={KAFKA}", auth=auth).json()
@@ -220,20 +207,17 @@ async def test_grafana(cos_lite: Model):
         logger.info(f"|__ {panel}")
 
 
-@pytest.mark.abort_on_fail
-async def test_metrics_and_alerts(cos_lite: Model):
+def test_metrics_and_alerts(testbed, cos_lite):
     """Checks alert rules are submitted and metrics are being sent to prometheus."""
     # wait a couple of minutes for metrics to show up
+    testbed.use_k8s()
     logging.info("Sleeping for 5 min.")
-    await asyncio.sleep(300)
+    time.sleep(300)
 
-    traefik_unit = cos_lite.applications[COS.TRAEFIK].units[0]
-    action = await traefik_unit.run_action("show-proxied-endpoints")
-    response = await action.wait()
+    traefik_unit = next(iter(testbed.juju.status().apps[COS.TRAEFIK].units))
+    action = testbed.juju.run(traefik_unit, "show-proxied-endpoints")
 
-    prometheus_url = json.loads(response.results["proxied-endpoints"])[f"{COS.PROMETHEUS}/0"][
-        "url"
-    ]
+    prometheus_url = json.loads(action.results["proxied-endpoints"])[f"{COS.PROMETHEUS}/0"]["url"]
 
     # metrics
 
@@ -260,14 +244,13 @@ async def test_metrics_and_alerts(cos_lite: Model):
         logger.info(f'|__ {rule["name"]}')
 
 
-@pytest.mark.abort_on_fail
-async def test_loki(cos_lite: Model):
+def test_loki(testbed, cos_lite):
     """Checks log streams are being pushed to loki."""
-    traefik_unit = cos_lite.applications[COS.TRAEFIK].units[0]
-    action = await traefik_unit.run_action("show-proxied-endpoints")
-    response = await action.wait()
+    testbed.use_k8s()
+    traefik_unit = next(iter(testbed.juju.status().apps[COS.TRAEFIK].units))
+    action = testbed.juju.run(traefik_unit, "show-proxied-endpoints")
 
-    loki_url = json.loads(response.results["proxied-endpoints"])[f"{COS.LOKI}/0"]["url"]
+    loki_url = json.loads(action.results["proxied-endpoints"])[f"{COS.LOKI}/0"]["url"]
 
     endpoint = f"{loki_url}/loki/api/v1/query_range"
     headers = {"Accept": "application/json"}

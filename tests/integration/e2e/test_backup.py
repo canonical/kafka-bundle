@@ -2,16 +2,14 @@
 # Copyright 2023 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-import asyncio
 import json
 import logging
 import socket
 
 import boto3
+import jubilant
 import pytest
 import pytest_microceph
-from mypy_boto3_s3.service_resource import Bucket
-from pytest_operator.plugin import OpsTest
 from tests.integration.e2e.helpers import (
     create_topic,
     get_random_topic,
@@ -63,166 +61,144 @@ def s3_bucket(cloud_credentials, cloud_configs):
     yield bucket
 
 
-@pytest.mark.skip_if_deployed
-@pytest.mark.abort_on_fail
-async def test_deploy(ops_test: OpsTest, deploy_cluster):
-    await asyncio.sleep(0)  # do nothing, await deploy_cluster
+def test_deploy(juju, deploy_cluster):
+    juju.wait(lambda status: jubilant.all_active(status), timeout=1800)
 
 
-@pytest.mark.abort_on_fail
-async def test_set_up_deployment(
-    ops_test: OpsTest,
+def test_set_up_deployment(
+    juju,
     kafka,
     zookeeper,
     cloud_configs,
     cloud_credentials,
     s3_bucket,
 ):
-    assert ops_test.model.applications[kafka].status == "active"
-    assert ops_test.model.applications[zookeeper].status == "active"
-    await ops_test.model.deploy(S3_INTEGRATOR, channel=S3_CHANNEL)
-    await ops_test.model.wait_for_idle(apps=[S3_INTEGRATOR], status="blocked", timeout=1000)
+    status = juju.status()
+    assert status.apps[kafka].app_status.current == "active"
+    assert status.apps[zookeeper].app_status.current == "active"
+
+    juju.deploy(S3_INTEGRATOR, channel=S3_CHANNEL)
+    juju.wait(lambda status: status.apps[S3_INTEGRATOR].is_blocked, timeout=1000, delay=5)
 
     logger.info("Syncing credentials")
+    juju.config(S3_INTEGRATOR, cloud_configs)
 
-    await ops_test.model.applications[S3_INTEGRATOR].set_config(cloud_configs)
-    leader_unit = ops_test.model.applications[S3_INTEGRATOR].units[0]
+    leader_unit = list(juju.status().apps[S3_INTEGRATOR].units)[0]
+    juju.run(leader_unit, "sync-s3-credentials", params=cloud_credentials)
 
-    sync_action = await leader_unit.run_action(
-        "sync-s3-credentials",
-        **cloud_credentials,
-    )
-    await sync_action.wait()
-    await ops_test.model.add_relation(zookeeper, S3_INTEGRATOR)
-    await ops_test.model.wait_for_idle(
-        apps=[zookeeper, S3_INTEGRATOR],
-        status="active",
-        timeout=1000,
+    juju.integrate(zookeeper, S3_INTEGRATOR)
+    juju.wait(
+        lambda status: jubilant.all_active(status, apps=[zookeeper, S3_INTEGRATOR]), timeout=1000
     )
 
     # bucket exists
     assert s3_bucket.meta.client.head_bucket(Bucket=s3_bucket.name)
 
 
-@pytest.mark.abort_on_fail
-async def test_point_in_time_recovery(ops_test: OpsTest, s3_bucket: Bucket, kafka, zookeeper):
+def test_point_in_time_recovery(juju, s3_bucket, kafka, zookeeper):
 
     logger.info("Creating topic")
 
-    create_topic(model_full_name=ops_test.model_full_name, app_name=kafka, topic=TOPIC)
+    create_topic(model_full_name=juju.model, app_name=kafka, topic=TOPIC)
     write_topic_message_size_config(
-        model_full_name=ops_test.model_full_name,
+        model_full_name=juju.model,
         app_name=kafka,
         topic=TOPIC,
         size=NON_DEFAULT_TOPIC_SIZE,
     )
     assert f"max.message.bytes={NON_DEFAULT_TOPIC_SIZE}" in read_topic_config(
-        model_full_name=ops_test.model_full_name, app_name=kafka, topic=TOPIC
+        model_full_name=juju.model, app_name=kafka, topic=TOPIC
     )
 
     logger.info("Creating initial backup")
 
-    for unit in ops_test.model.applications[zookeeper].units:
-        if await unit.is_leader_from_status():
-            leader_unit = unit
+    for unit_name, unit_status in juju.status().apps[zookeeper].units.items():
+        if unit_status.leader:
+            leader_unit = unit_name
 
-    create_action = await leader_unit.run_action("create-backup")
-    await create_action.wait()
+    juju.run(leader_unit, "create-backup")
+    list_action = juju.run(leader_unit, "list-backups")
 
-    list_action = await leader_unit.run_action("list-backups")
-    response = await list_action.wait()
-
-    backups = json.loads(response.results.get("backups", "[]"))
+    backups = json.loads(list_action.results.get("backups", "[]"))
     assert len(backups) == 1
 
     logger.info("Restoring backup")
 
     write_topic_message_size_config(
-        model_full_name=ops_test.model_full_name,
+        model_full_name=juju.model,
         app_name=kafka,
         topic=TOPIC,
         size=UPDATED_TOPIC_SIZE,
     )
 
     assert f"max.message.bytes={UPDATED_TOPIC_SIZE}" in read_topic_config(
-        model_full_name=ops_test.model_full_name, app_name=kafka, topic=TOPIC
+        model_full_name=juju.model, app_name=kafka, topic=TOPIC
     )
 
     backup_to_restore = backups[0]["id"]
-    list_action = await leader_unit.run_action("restore", **{"backup-id": backup_to_restore})
-    await ops_test.model.wait_for_idle(
-        apps=[zookeeper, kafka], status="active", timeout=1000, idle_period=30
+    list_action = juju.run(leader_unit, "restore", params={"backup-id": backup_to_restore})
+
+    juju.wait(
+        lambda status: jubilant.all_active(status, apps=[zookeeper, kafka]), timeout=1800, delay=10
     )
     assert f"max.message.bytes={NON_DEFAULT_TOPIC_SIZE}" in read_topic_config(
-        model_full_name=ops_test.model_full_name, app_name=kafka, topic=TOPIC
+        model_full_name=juju.model, app_name=kafka, topic=TOPIC
     )
 
-    assert ops_test.model.applications[kafka].status == "active"
-    assert ops_test.model.applications[zookeeper].status == "active"
+    status = juju.status()
+    assert status.apps[kafka].app_status.current == "active"
+    assert status.apps[zookeeper].app_status.current == "active"
 
 
-@pytest.mark.abort_on_fail
-async def test_new_cluster_migration(ops_test: OpsTest, s3_bucket: Bucket, kafka, zookeeper):
+def test_new_cluster_migration(juju, s3_bucket, kafka, zookeeper):
 
-    status = await ops_test.model.get_status()
-
-    zookeeper_status = status.applications[zookeeper]
+    status = juju.status()
+    zookeeper_status = status.apps[zookeeper]
 
     logger.info(f"status: {zookeeper_status}")
-
     logger.info(f"charm url: {zookeeper_status.charm}")
-
-    revision = int(zookeeper_status.charm.split("-")[-1])
 
     data = {
         "channel": zookeeper_status.charm_channel,
-        "revision": revision,
+        "revision": zookeeper_status.charm_rev,
     }
 
-    logging.info(f"Fetched current deployment revision: {data}")
+    logger.info(f"Fetched current deployment revision: {data}")
+    logger.info("Removing and redeploying apps")
 
-    logging.info("Removing and redeploying apps")
+    juju.remove_application(zookeeper)
 
-    await ops_test.model.applications[zookeeper].remove()
-
-    await ops_test.model.deploy(
-        ZOOKEEPER_CHARM_NAME, application_name="new-zk", num_units=3, series="jammy", **data
+    juju.deploy(ZOOKEEPER_CHARM_NAME, app="new-zk", num_units=3, **data)
+    juju.wait(
+        lambda status: jubilant.all_active(status, apps=[kafka, "new-zk"]), timeout=3600, delay=10
     )
-    await ops_test.model.wait_for_idle(apps=[kafka, "new-zk"], timeout=3600)
 
-    await ops_test.model.add_relation("new-zk", S3_INTEGRATOR)
-    await ops_test.model.wait_for_idle(
-        apps=["new-zk", S3_INTEGRATOR],
-        status="active",
+    juju.integrate("new-zk", S3_INTEGRATOR)
+    juju.wait(
+        lambda status: jubilant.all_active(status, apps=["new-zk", S3_INTEGRATOR]),
         timeout=1000,
+        delay=10,
     )
 
-    logging.info("Restoring backup")
+    logger.info("Restoring backup")
 
-    for unit in ops_test.model.applications["new-zk"].units:
-        if await unit.is_leader_from_status():
-            leader_unit = unit
+    for unit_name, unit_status in juju.status().apps["new-zk"].units.items():
+        if unit_status.leader:
+            leader_unit = unit_name
 
-    list_action = await leader_unit.run_action("list-backups")
-    response = await list_action.wait()
-
-    backups = json.loads(response.results.get("backups", "[]"))
+    list_action = juju.run(leader_unit, "list-backups")
+    backups = json.loads(list_action.results.get("backups", "[]"))
     assert len(backups) == 1
 
     backup_to_restore = backups[0]["id"]
-    list_action = await leader_unit.run_action("restore", **{"backup-id": backup_to_restore})
-    await ops_test.model.wait_for_idle(
-        apps=["new-zk"], status="active", timeout=1000, idle_period=30
-    )
+    list_action = juju.run(leader_unit, "restore", params={"backup-id": backup_to_restore})
+    juju.wait(lambda status: status.apps["new-zk"].is_active, timeout=1000, delay=10)
 
-    await ops_test.model.add_relation(kafka, "new-zk")
-    await ops_test.model.wait_for_idle(
-        apps=[kafka, "new-zk"],
-        idle_period=30,
-        status="active",
-        timeout=1200,
+    juju.integrate(kafka, "new-zk")
+    juju.wait(
+        lambda status: jubilant.all_active(status, apps=[kafka, "new-zk"]), timeout=1200, delay=10
     )
 
     assert f"max.message.bytes={NON_DEFAULT_TOPIC_SIZE}" in read_topic_config(
-        model_full_name=ops_test.model_full_name, app_name=kafka, topic=TOPIC
+        model_full_name=juju.model, app_name=kafka, topic=TOPIC
     )

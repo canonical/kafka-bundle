@@ -8,7 +8,6 @@ from subprocess import PIPE, CalledProcessError, check_output
 from typing import Any, Dict, List, Set, Tuple
 
 import yaml
-from pytest_operator.plugin import OpsTest
 from tests.integration.bundle.literals import KAFKA_CLIENT_PROPERTIES, ZOOKEEPER_CONF_PATH
 
 from .auth import Acl, KafkaAuth
@@ -245,9 +244,9 @@ def srvr(host: str) -> Dict:
     return result
 
 
-async def ping_servers(ops_test: OpsTest, zookeeper_app_name: str) -> bool:
-    for unit in ops_test.model.applications[zookeeper_app_name].units:
-        host = unit.public_address
+# TODO: fixme
+def ping_servers(unit_ips: list[str]) -> bool:
+    for host in unit_ips:
         mode = srvr(host)["Mode"]
         if mode not in ["leader", "follower"]:
             return False
