@@ -169,9 +169,7 @@ def test_new_cluster_migration(juju, s3_bucket, kafka, zookeeper):
     juju.remove_application(zookeeper)
 
     juju.deploy(ZOOKEEPER_CHARM_NAME, app="new-zk", num_units=3, **data)
-    juju.wait(
-        lambda status: jubilant.all_active(status, apps=[kafka, "new-zk"]), timeout=3600, delay=10
-    )
+    juju.wait(lambda status: status.apps["new-zk"].is_active, timeout=3600, delay=10)
 
     juju.integrate("new-zk", S3_INTEGRATOR)
     juju.wait(

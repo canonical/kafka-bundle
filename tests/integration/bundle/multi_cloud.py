@@ -134,11 +134,13 @@ class JujuTestbed:
         self.juju_cli("switch", self.microk8s_controller, json_output=False)
 
     def build_charm(self, path: Path) -> str:
-        for built_charm in glob.glob(f"{path}/*.charm"):
-            self._exec(f"rm -rf {built_charm}")
+        # if we're in CI, no need to use charmcraft pack.
+        if "CI" not in os.environ:
+            for built_charm in glob.glob(f"{path}/*.charm"):
+                self._exec(f"rm -rf {built_charm}")
 
-        logger.info(f"Building {path}")
-        self._exec("charmcraft pack", cwd=f"{path}")
+            logger.info(f"Building {path}")
+            self._exec("charmcraft pack", cwd=f"{path}")
 
         for built_path in glob.glob(f"{path}/*.charm"):
             return f"./{built_path}"
