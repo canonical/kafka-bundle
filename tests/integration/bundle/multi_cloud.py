@@ -126,12 +126,12 @@ class JujuTestbed:
     def use_vm(self) -> None:
         """Use the VM controller for jubilant Juju."""
         self.juju.model = f"{self.lxd_controller}:{self.model}"
-        self.juju_cli(f"switch", self.lxd_controller, json_output=False)
+        self.juju_cli("switch", self.lxd_controller, json_output=False)
 
     def use_k8s(self) -> None:
         """Use the K8s controller for jubilant Juju."""
         self.juju.model = f"{self.microk8s_controller}:{self.cos_model}"
-        self.juju_cli(f"switch", self.microk8s_controller, json_output=False)
+        self.juju_cli("switch", self.microk8s_controller, json_output=False)
 
     def build_charm(self, path: Path) -> str:
         for built_charm in glob.glob(f"{path}/*.charm"):
