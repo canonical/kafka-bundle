@@ -248,10 +248,6 @@ def test_consumed_messages(juju, deploy_data_integrator, database):
 
     uris = credentials[DATABASE_CHARM_NAME]["uris"]
 
-    import pdb
-
-    pdb.set_trace()
-
     check_produced_and_consumed_messages(uris, TOPIC)
 
     if pytest.remove_database:

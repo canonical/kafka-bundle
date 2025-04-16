@@ -87,10 +87,7 @@ class JujuTestbed:
 
     def get_or_create_model(self, controller_name: str, model_name: str) -> str:
         """Returns an existing model on a controller or creates new one if not existing."""
-        if self.get_model(controller_name, model_name) is None:
-            self.juju.add_model(model=model_name, controller=controller_name)
-
-        return model_name
+        return self.juju.add_model(model=model_name, controller=controller_name)
 
     def bootstrap_microk8s(self) -> None:
         """Bootstrap juju on microk8s cloud."""
@@ -129,10 +126,12 @@ class JujuTestbed:
     def use_vm(self) -> None:
         """Use the VM controller for jubilant Juju."""
         self.juju.model = f"{self.lxd_controller}:{self.model}"
+        self.juju_cli(f"switch", self.lxd_controller, json_output=False)
 
     def use_k8s(self) -> None:
         """Use the K8s controller for jubilant Juju."""
         self.juju.model = f"{self.microk8s_controller}:{self.cos_model}"
+        self.juju_cli(f"switch", self.microk8s_controller, json_output=False)
 
     def build_charm(self, path: Path) -> str:
         for built_charm in glob.glob(f"{path}/*.charm"):
