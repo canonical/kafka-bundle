@@ -154,7 +154,16 @@ def test_apps_up_and_running(testbed, usernames):
 
 def test_run_action_produce_consume(testbed):
     """Test production and consumption of messages."""
-    time.sleep(100)
+    testbed.juju.wait(
+        # kafka is active|idle
+        lambda status: {
+            status.apps[KAFKA].units[unit].juju_status.current for unit in status.apps[KAFKA].units
+        }
+        == {"idle"}
+        and status.apps[KAFKA].is_active,
+        timeout=1800,
+        delay=20,
+    )
     ran_action = testbed.juju.run("app/0", "produce-consume")
     assert ran_action.results.get("passed", "") == "true"
 
