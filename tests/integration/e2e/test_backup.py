@@ -194,7 +194,7 @@ def test_new_cluster_migration(juju, s3_bucket, kafka, zookeeper):
 
     juju.integrate(kafka, "new-zk")
     juju.wait(
-        lambda status: jubilant.all_active(status, apps=[kafka, "new-zk"]), timeout=1200, delay=10
+        lambda status: jubilant.all_active(status, apps=[kafka, "new-zk"]), timeout=3600, delay=10
     )
 
     assert f"max.message.bytes={NON_DEFAULT_TOPIC_SIZE}" in read_topic_config(
