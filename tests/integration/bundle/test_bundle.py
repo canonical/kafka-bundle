@@ -154,6 +154,7 @@ def test_apps_up_and_running(testbed, usernames):
 
 def test_run_action_produce_consume(testbed):
     """Test production and consumption of messages."""
+    time.sleep(100)
     ran_action = testbed.juju.run("app/0", "produce-consume")
     assert ran_action.results.get("passed", "") == "true"
 

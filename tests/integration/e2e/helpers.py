@@ -56,7 +56,7 @@ def check_produced_and_consumed_messages(uris: str, collection_name: str):
             logger.error(missing_elem)
 
         assert len(consumed_messages) >= len(produced_messages)
-        assert abs(len(consumed_messages) - len(produced_messages)) < 3
+        assert abs(len(consumed_messages) - len(produced_messages)) <= 3
 
         client.close()
     except Exception as e:

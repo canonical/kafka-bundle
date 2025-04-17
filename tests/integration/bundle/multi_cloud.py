@@ -87,7 +87,7 @@ class JujuTestbed:
 
     def get_or_create_model(self, controller_name: str, model_name: str) -> str:
         """Returns an existing model on a controller or creates new one if not existing."""
-        return self.juju.add_model(model=model_name, controller=controller_name)
+        return self.get_model(model_name=model_name, controller_name=controller_name)
 
     def bootstrap_microk8s(self) -> None:
         """Bootstrap juju on microk8s cloud."""
