@@ -191,11 +191,21 @@ def test_new_cluster_migration(juju, s3_bucket, kafka, zookeeper):
 
     backup_to_restore = backups[0]["id"]
     list_action = juju.run(leader_unit, "restore", params={"backup-id": backup_to_restore})
-    juju.wait(lambda status: status.apps["new-zk"].is_active, timeout=1000, delay=10)
+    juju.wait(
+        # zk is active|idle
+        lambda status: {
+            status.apps["new-zk"].units[unit].juju_status.current
+            for unit in status.apps["new-zk"].units
+        }
+        == {"idle"}
+        and status.apps["new-zk"].is_active,
+        timeout=1800,
+        delay=20,
+    )
 
     juju.integrate(kafka, "new-zk")
     juju.wait(
-        lambda status: jubilant.all_active(status, apps=[kafka, "new-zk"]), timeout=3600, delay=10
+        lambda status: jubilant.all_active(status, apps=[kafka, "new-zk"]), timeout=1800, delay=10
     )
 
     assert f"max.message.bytes={NON_DEFAULT_TOPIC_SIZE}" in read_topic_config(
