@@ -152,6 +152,7 @@ def test_point_in_time_recovery(juju, s3_bucket, kafka, zookeeper):
 
 def test_new_cluster_migration(juju, s3_bucket, kafka, zookeeper):
 
+    juju.cli("model-config", "update-status-hook-interval=1m")
     status = juju.status()
     zookeeper_status = status.apps[zookeeper]
 
