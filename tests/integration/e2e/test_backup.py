@@ -198,7 +198,8 @@ def test_new_cluster_migration(juju, s3_bucket, kafka, zookeeper):
     list_action = juju.run(leader_unit, "restore", params={"backup-id": backup_to_restore})
     juju.wait(
         # zk is active|idle
-        jubilant_all_units_idle(status, apps=["new-zk"]) and status.apps["new-zk"].is_active,
+        lambda status: jubilant_all_units_idle(status, apps=["new-zk"])
+        and status.apps["new-zk"].is_active,
         timeout=1800,
         delay=20,
     )
