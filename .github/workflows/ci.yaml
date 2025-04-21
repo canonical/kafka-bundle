@@ -63,6 +63,7 @@ jobs:
   integration-test:
     strategy:
       fail-fast: false
+      max-parallel: 10
       matrix:
         job: ${{ fromJSON(needs.collect-spread-jobs.outputs.jobs) }}
     name: ${{ matrix.job.name }}
