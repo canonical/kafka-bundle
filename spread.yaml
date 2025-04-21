@@ -121,7 +121,8 @@ path: /root/spread_project
 warn-timeout: 1m
 kill-timeout: 3h
 environment:
-  PATH: $PATH:/root/.local/bin
+  # TODO: is there a better way?
+  PATH: $PATH:/root/.local/bin:/opt/pipx:/opt/pipx_bin
   CONCIERGE_JUJU_CHANNEL/juju34: 3.4/stable
   CONCIERGE_JUJU_CHANNEL/juju36: 3.6/stable
 

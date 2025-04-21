@@ -1,4 +1,4 @@
-summary: Bundle Tests
+summary: E2E backup tests
 execute: |
   cd "$SPREAD_PATH"
   make build TLS=

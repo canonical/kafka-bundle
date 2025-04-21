@@ -1,4 +1,4 @@
-summary: E2E basic flow tests
+summary: E2E password rotation tests
 execute: |
   cd "$SPREAD_PATH"
   make build TLS=
