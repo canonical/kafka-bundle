@@ -73,19 +73,26 @@ backends:
     # each spread job & select a single job when running spread)
     # Derived from https://github.com/jnsgruk/zinc-k8s-operator/blob/a21eae8399eb3b9df4ddb934b837af25ef831976/spread.yaml#L47
     allocate: |
-      sudo tee /etc/ssh/sshd_config.d/10-spread-github-ci.conf << 'EOF'
-      PasswordAuthentication yes
-      PermitEmptyPasswords yes
-      EOF
+      sudo sed -i "s|#PasswordAuthentication yes|PasswordAuthentication yes|g" /etc/ssh/sshd_config
+      sudo sed -i "s|KbdInteractiveAuthentication no|KbdInteractiveAuthentication yes|g" /etc/ssh/sshd_config
+      sudo rm -f /etc/ssh/sshd_config.d/60-cloudimg-settings.conf
+      sudo systemctl daemon-reload
+      sudo systemctl restart ssh
 
-      ADDRESS localhost
-    # HACK: spread does not pass environment variables set on runner
-    # Manually pass specific environment variables
+      sudo useradd spread -s /bin/bash -m || true
+      echo "spread:$SPREAD_PASSWORD" | sudo chpasswd || true
+      echo 'spread ALL=(ALL) NOPASSWD:ALL ' | sudo tee /etc/sudoers.d/99-spread-user || true
+
+      ADDRESS "127.0.0.1"
+    discard: |
+      sudo userdel -f -r spread || true
+      sudo rm -f /etc/sudoers.d/99-spread-user
     environment:
       CI: '$(HOST: echo $CI)'
     systems:
       - ubuntu-22.04:
-          username: runner
+          username: spread
+          workers: 1
 
 suites:
   tests/spread/bundle/:
