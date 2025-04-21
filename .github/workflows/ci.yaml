@@ -93,6 +93,8 @@ jobs:
       - run: |
           sudo snap install go --classic
           go install github.com/snapcore/spread/cmd/spread@latest
+          sudo apt-get update
+          sudo apt-get install -y pipx
       - name: Download packed charm(s)
         uses: actions/download-artifact@v4
         with:
