@@ -48,7 +48,14 @@ jobs:
       - name: Collect spread jobs
         id: collect-jobs
         run: |
-          echo jobs=$(charmcraft.spread --list github-ci | jq -Rsc 'split("\n")[:-1]') \
+          # create a JSON {name, job, artifact} from the spread jobs
+          echo jobs=$(charmcraft.spread --list github-ci | \
+              jq -Rsc 'split("\n")[:-1]' | \
+              jq -c '.[] as $job | [{
+                  $job, 
+                  name: $job|split("/")[2:]|join("/"), 
+                  artifact: $job|split("[:/]"; null)|join("_")
+              }]') \
             >> $GITHUB_OUTPUT
     outputs:
       jobs: ${{ steps.collect-jobs.outputs.jobs }}
@@ -56,10 +63,9 @@ jobs:
   integration-test:
     strategy:
       fail-fast: false
-      max-parallel: 10
       matrix:
         job: ${{ fromJSON(needs.collect-spread-jobs.outputs.jobs) }}
-    name: ${{ matrix.job }}
+    name: ${{ matrix.job.name }}
     needs:
       - lint
       - build
@@ -98,18 +104,15 @@ jobs:
         # TODO: replace with `charmcraft test` when
         # https://github.com/canonical/charmcraft/issues/2105 and
         # https://github.com/canonical/charmcraft/issues/2130 fixed
-        run: ~/go/bin/spread -vv '${{ matrix.job }}'
+        run: ~/go/bin/spread -vv '${{ matrix.job.job }}'
       - name: Select model
         timeout-minutes: 1
-        # `!contains(matrix.job.spread_job, 'juju29')` workaround for juju 2 error:
-        # "ERROR cannot acquire lock file to read controller concierge-microk8s: unable to open
-        # /tmp/juju-store-lock-3635383939333230: permission denied"
-        # Unable to workaround error with `sudo rm /tmp/juju-*`
         if: ${{ (success() || (failure() && steps.spread.outcome == 'failure')) }}
         id: juju-switch
         run: |
           # sudo needed since spread runs scripts as root
           # "testing" is default model created by concierge
+          sudo juju switch concierge-lxd
           sudo juju switch testing
           mkdir ~/logs/
       - name: juju status
@@ -129,7 +132,7 @@ jobs:
         if: ${{ (success() || (failure() && steps.spread.outcome == 'failure')) }}
         uses: actions/upload-artifact@v4
         with:
-          name: logs-integration-test-${{ matrix.job }}
+          name: logs-integration-test-${{ matrix.job.artifact }}
           path: ~/logs/
           if-no-files-found: error
       - name: Disk usage
