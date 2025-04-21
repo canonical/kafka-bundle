@@ -13,6 +13,7 @@ import pytest_microceph
 from tests.integration.e2e.helpers import (
     create_topic,
     get_random_topic,
+    jubilant_all_units_idle,
     read_topic_config,
     write_topic_message_size_config,
 )
@@ -193,19 +194,17 @@ def test_new_cluster_migration(juju, s3_bucket, kafka, zookeeper):
     list_action = juju.run(leader_unit, "restore", params={"backup-id": backup_to_restore})
     juju.wait(
         # zk is active|idle
-        lambda status: {
-            status.apps["new-zk"].units[unit].juju_status.current
-            for unit in status.apps["new-zk"].units
-        }
-        == {"idle"}
-        and status.apps["new-zk"].is_active,
+        jubilant_all_units_idle(status, apps=["new-zk"]) and status.apps["new-zk"].is_active,
         timeout=1800,
         delay=20,
     )
 
     juju.integrate(kafka, "new-zk")
     juju.wait(
-        lambda status: jubilant.all_active(status, apps=[kafka, "new-zk"]), timeout=1800, delay=10
+        lambda status: jubilant.all_active(status, apps=[kafka, "new-zk"])
+        and jubilant_all_units_idle(status, apps=[kafka, "new-zk"]),
+        timeout=1800,
+        delay=10,
     )
 
     assert f"max.message.bytes={NON_DEFAULT_TOPIC_SIZE}" in read_topic_config(

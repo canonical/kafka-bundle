@@ -33,32 +33,39 @@ jobs:
         path:
           - tests/integration/bundle/app-charm
 
+  collect-spread-jobs:
+    name: Collect spread jobs
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up environment
+        run: |
+          sudo snap install charmcraft --classic
+          sudo snap install jq
+          pipx install tox poetry
+      - name: Collect spread jobs
+        id: collect-jobs
+        run: |
+          echo jobs=$(charmcraft.spread --list github-ci | jq -Rsc 'split("\n")[:-1]') \
+            >> $GITHUB_OUTPUT
+    outputs:
+      jobs: ${{ steps.collect-jobs.outputs.jobs }}
+
   integration-test:
     strategy:
       fail-fast: false
-      max-parallel: 5
+      max-parallel: 10
       matrix:
-        tests:
-          # - integration-terraform  # disabled until https://github.com/juju/terraform-provider-juju/issues/376 is resolved and released
-          - tox-environment: integration-bundle
-            tls: "true"
-          - tox-environment: integration-e2e
-            tls: ""
-          - tox-environment: integration-e2e
-            tls: "true"
-          - tox-environment: integration-e2e-backup
-            tls: ""
-        juju:
-          - snap_channel: "3.4/stable"
-            agent: "3.4.2"
-          - snap_channel: "3.6/stable"
-            agent: "3.6.0"
-    name: ${{ matrix.tests.tox-environment }}_${{ matrix.tests.tls }}_${{ matrix.juju.agent || matrix.juju.snap_channel }}
+        job: ${{ fromJSON(needs.collect-spread-jobs.outputs.jobs) }}
+    name: ${{ matrix.jov }}
     needs:
       - lint
       - build
+      - collect-spread-jobs
     runs-on: ubuntu-22.04
-    timeout-minutes: 120
+    timeout-minutes: 240
     steps:
       - name: (GitHub hosted) Free up disk space
         timeout-minutes: 5
@@ -72,40 +79,65 @@ jobs:
           df --human-readable
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Setup operator environment
-        uses: charmed-kubernetes/actions-operator@main
-        with:
-          provider: lxd
-          juju-channel: ${{ matrix.juju.snap_channel }}
-          bootstrap-options: "--agent-version ${{ matrix.juju.agent }}"
+      - name: Set up environment
+        timeout-minutes: 5
+        run: sudo snap install charmcraft --classic
+      # TODO: remove when https://github.com/canonical/charmcraft/issues/2105 and
+      # https://github.com/canonical/charmcraft/issues/2130 fixed
+      - run: |
+          sudo snap install go --classic
+          go install github.com/snapcore/spread/cmd/spread@latest
       - name: Download packed charm(s)
         uses: actions/download-artifact@v4
         with:
           pattern: ${{ needs.build.outputs.artifact-prefix }}-*
           merge-multiple: true
-      - name: Select tests
-        id: select-tests
+      - name: Run spread job
+        timeout-minutes: 180
+        id: spread
+        # TODO: replace with `charmcraft test` when
+        # https://github.com/canonical/charmcraft/issues/2105 and
+        # https://github.com/canonical/charmcraft/issues/2130 fixed
+        run: ~/go/bin/spread -vv '${{ matrix.job }}'
+
+      - timeout-minutes: 1
+        if: ${{ success() || (failure() && steps.spread.outcome == 'failure') }}
+        run: snap list
+      - name: Select model
+        timeout-minutes: 1
+        # `!contains(matrix.job.spread_job, 'juju29')` workaround for juju 2 error:
+        # "ERROR cannot acquire lock file to read controller concierge-microk8s: unable to open
+        # /tmp/juju-store-lock-3635383939333230: permission denied"
+        # Unable to workaround error with `sudo rm /tmp/juju-*`
+        if: ${{ (success() || (failure() && steps.spread.outcome == 'failure')) }}
+        id: juju-switch
         run: |
-          if [ "${{ github.event_name }}" == "schedule" ]
-          then
-            echo Running unstable and stable tests
-            echo "mark_expression=" >> $GITHUB_OUTPUT
-          else
-            echo Skipping unstable tests
-            echo "mark_expression=not unstable" >> $GITHUB_OUTPUT
-          fi
-      - name: Run integration tests
-        run: |
-          if [ -z "${{ matrix.tests.tls }}" ]; then
-            FLAGS=""
-          else
-            FLAGS="--tls"
-          fi
-  
-          make build TLS=${{ matrix.tests.tls }}
-          echo "======================"
-          echo "Bundle being deployed:"
-          echo "======================"
-          cat build/bundle.yaml
-          echo "======================"
-          tox run -e ${{ matrix.tests.tox-environment }} -- -m '${{ steps.select-tests.outputs.mark_expression }}' $FLAGS
+          # sudo needed since spread runs scripts as root
+          # "testing" is default model created by concierge
+          sudo juju switch testing
+          mkdir ~/logs/
+      - name: juju status
+        timeout-minutes: 1
+        if: ${{ (success() || (failure() && steps.spread.outcome == 'failure')) }}
+        run: sudo juju status --color --relations | tee ~/logs/juju-status.txt
+      - name: juju debug-log
+        timeout-minutes: 3
+        if: ${{ (success() || (failure() && steps.spread.outcome == 'failure')) }}
+        run: sudo juju debug-log --color --replay --no-tail | tee ~/logs/juju-debug-log.txt
+      - name: jhack tail
+        timeout-minutes: 3
+        if: ${{ (success() || (failure() && steps.spread.outcome == 'failure')) }}
+        run: sudo jhack tail --printer raw --replay --no-watch | tee ~/logs/jhack-tail.txt
+      - name: Upload logs
+        timeout-minutes: 5
+        if: ${{ (success() || (failure() && steps.spread.outcome == 'failure')) }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-integration-test-${{ matrix.job }}
+          path: ~/logs/
+          if-no-files-found: error
+      - name: Disk usage
+        timeout-minutes: 1
+        if: ${{ success() || (failure() && steps.spread.outcome == 'failure') }}
+        run: df --human-readable
+

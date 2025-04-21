@@ -1,0 +1,5 @@
+summary: Bundle Tests
+execute: |
+  cd "$SPREAD_PATH"
+  make build TLS=
+  tox -e integration-e2e-backup -- --model testing
