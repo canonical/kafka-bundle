@@ -49,14 +49,12 @@ jobs:
         id: collect-jobs
         run: |
           # create a JSON {name, job, artifact} from the spread jobs
-          echo jobs=$(charmcraft.spread --list github-ci | \
-              jq -Rsc 'split("\n")[:-1]' | \
-              jq -c '.[] as $job | [{
-                  $job, 
-                  name: $job|split("/")[2:]|join("/"), 
-                  artifact: $job|split("[:/]"; null)|join("_")
-              }]') \
-            >> $GITHUB_OUTPUT
+          charmcraft.spread --list github-ci | jq -Rsc 'split("\n")[:-1]' | jq '.[] as $job | {
+            $job, 
+            name: $job|split("/")[2:]|join("/"), 
+            artifact: $job|split("[:/]"; null)|join("_")
+          }' | jq -sc >> $GITHUB_OUTPUT
+          sed -i '1s/^/jobs=/' $GITHUB_OUTPUT
     outputs:
       jobs: ${{ steps.collect-jobs.outputs.jobs }}
 
