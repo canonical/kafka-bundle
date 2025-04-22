@@ -1,0 +1,5 @@
+summary: E2E basic flow tests
+execute: |
+  cd "$SPREAD_PATH"
+  make build TLS=enabled
+  tox -e integration-e2e-basic-flow -- --model testing --tls

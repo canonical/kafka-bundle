@@ -1,0 +1,5 @@
+summary: Bundle Tests
+execute: |
+  cd "$SPREAD_PATH"
+  make build TLS=enabled
+  tox -e integration-bundle -- --model testing --tls

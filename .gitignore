@@ -9,3 +9,4 @@ build/
 parts/
 prime/
 stage/
+.spread-reuse*
