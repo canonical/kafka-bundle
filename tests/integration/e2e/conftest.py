@@ -125,12 +125,13 @@ def juju(request: pytest.FixtureRequest) -> Generator[jubilant.Juju, None, None]
     if model is None:
         with jubilant.temp_model(keep=keep_models) as juju:
             yield juju
+            log = juju.debug_log(limit=1000)
     else:
         juju = jubilant.Juju(model=model)
         yield juju
+        log = juju.debug_log(limit=1000)
 
     if request.session.testsfailed:
-        log = juju.debug_log(limit=1000)
         print(log, end="")
 
 
