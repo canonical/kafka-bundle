@@ -216,3 +216,17 @@ def read_topic_config(model_full_name: str, app_name: str, topic: str) -> str:
         logger.error(f"command '{e.cmd}' return with error (code {e.returncode}): {e.output}")
         raise
     return result
+
+
+def jubilant_all_units_idle(status: jubilant.Status, apps: list[str]):
+    """Helper function that checks if all units are in idle state."""
+    for app in apps:
+        if app not in status.apps:
+            return False
+
+        if {
+            status.apps[app].units[unit].juju_status.current for unit in status.apps[app].units
+        } != {"idle"}:
+            return False
+
+    return True
