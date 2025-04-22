@@ -19,9 +19,9 @@ def juju(request: pytest.FixtureRequest) -> Generator[jubilant.Juju, None, None]
     with jubilant.temp_model(keep=True) as juju:
         yield juju
 
-    if request.session.testsfailed:
-        log = juju.debug_log(limit=1000)
-        print(log, end="")
+        if request.session.testsfailed:
+            log = juju.debug_log(limit=1000)
+            print(log, end="")
 
 
 def get_value(obj: dict, key: str) -> list | str:
