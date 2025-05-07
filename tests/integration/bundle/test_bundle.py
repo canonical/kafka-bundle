@@ -151,19 +151,16 @@ def test_apps_up_and_running(testbed, usernames):
 
     assert ping_servers(zookeeper_hosts)
 
-
-def test_run_action_produce_consume(testbed):
-    """Test production and consumption of messages."""
     testbed.juju.wait(
-        # kafka is active|idle
-        lambda status: {
-            status.apps[KAFKA].units[unit].juju_status.current for unit in status.apps[KAFKA].units
-        }
-        == {"idle"}
-        and status.apps[KAFKA].is_active,
+        lambda status: jubilant.all_active(status, KAFKA)
+        and jubilant.all_agents_idle(status, KAFKA),
         timeout=1800,
         delay=20,
     )
+
+
+def test_run_action_produce_consume(testbed):
+    """Test production and consumption of messages."""
     ran_action = testbed.juju.run("app/0", "produce-consume")
     assert ran_action.results.get("passed", "") == "true"
 
