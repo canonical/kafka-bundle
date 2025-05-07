@@ -244,7 +244,6 @@ def srvr(host: str) -> Dict:
     return result
 
 
-# TODO: fixme
 def ping_servers(unit_ips: list[str]) -> bool:
     for host in unit_ips:
         mode = srvr(host)["Mode"]
