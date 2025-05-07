@@ -2,35 +2,38 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-import asyncio
+import glob
 import json
 import logging
 import os
+import secrets
+from pathlib import Path
 from subprocess import PIPE, check_output
 from typing import Optional
 
-from juju.errors import JujuConnectionError
-from juju.model import Model
-from pytest_operator.plugin import OpsTest
+import jubilant
 
 logger = logging.getLogger(__name__)
 
 
-class OpsTestbed:
+class JujuTestbed:
     """Class for handling multi-cloud juju deployments."""
 
-    def __init__(self, ops_test: OpsTest):
-        self._ops_test = ops_test
-        logging.warning("When using Testbed, avoid interacting directly with ops_test.")
-        pass
+    def __init__(self, model: str | None = None, cos_model: str = "cos"):
+        self.juju = jubilant.Juju()
+        self.model = "jubilant-" + secrets.token_hex(4) if not model else model
+        self.cos_model = cos_model
 
-    def _exec(self, cmd: str) -> str:
+        self.get_or_create_model(self.lxd_controller, self.model)
+
+    def _exec(self, cmd: str, cwd: str | None = None) -> str:
         """Executes a command on shell and returns the result."""
         return check_output(
             cmd,
             stderr=PIPE,
             shell=True,
             universal_newlines=True,
+            cwd=cwd,
         )
 
     def run_script(self, script: str) -> None:
@@ -54,10 +57,10 @@ class OpsTestbed:
             if ret_code:
                 raise OSError(f'command "{command}" failed with error code {ret_code}')
 
-    def juju(self, *args, json_output=True) -> dict:
+    def juju_cli(self, *args, json_output=True) -> dict:
         """Runs a juju command and returns the result in JSON format."""
-        _format_json = "" if not json_output else "--format json"
-        res = self._exec(f"juju {' '.join(args)} {_format_json}")
+        _format_json = [] if not json_output else ["--format", "json"]
+        res = self.juju.cli(*args, *_format_json, include_model=False)
 
         if json_output:
             return json.loads(res)
@@ -66,26 +69,25 @@ class OpsTestbed:
 
     def get_controller_name(self, cloud: str) -> Optional[str]:
         """Gets controller name for specified cloud, e.g. localhost, microk8s, lxd, etc."""
-        res = self.juju("controllers")
+        res = self.juju_cli("controllers")
         for controller in res.get("controllers", {}):
             if res["controllers"][controller].get("cloud") == cloud:
                 return controller
 
         return None
 
-    async def get_model(self, controller_name: str, model_name: str) -> Model:
-        """Gets a juju model on specified controller, raises JujuConnectionError if not found."""
-        state = await OpsTest._connect_to_model(controller_name, model_name)
-        return state.model
-
-    async def get_or_create_model(self, controller_name: str, model_name: str) -> Model:
-        """Returns an existing model on a controller or creates new one if not existing."""
+    def get_model(self, controller_name: str, model_name: str) -> str | None:
+        """Gets a juju model on specified controller, and None if not found."""
         try:
-            return await self.get_model(controller_name, model_name)
-        except JujuConnectionError:
-            self.juju("add-model", "-c", controller_name, model_name, json_output=False)
-            await asyncio.sleep(10)
-            return await self.get_model(controller_name, model_name)
+            self.juju.add_model(model=model_name, controller=controller_name)
+            return None
+        except jubilant.CLIError:
+            # model exists!
+            return model_name
+
+    def get_or_create_model(self, controller_name: str, model_name: str) -> str:
+        """Returns an existing model on a controller or creates new one if not existing."""
+        return self.get_model(model_name=model_name, controller_name=controller_name)
 
     def bootstrap_microk8s(self) -> None:
         """Bootstrap juju on microk8s cloud."""
@@ -120,6 +122,30 @@ class OpsTestbed:
             sleep 90
         """
         )
+
+    def use_vm(self) -> None:
+        """Use the VM controller for jubilant Juju."""
+        self.juju.model = f"{self.lxd_controller}:{self.model}"
+        self.juju_cli("switch", self.lxd_controller, json_output=False)
+
+    def use_k8s(self) -> None:
+        """Use the K8s controller for jubilant Juju."""
+        self.juju.model = f"{self.microk8s_controller}:{self.cos_model}"
+        self.juju_cli("switch", self.microk8s_controller, json_output=False)
+
+    def build_charm(self, path: Path) -> str:
+        # if we're in CI, no need to use charmcraft pack.
+        if "CI" not in os.environ:
+            for built_charm in glob.glob(f"{path}/*.charm"):
+                self._exec(f"rm -rf {built_charm}")
+
+            logger.info(f"Building {path}")
+            self._exec("charmcraft pack", cwd=f"{path}")
+
+        for built_path in glob.glob(f"{path}/*.charm"):
+            return f"./{built_path}"
+
+        raise Exception("Failed to build the charm.")
 
     @property
     def lxd_controller(self) -> Optional[str]:

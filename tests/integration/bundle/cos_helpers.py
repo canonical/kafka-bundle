@@ -36,7 +36,6 @@ def deploy_cos_script(controller: str, model_name: str = "cos", channel: str = "
     return f"""
         # deploy COS-Lite
         juju switch {controller}
-        juju add-model {model_name}
         juju switch {model_name}
 
         curl -L https://raw.githubusercontent.com/canonical/cos-lite-bundle/main/overlays/offers-overlay.yaml -O

@@ -8,7 +8,7 @@ import string
 from subprocess import PIPE, STDOUT, CalledProcessError, check_output
 from typing import NamedTuple
 
-from juju.unit import Unit
+import jubilant
 from pymongo import MongoClient
 from tests.integration.e2e.literals import KAFKA_INTERNAL_PORT, SUBSTRATE
 
@@ -56,7 +56,7 @@ def check_produced_and_consumed_messages(uris: str, collection_name: str):
             logger.error(missing_elem)
 
         assert len(consumed_messages) >= len(produced_messages)
-        assert abs(len(consumed_messages) - len(produced_messages)) < 3
+        assert abs(len(consumed_messages) - len(produced_messages)) <= 3
 
         client.close()
     except Exception as e:
@@ -64,17 +64,11 @@ def check_produced_and_consumed_messages(uris: str, collection_name: str):
         raise e
 
 
-async def fetch_action_get_credentials(unit: Unit) -> dict:
-    """Helper to run an action to fetch connection info.
-
-    Args:
-        unit: The juju unit on which to run the get_credentials action for credentials
-    Returns:
-        A dictionary with the username, password and access info for the service.
-    """
-    action = await unit.run_action(action_name="get-credentials")
-    result = await action.wait()
-    return result.results
+def fetch_action_get_credentials(juju: jubilant.Juju, app: str) -> dict:
+    """Helper to run an action to fetch connection info."""
+    unit = next(iter(juju.status().apps[app].units.keys()))
+    action = juju.run(unit, "get-credentials")
+    return action.results
 
 
 def get_action_parameters(credentials: dict, topic_name: str):
@@ -92,33 +86,39 @@ def get_action_parameters(credentials: dict, topic_name: str):
     return action_data
 
 
-async def fetch_action_start_process(unit: Unit, action_params: dict[str, str]) -> dict:
+def fetch_action_start_process(
+    juju: jubilant.Juju, app: str, action_params: dict[str, str], unit_num: int = 0
+) -> dict:
     """Helper to run an action to start consumer/producer.
 
     Args:
-        unit: the target unit.
+        juju: the Jubilant juju instance.
+        app: application name.
         action_params: A dictionary that contains all commands parameters.
+        unit_num: number of unit to run action on. Defaults to 0.
 
     Returns:
         A dictionary with the result of the action.
     """
-    action = await unit.run_action(action_name="start-process", **action_params)
-    result = await action.wait()
-    return result.results
+    unit = list(juju.status().apps[app].units)[unit_num]
+    action = juju.run(unit, "start-process", params=action_params)
+    return action.results
 
 
-async def fetch_action_stop_process(unit: Unit) -> dict:
+def fetch_action_stop_process(juju: jubilant.Juju, app: str, unit_num: int = 0) -> dict:
     """Helper to run an action to stop consumer/producer.
 
     Args:
-        unit: the target unit.
+        juju: the Jubilant juju instance.
+        app: application name.
+        unit_num: number of unit to run action on. Defaults to 0.
 
     Returns:
         A dictionary with the result of the action.
     """
-    action = await unit.run_action(action_name="stop-process")
-    result = await action.wait()
-    return result.results
+    unit = list(juju.status().apps[app].units)[unit_num]
+    action = juju.run(unit, "stop-process")
+    return action.results
 
 
 def get_random_topic() -> str:

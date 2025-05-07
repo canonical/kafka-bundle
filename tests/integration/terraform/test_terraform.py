@@ -4,12 +4,24 @@
 
 import logging
 import subprocess
+from typing import Generator
 
+import jubilant
 import pytest
 import yaml
-from pytest_operator.plugin import OpsTest
 
 logger = logging.getLogger(__name__)
+
+
+@pytest.fixture(scope="module")
+def juju(request: pytest.FixtureRequest) -> Generator[jubilant.Juju, None, None]:
+    """Pytest fixture that wraps :meth:`jubilant.with_model`."""
+    with jubilant.temp_model(keep=True) as juju:
+        yield juju
+
+        if request.session.testsfailed:
+            log = juju.debug_log(limit=1000)
+            print(log, end="")
 
 
 def get_value(obj: dict, key: str) -> list | str:
@@ -24,16 +36,10 @@ def get_value(obj: dict, key: str) -> list | str:
                 return item
 
 
-@pytest.mark.abort_on_fail
-async def test_deploy_terraform_active(ops_test: OpsTest):
+def test_deploy_terraform_active(juju):
     """Deploy using Terraform."""
     controller_credentials = yaml.safe_load(
-        subprocess.check_output(
-            "juju show-controller --show-password",
-            stderr=subprocess.PIPE,
-            shell=True,
-            universal_newlines=True,
-        )
+        juju.cli("show-controller", "--show-password", include_model=False)
     )
 
     username = get_value(obj=controller_credentials, key="user")
@@ -41,7 +47,7 @@ async def test_deploy_terraform_active(ops_test: OpsTest):
     controller_addresses = ",".join(get_value(obj=controller_credentials, key="api-endpoints"))
     ca_cert = get_value(obj=controller_credentials, key="ca-cert")
 
-    command = f"terraform init && terraform import juju_model.kafka {ops_test.model_name} && terraform apply -auto-approve -var 'model={ops_test.model_name}'"
+    command = f"terraform init && terraform import juju_model.kafka {juju.model} && terraform apply -auto-approve -var 'model={juju.model}'"
 
     try:
         subprocess.check_output(
@@ -63,6 +69,8 @@ async def test_deploy_terraform_active(ops_test: OpsTest):
         logger.info(e.stderr)
         raise e
 
-    await ops_test.model.wait_for_idle(
-        apps=["kafka", "zookeeper"], timeout=2000, idle_period=30, status="active"
+    juju.wait(
+        lambda status: jubilant.all_active(status, "kafka", "zookeeper"),
+        timeout=2000,
+        delay=10,
     )
