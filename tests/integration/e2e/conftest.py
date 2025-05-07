@@ -226,9 +226,7 @@ def deploy_test_app(juju: jubilant.Juju, kafka, certificates, database, tls):
         if tls:
             juju.integrate(generated_app_name, certificates)
             juju.wait(
-                lambda status: jubilant.all_active(
-                    status, apps=[generated_app_name, certificates]
-                ),
+                lambda status: jubilant.all_active(status, generated_app_name, certificates),
                 timeout=1800,
                 delay=10,
             )
@@ -236,7 +234,7 @@ def deploy_test_app(juju: jubilant.Juju, kafka, certificates, database, tls):
         # Relate with MongoDB
         juju.integrate(generated_app_name, database)
         juju.wait(
-            lambda status: jubilant.all_active(status, apps=[generated_app_name, database]),
+            lambda status: jubilant.all_active(status, generated_app_name, database),
             timeout=1800,
             delay=10,
         )

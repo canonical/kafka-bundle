@@ -43,7 +43,7 @@ def test_cluster_is_deployed_successfully(juju, kafka, zookeeper, tls, certifica
             channel="5/edge",
         )
         juju.wait(
-            lambda status: jubilant.all_active(status, apps=[kafka, zookeeper, database]),
+            lambda status: jubilant.all_active(status, kafka, zookeeper, database),
             timeout=1200,
             delay=10,
         )
@@ -65,7 +65,7 @@ def test_test_app_actually_set_up(
 
         juju.integrate(data_integrator_producer, kafka)
         juju.wait(
-            lambda status: jubilant.all_active(status, apps=[data_integrator_producer, kafka]),
+            lambda status: jubilant.all_active(status, data_integrator_producer, kafka),
             timeout=1800,
             delay=10,
         )
@@ -77,7 +77,7 @@ def test_test_app_actually_set_up(
         )
         juju.integrate(data_integrator_consumer, kafka)
         juju.wait(
-            lambda status: jubilant.all_active(status, apps=[data_integrator_consumer, kafka]),
+            lambda status: jubilant.all_active(status, data_integrator_consumer, kafka),
             timeout=1800,
             delay=10,
         )
@@ -99,7 +99,7 @@ def test_test_app_actually_set_up(
         # Relate with Kafka and automatically start producer
         juju.integrate(producer, kafka)
         juju.wait(
-            lambda status: jubilant.all_active(status, apps=[producer, kafka]),
+            lambda status: jubilant.all_active(status, producer, kafka),
             timeout=1800,
             delay=10,
         )
@@ -117,7 +117,7 @@ def test_test_app_actually_set_up(
         # Relate with Kafka and automatically start consumer
         juju.integrate(consumer, kafka)
         juju.wait(
-            lambda status: jubilant.all_active(status, apps=[consumer, kafka]),
+            lambda status: jubilant.all_active(status, consumer, kafka),
             timeout=1800,
             delay=10,
         )
@@ -184,7 +184,7 @@ def test_consumed_messages(juju, deploy_data_integrator, database):
 
     juju.integrate(mongo_integrator, database)
     juju.wait(
-        lambda status: jubilant.all_active(status, apps=[mongo_integrator, database]),
+        lambda status: jubilant.all_active(status, mongo_integrator, database),
         timeout=1800,
         delay=10,
     )

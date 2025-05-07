@@ -99,7 +99,7 @@ def test_deploy_app_charm_relate(testbed, bundle_file, tls):
     if tls:
         testbed.juju.integrate("app", TLS_CHARM_NAME)
 
-    testbed.juju.wait(lambda status: jubilant.all_active(status, apps=applications), timeout=2000)
+    testbed.juju.wait(lambda status: jubilant.all_active(status, *applications), timeout=2000)
     testbed.juju.integrate(KAFKA, "app")
 
     testbed.juju.wait(lambda status: jubilant.all_active(status), timeout=1000)

@@ -70,7 +70,7 @@ def test_deploy_terraform_active(juju):
         raise e
 
     juju.wait(
-        lambda status: jubilant.all_active(status, apps=["kafka", "zookeeper"]),
+        lambda status: jubilant.all_active(status, "kafka", "zookeeper"),
         timeout=2000,
         delay=10,
     )

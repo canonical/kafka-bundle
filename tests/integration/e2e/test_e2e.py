@@ -30,14 +30,14 @@ def test_clients_actually_set_up(juju, deploy_data_integrator):
 
     juju.integrate(producer, KAFKA_CHARM_NAME)
     juju.wait(
-        lambda status: jubilant.all_active(status, apps=[producer, KAFKA_CHARM_NAME]),
+        lambda status: jubilant.all_active(status, producer, KAFKA_CHARM_NAME),
         timeout=1800,
         delay=10,
     )
 
     juju.integrate(consumer, KAFKA_CHARM_NAME)
     juju.wait(
-        lambda status: jubilant.all_active(status, apps=[consumer, KAFKA_CHARM_NAME]),
+        lambda status: jubilant.all_active(status, consumer, KAFKA_CHARM_NAME),
         timeout=1800,
         delay=10,
     )
