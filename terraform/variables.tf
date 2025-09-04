@@ -16,12 +16,10 @@ variable "tls_offer" {
 }
 
 variable "cos_offers" {
-  description = "COS offers for observability."
   type = object({
     dashboard = optional(string, null),
     metrics   = optional(string, null),
-    logging   = optional(string, null),
-    tracing   = optional(string, null)
+    logging   = optional(string, null)
   })
 
   default = {}
