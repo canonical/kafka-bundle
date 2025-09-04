@@ -1,2 +1,0 @@
-model = "dev"
-cloud = "localhost"
