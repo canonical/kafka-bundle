@@ -1,5 +1,5 @@
 locals {
-  connect_app_name  = var.connect.units <= 0 ? module.connect[0].app_name : null
+  connect_app_name  = var.connect.units > 0 ? module.connect[0].app_name : null
   karapace_app_name = var.karapace.units > 0 ? module.karapace[0].app_name : null
   ui_app_name       = var.ui.units > 0 ? module.ui[0].app_name : null
   cos_enabled       = var.cos_offers.dashboard != null ? true : false
