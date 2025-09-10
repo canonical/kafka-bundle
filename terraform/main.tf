@@ -18,9 +18,9 @@ module "kafka" {
   base             = var.kafka.base
   units            = var.kafka.units
   controller_units = var.kafka.controller_units
-  config = {
+  config = merge(var.kafka.config, {
     profile = var.profile
-  }
+  })
 }
 
 module "connect" {
@@ -33,6 +33,7 @@ module "connect" {
   constraints = var.connect.constraints
   base        = var.connect.base
   units       = var.connect.units
+  config      = var.connect.config
 }
 
 module "karapace" {
@@ -45,6 +46,7 @@ module "karapace" {
   constraints = var.karapace.constraints
   base        = var.karapace.base
   units       = var.karapace.units
+  config      = var.karapace.config
 }
 
 module "ui" {
@@ -57,4 +59,5 @@ module "ui" {
   constraints = var.ui.constraints
   base        = var.ui.base
   units       = var.ui.units
+  config      = var.ui.config
 }
