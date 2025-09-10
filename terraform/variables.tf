@@ -108,7 +108,7 @@ variable "integrator" {
     app_name = optional(string, "data-integrator")
     channel  = optional(string, "latest/edge")
     config = optional(map(string), {
-      topic-name       = "default"
+      topic-name       = "__admin-user"
       extra-user-roles = "admin"
     })
     constraints = optional(string, "arch=amd64")
