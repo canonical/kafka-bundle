@@ -16,10 +16,12 @@ variable "tls_offer" {
 }
 
 variable "cos_offers" {
+  description = "COS offers for observability."
   type = object({
     dashboard = optional(string, null),
     metrics   = optional(string, null),
-    logging   = optional(string, null)
+    logging   = optional(string, null),
+    tracing   = optional(string, null)
   })
 
   default = {}
@@ -52,6 +54,11 @@ variable "kafka" {
     controller_units = optional(number, 3)
   })
   default = {}
+
+  validation {
+    condition     = var.kafka.controller_units % 2 != 0
+    error_message = "The number of Apache Kafka KRaft controllers must be odd (e.g., 1, 3, 5, ...)."
+  }
 }
 
 variable "connect" {
