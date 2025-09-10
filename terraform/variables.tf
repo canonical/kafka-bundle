@@ -65,7 +65,6 @@ variable "connect" {
     revision    = optional(number, null)
     base        = optional(string, "ubuntu@22.04")
     units       = optional(number, 1)
-    enabled     = optional(bool, true)
   })
   default = {}
 }
@@ -81,7 +80,6 @@ variable "karapace" {
     revision    = optional(number, null)
     base        = optional(string, "ubuntu@24.04")
     units       = optional(number, 1)
-    enabled     = optional(bool, true)
   })
   default = {}
 }
@@ -97,7 +95,6 @@ variable "ui" {
     revision    = optional(number, null)
     base        = optional(string, "ubuntu@24.04")
     units       = optional(number, 1)
-    enabled     = optional(bool, true)
   })
   default = {}
 }
@@ -116,7 +113,6 @@ variable "integrator" {
     revision    = optional(number, null)
     base        = optional(string, "ubuntu@24.04")
     units       = optional(number, 1)
-    enabled     = optional(bool, true)
   })
   default = {}
 }
