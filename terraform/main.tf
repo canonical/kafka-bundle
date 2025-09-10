@@ -1,4 +1,5 @@
 locals {
+<<<<<<< HEAD
   deployment_mode     = var.controller.units > 0 ? "split" : "single"
   controller_app_name = var.controller.units > 0 ? var.controller.app_name : var.broker.app_name
   connect_app_name    = var.connect.units > 0 ? module.connect[0].app_name : null
@@ -9,6 +10,15 @@ locals {
   tls_enabled         = var.tls_offer != null ? true : false
   cos_agent_charm     = "grafana-agent"
   cos_agent_channel   = "1/stable"
+=======
+  connect_app_name  = var.connect.units > 0 ? module.connect[0].app_name : null
+  karapace_app_name = var.karapace.units > 0 ? module.karapace[0].app_name : null
+  ui_app_name       = var.ui.units > 0 ? module.ui[0].app_name : null
+  cos_enabled       = var.cos_offers.dashboard != null ? true : false
+  tls_enabled       = var.tls_offer != null ? true : false
+  cos_agent_charm   = "grafana-agent"
+  cos_agent_channel = "1/stable"
+>>>>>>> a1d722e (fix: wrong ternary)
 }
 
 module "broker" {
