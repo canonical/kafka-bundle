@@ -40,26 +40,43 @@ variable "cos_offers" {
   }
 }
 
-variable "kafka" {
+variable "broker" {
   description = "Defines the Apache Kafka broker appliaction configuration"
   type = object({
-    app_name         = optional(string, "kafka")
-    channel          = optional(string, "4/edge")
-    config           = optional(map(string), {})
-    constraints      = optional(string, "arch=amd64")
-    resources        = optional(map(string), {})
-    revision         = optional(number, null)
-    base             = optional(string, "ubuntu@24.04")
-    units            = optional(number, 3)
-    controller_units = optional(number, 3)
+    app_name    = optional(string, "kafka-broker")
+    channel     = optional(string, "4/edge")
+    config      = optional(map(string), {})
+    constraints = optional(string, "arch=amd64")
+    resources   = optional(map(string), {})
+    revision    = optional(number, null)
+    base        = optional(string, "ubuntu@24.04")
+    units       = optional(number, 3)
+    storage     = optional(map(string), {})
+  })
+  default = {}
+}
+
+variable "controller" {
+  description = "Defines the Apache Kafka KRaft controller appliaction configuration"
+  type = object({
+    app_name    = optional(string, "kafka-controller")
+    channel     = optional(string, "4/edge")
+    config      = optional(map(string), {})
+    constraints = optional(string, "arch=amd64")
+    resources   = optional(map(string), {})
+    revision    = optional(number, null)
+    base        = optional(string, "ubuntu@24.04")
+    units       = optional(number, 3)
+    storage     = optional(map(string), {})
   })
   default = {}
 
   validation {
-    condition     = var.kafka.controller_units % 2 != 0
+    condition     = var.controller.units == 0 || var.controller.units % 2 != 0
     error_message = "The number of Apache Kafka KRaft controllers must be odd (e.g., 1, 3, 5, ...)."
   }
 }
+
 
 variable "connect" {
   description = "Defines the Kafka Connect appliaction configuration"

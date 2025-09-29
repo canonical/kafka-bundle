@@ -17,24 +17,24 @@ resource "juju_application" "integrator" {
 resource "juju_application" "kafka_cos_agent" {
   count = local.cos_enabled ? 1 : 0
   model = var.model
-  name  = "${module.kafka.broker_app_name}-cos-agent"
+  name  = "${module.broker.app_name}-cos-agent"
 
   charm {
     name    = local.cos_agent_charm
     channel = local.cos_agent_channel
-    base    = var.kafka.base
+    base    = var.broker.base
   }
 }
 
 resource "juju_application" "kraft_cos_agent" {
-  count = local.cos_enabled && module.kafka.deployment_mode == "split" ? 1 : 0
+  count = local.cos_enabled && local.deployment_mode == "split" ? 1 : 0
   model = var.model
-  name  = "${module.kafka.controller_app_name}-cos-agent"
+  name  = "${module.controller[0].app_name}-cos-agent"
 
   charm {
     name    = local.cos_agent_charm
     channel = local.cos_agent_channel
-    base    = var.kafka.base
+    base    = var.controller.base
   }
 }
 

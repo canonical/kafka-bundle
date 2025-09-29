@@ -1,11 +1,26 @@
 # Integrations between Kafka products
 
+resource "juju_integration" "kafka_kraft" {
+  count = local.deployment_mode == "split" ? 1 : 0
+  model = var.model
+
+  application {
+    name     = module.broker.app_name
+    endpoint = "peer-cluster-orchestrator"
+  }
+
+  application {
+    name     = module.controller[0].app_name
+    endpoint = "peer-cluster"
+  }
+}
+
 resource "juju_integration" "kafka_connect" {
   count = var.connect.units > 0 ? 1 : 0
   model = var.model
 
   application {
-    name     = module.kafka.broker_app_name
+    name     = module.broker.app_name
     endpoint = "kafka-client"
   }
 
@@ -19,7 +34,7 @@ resource "juju_integration" "kafka_karapace" {
   model = var.model
 
   application {
-    name     = module.kafka.broker_app_name
+    name     = module.broker.app_name
     endpoint = "kafka-client"
   }
 
@@ -33,7 +48,7 @@ resource "juju_integration" "kafka_ui" {
   model = var.model
 
   application {
-    name     = module.kafka.broker_app_name
+    name     = module.broker.app_name
     endpoint = "kafka-client"
   }
 
@@ -79,7 +94,7 @@ resource "juju_integration" "integrator_kafka" {
   }
 
   application {
-    name = module.kafka.broker_app_name
+    name = module.broker.app_name
   }
 }
 
@@ -90,7 +105,7 @@ resource "juju_integration" "kafka_tls" {
   model = var.model
 
   application {
-    name     = module.kafka.broker_app_name
+    name     = module.broker.app_name
     endpoint = "certificates"
   }
 
@@ -148,7 +163,7 @@ resource "juju_integration" "kafka_cos" {
   model = var.model
 
   application {
-    name     = module.kafka.broker_app_name
+    name     = module.broker.app_name
     endpoint = "cos-agent"
   }
 
@@ -159,11 +174,11 @@ resource "juju_integration" "kafka_cos" {
 }
 
 resource "juju_integration" "kraft_cos" {
-  count = local.cos_enabled && module.kafka.deployment_mode == "split" ? 1 : 0
+  count = local.cos_enabled && local.deployment_mode == "split" ? 1 : 0
   model = var.model
 
   application {
-    name     = module.kafka.controller_app_name
+    name     = module.controller[0].app_name
     endpoint = "cos-agent"
   }
 
