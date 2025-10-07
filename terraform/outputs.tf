@@ -20,6 +20,7 @@ output "app_names" {
     controller = local.controller_app_name,
     connect    = local.connect_app_name,
     karapace   = local.karapace_app_name,
-    ui         = local.ui_app_name
+    ui         = local.ui_app_name,
+    integrator = local.integrator_app_name
   }
 }

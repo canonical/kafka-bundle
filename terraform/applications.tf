@@ -1,4 +1,5 @@
 resource "juju_application" "integrator" {
+  count = var.integrator.units > 0 ? 1 : 0
   model = var.model
   name  = var.integrator.app_name
   units = var.integrator.units

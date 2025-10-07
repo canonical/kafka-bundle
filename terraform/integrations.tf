@@ -87,10 +87,11 @@ resource "juju_integration" "kafka_connect_ui" {
 }
 
 resource "juju_integration" "integrator_kafka" {
+  count = var.integrator.units > 0 ? 1 : 0
   model = var.model
 
   application {
-    name = juju_application.integrator.name
+    name = juju_application.integrator[0].name
   }
 
   application {
