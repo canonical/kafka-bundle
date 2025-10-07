@@ -57,7 +57,7 @@ variable "broker" {
 }
 
 variable "controller" {
-  description = "Defines the Apache Kafka KRaft controller appliaction configuration"
+  description = "Defines the Apache Kafka KRaft controller application configuration"
   type = object({
     app_name    = optional(string, "kafka-controller")
     channel     = optional(string, "4/edge")
