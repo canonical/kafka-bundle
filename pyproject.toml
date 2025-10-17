@@ -79,6 +79,7 @@ pymongo = "^4.3.3"
 boto3-stubs = { extras = ["s3"], version = "^1.35.8" }
 pytest-operator-cache = { git = "https://github.com/canonical/data-platform-workflows", tag = "v22.0.0", subdirectory = "python/pytest_plugins/pytest_operator_cache" }
 pytest-microceph = { git = "https://github.com/canonical/data-platform-workflows", tag = "v22.0.0", subdirectory = "python/pytest_plugins/microceph" }
+jubilant = ">=1.0.0"
 
 [tool.ruff]
 line-length = 99
