@@ -15,6 +15,7 @@ from tests.integration.terraform.helpers import all_active_idle, get_app_list
 logger = logging.getLogger(__name__)
 
 
+@pytest.mark.skip_if_deployed
 @pytest.mark.abort_on_fail
 def test_deployment_active(juju: Juju, kraft_mode, deploy_cluster):
     """Test that Kafka is deployed and active."""
@@ -34,7 +35,6 @@ def test_deployment_active(juju: Juju, kraft_mode, deploy_cluster):
         assert status.apps[app].app_status.current == "active"
 
 
-@pytest.mark.skip
 @pytest.mark.abort_on_fail
 def test_components(juju: Juju, kraft_mode):
     """Test that all components are deployed."""
@@ -49,7 +49,6 @@ def test_components(juju: Juju, kraft_mode):
     validator.test_create_mm2_connector()
 
 
-@pytest.mark.skip
 @pytest.mark.abort_on_fail
 def test_tls_toggle(juju: Juju, kraft_mode, enable_tls):
     """Test enabling and disabling TLS across the cluster."""
