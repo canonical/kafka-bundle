@@ -47,7 +47,7 @@ def deploy_cluster(juju: jubilant.Juju, kraft_mode):
     # Ensure cleanup of any previous state
     terraform_deployer.cleanup()
 
-    config = get_terraform_config(model_name=juju.model, split_mode=(kraft_mode == "multi"))
+    config = get_terraform_config(split_mode=(kraft_mode == "multi"))
     tfvars_file = terraform_deployer.create_tfvars(config)
 
     terraform_deployer.terraform_init()
@@ -73,11 +73,7 @@ def enable_tls(juju: jubilant.Juju, kraft_mode):
     open(CA_FILE, "w").write(ca)
 
     terraform_deployer = TerraformDeployer(juju.model)
-    config = get_terraform_config(
-        model_name=juju.model,
-        enable_tls=True,
-        split_mode=(kraft_mode == "multi"),
-    )
+    config = get_terraform_config(enable_tls=True, split_mode=(kraft_mode == "multi"))
     tfvars_file = terraform_deployer.create_tfvars(config)
     terraform_deployer.terraform_apply(tfvars_file)
 
@@ -86,11 +82,7 @@ def enable_tls(juju: jubilant.Juju, kraft_mode):
 def disable_tls(juju: jubilant.Juju, kraft_mode):
     """Remove the tls endpoint and update terraform."""
     terraform_deployer = TerraformDeployer(juju.model)
-    config = get_terraform_config(
-        model_name=juju.model,
-        enable_tls=False,
-        split_mode=(kraft_mode == "multi"),
-    )
+    config = get_terraform_config(enable_tls=False, split_mode=(kraft_mode == "multi"))
     tfvars_file = terraform_deployer.create_tfvars(config)
 
     terraform_deployer.terraform_apply(tfvars_file)

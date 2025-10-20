@@ -184,7 +184,6 @@ class TerraformDeployer:
 
 
 def get_terraform_config(
-    model_name: str,
     enable_cruise_control: bool = False,
     enable_tls: bool = False,
     split_mode: bool = False,
@@ -192,20 +191,18 @@ def get_terraform_config(
     """Get Terraform configuration based on deployment mode."""
     if split_mode:
         return get_multi_app_config(
-            model_name=model_name,
             enable_cruise_control=enable_cruise_control,
             enable_tls=enable_tls,
         )
     else:
         return get_single_mode_config(
-            model_name=model_name,
             enable_cruise_control=enable_cruise_control,
             enable_tls=enable_tls,
         )
 
 
 def get_single_mode_config(
-    model_name: str, enable_cruise_control: bool = False, enable_tls: bool = False
+    enable_cruise_control: bool = False, enable_tls: bool = False
 ) -> Dict[str, Any]:
     """Get Terraform configuration for single-mode deployment."""
     config = {
@@ -219,7 +216,7 @@ def get_single_mode_config(
         "integrator": {"units": 1},
     }
     if enable_tls:
-        config = enable_tls_config(config, model_name)
+        config = enable_tls_config(config)
 
     if enable_cruise_control:
         # Add balancer role while preserving existing roles
@@ -229,7 +226,7 @@ def get_single_mode_config(
 
 
 def get_multi_app_config(
-    model_name: str, enable_cruise_control: bool = False, enable_tls: bool = False
+    enable_cruise_control: bool = False, enable_tls: bool = False
 ) -> Dict[str, Any]:
     """Get Terraform configuration for multi-app (split) mode deployment."""
     config = {
@@ -247,7 +244,7 @@ def get_multi_app_config(
     }
 
     if enable_tls:
-        config = enable_tls_config(config, model_name)
+        config = enable_tls_config(config)
 
     if enable_cruise_control:
         # Add balancer role while preserving existing roles
