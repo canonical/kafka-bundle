@@ -123,7 +123,7 @@ jobs:
         juju:
           - snap_channel: "3.6/stable"
             agent: "3.6.10"
-    runs-on: [self-hosted, linux, AMD64, X64, xlarge, noble]
+    runs-on: ubuntu-latest
     name: ${{ matrix.tox-environment }}_${{ matrix.kraft-mode }}_${{ matrix.juju.agent || matrix.juju.snap_channel }}
     needs:
       - lint
