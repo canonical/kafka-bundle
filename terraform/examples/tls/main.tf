@@ -41,10 +41,10 @@ module "kafka" {
   profile    = var.profile
   tls_offer  = module.tls.offers.certificates.url
   broker = {
-    units = 1
+    units = 3
   }
   controller = {
-    units = 1
+    units = 3
   }
   connect = {
     units = 3
