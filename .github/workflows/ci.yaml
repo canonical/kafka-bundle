@@ -139,8 +139,6 @@ jobs:
           rm -r /opt/hostedtoolcache/
           printf '\nDisk usage after cleanup\n'
           df --human-readable
-      - name: Install tox
-        run: pipx install tox
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup operator environment
