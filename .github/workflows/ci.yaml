@@ -22,16 +22,16 @@ jobs:
       - name: Run linters
         run: make lint
 
-  build:
-    strategy:
-      matrix:
-        path:
-          - tests/integration/bundle/app-charm
-    name: Build charm | ${{ matrix.path }}
-    uses: canonical/data-platform-workflows/.github/workflows/build_charm.yaml@v32.2.2
-    with:
-      cache: true
-      path-to-charm-directory: ${{ matrix.path }}
+  # build:
+  #   strategy:
+  #     matrix:
+  #       path:
+  #         - tests/integration/bundle/app-charm
+  #   name: Build charm | ${{ matrix.path }}
+  #   uses: canonical/data-platform-workflows/.github/workflows/build_charm.yaml@v32.2.2
+  #   with:
+  #     cache: true
+  #     path-to-charm-directory: ${{ matrix.path }}
 
   # integration-test:
   #   strategy:
@@ -139,6 +139,8 @@ jobs:
       #     rm -r /opt/hostedtoolcache/
       #     printf '\nDisk usage after cleanup\n'
       #     df --human-readable
+      - name: Install tox
+        run: pipx install tox
       - name: Checkout
         uses: actions/checkout@v4
       # - name: Download packed charm(s)
