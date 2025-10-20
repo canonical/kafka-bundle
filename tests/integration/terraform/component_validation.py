@@ -274,19 +274,19 @@ class ComponentValidation:
 
     def _get_connect_admin_password(self) -> str:
         """Get admin user's password of a unit by reading credentials file."""
-        password_path = f"/var/snap/charmed-kafka/current/etc/connect/connect.password"
+        password_path = "/var/snap/charmed-kafka/current/etc/connect/connect.password"
         res = check_output(
-                f"JUJU_MODEL={self.model} juju ssh {CONNECT_APP_NAME}/0 sudo -i 'sudo cat {password_path}'",
-                shell=True,
-                universal_newlines=True,
-            )
+            f"JUJU_MODEL={self.model} juju ssh {CONNECT_APP_NAME}/0 sudo -i 'sudo cat {password_path}'",
+            shell=True,
+            universal_newlines=True,
+        )
         raw = res.strip().split("\n")
 
         if not raw:
-            raise Exception(f"Unable to read the Connect credentials file.")
+            raise Exception("Unable to read the Connect credentials file.")
 
         for line in raw:
             if line.startswith("admin"):
                 return line.split(":")[-1].strip()
 
-        raise Exception(f"Admin user not defined in the Connect credentials file.")
+        raise Exception("Admin user not defined in the Connect credentials file.")

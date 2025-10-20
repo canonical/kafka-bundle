@@ -13,6 +13,7 @@ from tests.integration.terraform.helpers import all_active_idle, get_app_list
 
 logger = logging.getLogger(__name__)
 
+
 @pytest.mark.skip_if_deployed
 @pytest.mark.abort_on_fail
 def test_deployment_active(juju: Juju, kraft_mode, deploy_cluster):
@@ -29,6 +30,7 @@ def test_deployment_active(juju: Juju, kraft_mode, deploy_cluster):
     status = juju.status()
     for app in app_list:
         assert status.apps[app].app_status.current == "active"
+
 
 @pytest.mark.abort_on_fail
 def test_components(juju: Juju, kraft_mode):
