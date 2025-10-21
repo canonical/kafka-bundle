@@ -5,7 +5,6 @@
 """Tests both single-mode and multi-app mode deployments with all components."""
 
 import logging
-import time
 
 import pytest
 from jubilant import Juju
@@ -21,8 +20,6 @@ def test_deployment_active(juju: Juju, kraft_mode, deploy_cluster):
     """Test that Kafka is deployed and active."""
     # Fixtures will deploy using terraform
     # Wait for all applications to be active
-    logger.info("Waiting a bit after initial deployment...")
-    time.sleep(60)
     app_list = get_app_list(kraft_mode)
     juju.wait(
         lambda status: all_active_idle(status, *app_list),
@@ -50,7 +47,7 @@ def test_components(juju: Juju, kraft_mode):
 
 
 @pytest.mark.abort_on_fail
-def test_tls_toggle(juju: Juju, kraft_mode, enable_tls):
+def test_tls_toggle(juju: Juju, kraft_mode, enable_terraform_tls):
     """Test enabling and disabling TLS across the cluster."""
     app_list = get_app_list(kraft_mode)
 

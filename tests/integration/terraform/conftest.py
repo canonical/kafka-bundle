@@ -55,7 +55,7 @@ def deploy_cluster(juju: jubilant.Juju, kraft_mode):
 
 
 @pytest.fixture()
-def enable_tls(juju: jubilant.Juju, kraft_mode):
+def enable_terraform_tls(juju: jubilant.Juju, kraft_mode):
     """Deploy a tls endpoint and update terraform."""
     jubilant.Juju().add_model(model=TLS_MODEL_NAME)
     tls_model = jubilant.Juju(model=TLS_MODEL_NAME)
@@ -79,7 +79,7 @@ def enable_tls(juju: jubilant.Juju, kraft_mode):
 
 
 @pytest.fixture()
-def disable_tls(juju: jubilant.Juju, kraft_mode):
+def disable_terraform_tls(juju: jubilant.Juju, kraft_mode):
     """Remove the tls endpoint and update terraform."""
     terraform_deployer = TerraformDeployer(juju.model)
     config = get_terraform_config(enable_tls=False, split_mode=(kraft_mode == "multi"))
