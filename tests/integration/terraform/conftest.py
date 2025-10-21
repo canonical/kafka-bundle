@@ -66,6 +66,7 @@ def enable_terraform_tls(juju: jubilant.Juju, kraft_mode):
         successes=5,
         timeout=600,
     )
+    tls_model.offer(CERTIFICATES_APP_NAME, endpoint="certificates")
 
     # Store the CA cert for requests
     result = tls_model.run(f"{CERTIFICATES_APP_NAME}/0", "get-ca-certificate")

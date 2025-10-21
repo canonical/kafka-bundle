@@ -33,8 +33,9 @@ logger = logging.getLogger(__name__)
 class ComponentValidation:
     """Test all Kafka ecosystem components functionality."""
 
-    def __init__(self, model: str):
+    def __init__(self, model: str, tls: bool = False):
         self.model = model
+        self.tls = tls
 
     def test_kafka_admin_operations(self):
         """Test basic Kafka admin operations.
@@ -49,14 +50,19 @@ class ComponentValidation:
             universal_newlines=True,
         )
 
-        result = check_output(
+        _ = check_output(
             f"JUJU_MODEL={self.model} juju ssh {KAFKA_BROKER_APP_NAME}/0 sudo -i 'sudo charmed-kafka.acls --bootstrap-server {bootstrap_server} --add --allow-principal=User:* --operation READ --operation WRITE --operation CREATE --topic test --command-config $CONF/client.properties'",
             stderr=PIPE,
             shell=True,
             universal_newlines=True,
         )
 
-        return result
+        _ = check_output(
+            f"JUJU_MODEL={self.model} juju ssh {KAFKA_BROKER_APP_NAME}/0 sudo -i 'sudo charmed-kafka.topics --bootstrap-server {bootstrap_server} --command-config $CONF/client.properties -delete -topic test'",
+            stderr=PIPE,
+            shell=True,
+            universal_newlines=True,
+        )
 
     def test_kafka_producer_consumer(self):
         """Test Kafka producer and consumer operations using charmed-kafka CLI tools."""
@@ -104,50 +110,49 @@ class ComponentValidation:
                 # Ignore cleanup errors
                 pass
 
-    def test_create_schema_subject(self, juju: jubilant.Juju, schema_name: str = "test-key"):
-        """Test creating a schema subject in Karapace."""
+    def test_karapace(self, juju: jubilant.Juju):
+        """Test creating a schema subject in Karapace, listing it and then deletes it."""
+        schema_name = "test-key"
         result = juju.run(unit=f"{KARAPACE_APP_NAME}/0", action="get-password")
         password = result.results.get("password")
         karapace_endpoint = self.get_karapace_endpoint()
+        base_url = f"http://{karapace_endpoint}"
+        auth = ("operator", password)
 
-        command = " ".join(
-            [
-                "curl",
-                "-u",
-                f"operator:{password}",
-                "-X",
-                "POST",
-                "-H",
-                '"Content-Type: application/vnd.schemaregistry.v1+json"',
-                "--data",
-                '\'{"schema": "{\\"type\\": \\"record\\", \\"name\\": \\"Obj\\", \\"fields\\":[{\\"name\\": \\"age\\", \\"type\\": \\"int\\"}]}"}\'',
-                f"http://{karapace_endpoint}/subjects/{schema_name}/versions",
-            ]
+        # Create the schema
+        schema_data = {
+            "schema": '{"type": "record", "name": "Obj", "fields":[{"name": "age", "type": "int"}]}'
+        }
+
+        response = requests.post(
+            f"{base_url}/subjects/{schema_name}/versions",
+            json=schema_data,
+            headers={"Content-Type": "application/vnd.schemaregistry.v1+json"},
+            auth=auth,
         )
-
-        result = check_output(command, stderr=PIPE, shell=True, universal_newlines=True)
+        response.raise_for_status()
+        result = response.text
         assert '{"id":1}' in result
 
-    def test_list_subjects(self, juju: jubilant.Juju, expected_schemas: str = "[test-key]"):
-        """Test listing subjects in Karapace."""
-        result = juju.run(unit=f"{KARAPACE_APP_NAME}/0", action="get-password")
-        password = result.results.get("password")
-        karapace_endpoint = self.get_karapace_endpoint()
-
-        command = " ".join(
-            [
-                "curl",
-                "-u",
-                f"operator:{password}",
-                "-X",
-                "GET",
-                f"http://{karapace_endpoint}/subjects",
-            ]
-        )
+        # Listing it
+        expected_schema = f'["{schema_name}"]'
 
         logger.info("Requesting schemas")
-        result = check_output(command, stderr=PIPE, shell=True, universal_newlines=True)
-        assert expected_schemas in result
+        response = requests.get(
+            f"{base_url}/subjects",
+            auth=auth,
+        )
+        response.raise_for_status()
+        result = response.text
+        assert expected_schema in result
+
+        # Deleting the schema
+        logger.info("Deleting schema")
+        response = requests.delete(
+            f"{base_url}/subjects/{schema_name}",
+            auth=auth,
+        )
+        response.raise_for_status()
 
     def test_connect_endpoints(self):
         """Test Kafka Connect health."""
@@ -162,6 +167,11 @@ class ComponentValidation:
         connector_name = "mm2-test"
         connect_endpoint = self.get_connect_endpoint()
         connect_password = self._get_connect_admin_password()
+
+        # TLS setup
+        protocol = "https" if self.tls else "http"
+        base_url = f"{protocol}://{connect_endpoint}"
+        verify = CA_FILE if self.tls else False
 
         # Basic MM2 connector configuration
         mm2_config = {
@@ -184,24 +194,26 @@ class ComponentValidation:
 
         # Create connector
         response = requests.post(
-            f"http://{connect_endpoint}/connectors",
+            f"{base_url}/connectors",
             json=mm2_config,
             headers={"Content-Type": "application/json"},
             auth=("admin", connect_password),
+            verify=verify,
         )
 
         assert response.status_code in [200, 201, 400, 409]
 
         if response.status_code in [200, 201]:
             requests.delete(
-                f"http://{connect_endpoint}/connectors/{connector_name}",
+                f"{base_url}/connectors/{connector_name}",
                 auth=("admin", connect_password),
+                verify=verify,
             )
 
-    def test_ui_accessibility(self, juju: jubilant.Juju, tls_enabled: bool = False):
+    def test_ui_accessibility(self):
         """Test that Kafka UI is accessible."""
         secret_data = get_secret_by_label(
-            juju.model, f"cluster.{KAFKA_UI_APP_NAME}.app", owner=KAFKA_UI_APP_NAME
+            self.model, f"cluster.{KAFKA_UI_APP_NAME}.app", owner=KAFKA_UI_APP_NAME
         )
         password = secret_data.get(KAFKA_UI_SECRET_KEY)
 
@@ -210,7 +222,7 @@ class ComponentValidation:
 
         # Verify that we're using TLS provider's cert in case TLS enabled.
         _verify = False
-        if tls_enabled:
+        if self.tls:
             _verify = CA_FILE
 
         unit_ip = self.get_unit_ipv4_address(f"{KAFKA_UI_APP_NAME}/0")

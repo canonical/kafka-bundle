@@ -39,9 +39,8 @@ def test_components(juju: Juju, kraft_mode):
 
     validator.test_kafka_admin_operations()
     validator.test_kafka_producer_consumer()
-    validator.test_create_schema_subject(juju, schema_name="test-key")
-    validator.test_list_subjects(juju, expected_schemas='["test-key"]')
-    validator.test_ui_accessibility(juju)
+    validator.test_karapace(juju)
+    validator.test_ui_accessibility()
     validator.test_connect_endpoints()
     validator.test_create_mm2_connector()
 
@@ -62,16 +61,14 @@ def test_tls_toggle(juju: Juju, kraft_mode, enable_terraform_tls):
         assert status.apps[app].app_status.current == "active"
 
 
-@pytest.mark.skip
 @pytest.mark.abort_on_fail
 def test_tls_components(juju: Juju, kraft_mode):
     """Test that all components work with TLS enabled."""
-    validator = ComponentValidation(model=juju.model)
+    validator = ComponentValidation(model=juju.model, tls=True)
 
     validator.test_kafka_admin_operations()
     validator.test_kafka_producer_consumer()
-    validator.test_create_schema_subject(juju, schema_name="test-key")
-    validator.test_list_subjects(juju, expected_schemas='["test-key"]')
-    validator.test_ui_accessibility(juju, tls_enabled=True)
+    validator.test_karapace(juju)
+    validator.test_ui_accessibility()
     validator.test_connect_endpoints()
-    validator.test_create_mm2_connector(juju)
+    validator.test_create_mm2_connector()
