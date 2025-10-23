@@ -35,7 +35,7 @@ def test_deployment_active(juju: Juju, kraft_mode, deploy_cluster):
 @pytest.mark.abort_on_fail
 def test_components(juju: Juju, kraft_mode):
     """Test that all components are deployed."""
-    validator = ComponentValidation(model=juju.model)
+    validator = ComponentValidation(juju=juju)
 
     validator.test_kafka_admin_operations()
     validator.test_kafka_producer_consumer()
@@ -64,7 +64,7 @@ def test_tls_toggle(juju: Juju, kraft_mode, enable_terraform_tls):
 @pytest.mark.abort_on_fail
 def test_tls_components(juju: Juju, kraft_mode):
     """Test that all components work with TLS enabled."""
-    validator = ComponentValidation(model=juju.model, tls=True)
+    validator = ComponentValidation(juju=juju, tls=True)
 
     validator.test_kafka_admin_operations()
     validator.test_kafka_producer_consumer()

@@ -6,6 +6,7 @@
 
 import logging
 import re
+from functools import cached_property
 from subprocess import PIPE, CalledProcessError, check_output
 from uuid import uuid4
 
@@ -33,32 +34,53 @@ logger = logging.getLogger(__name__)
 class ComponentValidation:
     """Test all Kafka ecosystem components functionality."""
 
-    def __init__(self, model: str, tls: bool = False):
-        self.model = model
+    def __init__(self, juju: jubilant.Juju, tls: bool = False):
+        self.juju = juju
+        self.model = juju.model
         self.tls = tls
+
+    @cached_property
+    def kafka_unit_name(self) -> str:
+        """Get an available Kafka unit."""
+        return next(iter(self.juju.status().get_units(app=KAFKA_BROKER_APP_NAME).keys()))
+
+    @cached_property
+    def connect_unit_name(self) -> str:
+        """Get an available Connect unit."""
+        return next(iter(self.juju.status().get_units(app=CONNECT_APP_NAME).keys()))
+
+    @cached_property
+    def karapace_unit_name(self) -> str:
+        """Get an available Karapace unit."""
+        return next(iter(self.juju.status().get_units(app=KARAPACE_APP_NAME).keys()))
+
+    @cached_property
+    def ui_unit_name(self) -> str:
+        """Get an available Kafka UI unit."""
+        return next(iter(self.juju.status().get_units(app=KAFKA_UI_APP_NAME).keys()))
 
     def test_kafka_admin_operations(self):
         """Test basic Kafka admin operations.
 
         Creates `test` topic and adds ACLs for principal `User:*`.
         """
-        bootstrap_server = self.get_kafka_bootstrap_server(unit_name=f"{KAFKA_BROKER_APP_NAME}/0")
+        bootstrap_server = self.get_kafka_bootstrap_server()
         _ = check_output(
-            f"JUJU_MODEL={self.model} juju ssh {KAFKA_BROKER_APP_NAME}/0 sudo -i 'sudo charmed-kafka.topics --bootstrap-server {bootstrap_server} --command-config $CONF/client.properties -create -topic test'",
+            f"JUJU_MODEL={self.model} juju ssh {self.kafka_unit_name} sudo -i 'sudo charmed-kafka.topics --bootstrap-server {bootstrap_server} --command-config $CONF/client.properties -create -topic test'",
             stderr=PIPE,
             shell=True,
             universal_newlines=True,
         )
 
         _ = check_output(
-            f"JUJU_MODEL={self.model} juju ssh {KAFKA_BROKER_APP_NAME}/0 sudo -i 'sudo charmed-kafka.acls --bootstrap-server {bootstrap_server} --add --allow-principal=User:* --operation READ --operation WRITE --operation CREATE --topic test --command-config $CONF/client.properties'",
+            f"JUJU_MODEL={self.model} juju ssh {self.kafka_unit_name} sudo -i 'sudo charmed-kafka.acls --bootstrap-server {bootstrap_server} --add --allow-principal=User:* --operation READ --operation WRITE --operation CREATE --topic test --command-config $CONF/client.properties'",
             stderr=PIPE,
             shell=True,
             universal_newlines=True,
         )
 
         _ = check_output(
-            f"JUJU_MODEL={self.model} juju ssh {KAFKA_BROKER_APP_NAME}/0 sudo -i 'sudo charmed-kafka.topics --bootstrap-server {bootstrap_server} --command-config $CONF/client.properties -delete -topic test'",
+            f"JUJU_MODEL={self.model} juju ssh {self.kafka_unit_name} sudo -i 'sudo charmed-kafka.topics --bootstrap-server {bootstrap_server} --command-config $CONF/client.properties -delete -topic test'",
             stderr=PIPE,
             shell=True,
             universal_newlines=True,
@@ -68,12 +90,12 @@ class ComponentValidation:
         """Test Kafka producer and consumer operations using charmed-kafka CLI tools."""
         test_topic = f"test-topic-{uuid4().hex[:8]}"
         test_message = f"test-message-{uuid4().hex}"
-        bootstrap_server = self.get_kafka_bootstrap_server(unit_name=f"{KAFKA_BROKER_APP_NAME}/0")
+        bootstrap_server = self.get_kafka_bootstrap_server()
 
         try:
             # Create topic using charmed-kafka.topics
             _ = check_output(
-                f"JUJU_MODEL={self.model} juju ssh {KAFKA_BROKER_APP_NAME}/0 sudo -i 'sudo charmed-kafka.topics --bootstrap-server {bootstrap_server} --command-config $CONF/client.properties --create --topic {test_topic} --partitions 1 --replication-factor 1'",
+                f"JUJU_MODEL={self.model} juju ssh {self.kafka_unit_name} sudo -i 'sudo charmed-kafka.topics --bootstrap-server {bootstrap_server} --command-config $CONF/client.properties --create --topic {test_topic} --partitions 1 --replication-factor 1'",
                 stderr=PIPE,
                 shell=True,
                 universal_newlines=True,
@@ -81,14 +103,14 @@ class ComponentValidation:
 
             # Produce message using charmed-kafka.console-producer
             check_output(
-                f"JUJU_MODEL={self.model} juju ssh {KAFKA_BROKER_APP_NAME}/0 sudo -i 'echo \"{test_message}\" | sudo charmed-kafka.console-producer --bootstrap-server {bootstrap_server} --producer.config $CONF/client.properties --topic {test_topic}'",
+                f"JUJU_MODEL={self.model} juju ssh {self.kafka_unit_name} sudo -i 'echo \"{test_message}\" | sudo charmed-kafka.console-producer --bootstrap-server {bootstrap_server} --producer.config $CONF/client.properties --topic {test_topic}'",
                 stderr=PIPE,
                 shell=True,
                 universal_newlines=True,
             )
 
             output = check_output(
-                f"JUJU_MODEL={self.model} juju ssh {KAFKA_BROKER_APP_NAME}/0 sudo -i 'sudo timeout 10 charmed-kafka.console-consumer --bootstrap-server {bootstrap_server} --consumer.config $CONF/client.properties --topic {test_topic} --from-beginning --max-messages 1'",
+                f"JUJU_MODEL={self.model} juju ssh {self.kafka_unit_name} sudo -i 'sudo timeout 10 charmed-kafka.console-consumer --bootstrap-server {bootstrap_server} --consumer.config $CONF/client.properties --topic {test_topic} --from-beginning --max-messages 1'",
                 stderr=PIPE,
                 shell=True,
                 universal_newlines=True,
@@ -101,7 +123,7 @@ class ComponentValidation:
             # Clean up topic
             try:
                 check_output(
-                    f"JUJU_MODEL={self.model} juju ssh {KAFKA_BROKER_APP_NAME}/0 sudo -i 'sudo charmed-kafka.topics --bootstrap-server {bootstrap_server} --command-config $CONF/client.properties --delete --topic {test_topic}'",
+                    f"JUJU_MODEL={self.model} juju ssh {self.kafka_unit_name} sudo -i 'sudo charmed-kafka.topics --bootstrap-server {bootstrap_server} --command-config $CONF/client.properties --delete --topic {test_topic}'",
                     stderr=PIPE,
                     shell=True,
                     universal_newlines=True,
@@ -113,7 +135,7 @@ class ComponentValidation:
     def test_karapace(self, juju: jubilant.Juju):
         """Test creating a schema subject in Karapace, listing it and then deletes it."""
         schema_name = "test-key"
-        result = juju.run(unit=f"{KARAPACE_APP_NAME}/0", action="get-password")
+        result = juju.run(unit=self.karapace_unit_name, action="get-password")
         password = result.results.get("password")
         karapace_endpoint = self.get_karapace_endpoint()
         base_url = f"http://{karapace_endpoint}"
@@ -156,7 +178,7 @@ class ComponentValidation:
 
     def test_connect_endpoints(self):
         """Test Kafka Connect health."""
-        connect_address = self.get_unit_ipv4_address(f"{CONNECT_APP_NAME}/0")
+        connect_address = self.get_unit_ipv4_address(self.connect_unit_name)
         status = check_socket(connect_address, CONNECT_API_PORT)
 
         # assert all endpoints are up
@@ -225,7 +247,7 @@ class ComponentValidation:
         if self.tls:
             _verify = CA_FILE
 
-        unit_ip = self.get_unit_ipv4_address(f"{KAFKA_UI_APP_NAME}/0")
+        unit_ip = self.get_unit_ipv4_address(self.ui_unit_name)
         url = f"{KAFKA_UI_PROTO}://{unit_ip}:{KAFKA_UI_PORT}"
 
         login_resp = requests.post(
@@ -251,19 +273,17 @@ class ComponentValidation:
         assert len(clusters_json) > 0
         assert clusters_json[0].get("status") == "online"
 
-    def get_kafka_bootstrap_server(
-        self, unit_name: str = f"{KAFKA_BROKER_APP_NAME}/0"
-    ) -> str | None:
+    def get_kafka_bootstrap_server(self) -> str | None:
         """Get the Kafka bootstrap server address."""
-        return f"{self.get_unit_ipv4_address(unit_name)}:{SECURITY_PROTOCOL_PORTS['SASL_SSL', 'SCRAM-SHA-512'].internal}"
+        return f"{self.get_unit_ipv4_address(self.kafka_unit_name)}:{SECURITY_PROTOCOL_PORTS['SASL_SSL', 'SCRAM-SHA-512'].internal}"
 
-    def get_karapace_endpoint(self, unit_name: str = f"{KARAPACE_APP_NAME}/0") -> str | None:
+    def get_karapace_endpoint(self) -> str | None:
         """Get the Karapace endpoint address."""
-        return f"{self.get_unit_ipv4_address(unit_name)}:{KARAPACE_PORT}"
+        return f"{self.get_unit_ipv4_address(self.karapace_unit_name)}:{KARAPACE_PORT}"
 
-    def get_connect_endpoint(self, unit_name: str = f"{CONNECT_APP_NAME}/0") -> str | None:
+    def get_connect_endpoint(self) -> str | None:
         """Get the Connect endpoint address."""
-        return f"{self.get_unit_ipv4_address(unit_name)}:{CONNECT_API_PORT}"
+        return f"{self.get_unit_ipv4_address(self.connect_unit_name)}:{CONNECT_API_PORT}"
 
     def get_unit_ipv4_address(self, unit_name: str) -> str | None:
         """A safer alternative for `juju.unit.get_public_address()` which is robust to network changes."""
@@ -288,7 +308,7 @@ class ComponentValidation:
         """Get admin user's password of a unit by reading credentials file."""
         password_path = "/var/snap/charmed-kafka/current/etc/connect/connect.password"
         res = check_output(
-            f"JUJU_MODEL={self.model} juju ssh {CONNECT_APP_NAME}/0 sudo -i 'sudo cat {password_path}'",
+            f"JUJU_MODEL={self.model} juju ssh {self.connect_unit_name} sudo -i 'sudo cat {password_path}'",
             shell=True,
             universal_newlines=True,
         )
