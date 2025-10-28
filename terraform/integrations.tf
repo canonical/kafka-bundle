@@ -101,12 +101,6 @@ resource "juju_integration" "integrator_kafka" {
 
 # TLS Integrations
 
-data "juju_offer" "certificates" {
-  count = var.tls_offer != null ? 1 : 0
-  url   = var.tls_offer
-}
-
-
 resource "juju_integration" "kafka_tls" {
   count = local.tls_enabled ? 1 : 0
   model = var.model
@@ -117,7 +111,7 @@ resource "juju_integration" "kafka_tls" {
   }
 
   application {
-    offer_url = data.juju_offer.certificates[0].url
+    offer_url = var.tls_offer
   }
 }
 
@@ -131,7 +125,7 @@ resource "juju_integration" "kafka_connect_tls" {
   }
 
   application {
-    offer_url = data.juju_offer.certificates[0].url
+    offer_url = var.tls_offer
   }
 }
 
@@ -145,7 +139,7 @@ resource "juju_integration" "karapace_tls" {
   }
 
   application {
-    offer_url = data.juju_offer.certificates[0].url
+    offer_url = var.tls_offer
   }
 }
 
@@ -159,7 +153,7 @@ resource "juju_integration" "kafka_ui_tls" {
   }
 
   application {
-    offer_url = data.juju_offer.certificates[0].url
+    offer_url = var.tls_offer
   }
 }
 

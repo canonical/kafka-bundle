@@ -22,7 +22,10 @@ KRaftMode = typing.Literal["single", "multi"]
 def pytest_addoption(parser):
     """Defines pytest parsers."""
     parser.addoption(
-        "--kraft-mode", action="store", help="KRaft mode to run the tests", default="single"
+        "--kraft-mode",
+        action="store",
+        help="KRaft mode to run the tests, 'single' or 'multi'",
+        default="single",
     )
 
 
