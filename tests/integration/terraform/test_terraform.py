@@ -39,7 +39,6 @@ def test_components(juju: Juju):
 
     validator.test_kafka_admin_operations()
     validator.test_kafka_producer_consumer()
-    validator.test_kafka_password_rotation()
     validator.test_karapace()
     validator.test_ui_accessibility()
     validator.test_connect_endpoints()

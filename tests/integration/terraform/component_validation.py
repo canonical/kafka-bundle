@@ -132,15 +132,6 @@ class ComponentValidation:
                 # Ignore cleanup errors
                 pass
 
-    def test_kafka_password_rotation(self):
-        """Test rotating system admin password."""
-        # Get current password via jubilant.Juju, looking at the appropriate secret.
-
-        # Use config for system_users to update the password.
-
-        # Check that information has been updated and admin operations are still possible.
-        pass
-
     def test_karapace(self):
         """Test creating a schema subject in Karapace, listing it and then deletes it."""
         schema_name = "test-key"
