@@ -11,9 +11,8 @@ import socket
 import subprocess
 import tempfile
 from contextlib import closing
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Literal, NamedTuple, Optional
+from typing import Any, Dict, Optional
 
 import jubilant
 import yaml
@@ -21,28 +20,7 @@ import yaml
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class Ports:
-    """Types of ports for a Kafka broker."""
-
-    client: int
-    internal: int
-    external: int
-    controller: int
-    extra: int = 0
-
-
-AuthProtocol = Literal["SASL_PLAINTEXT", "SASL_SSL", "SSL"]
-AuthMechanism = Literal["SCRAM-SHA-512", "OAUTHBEARER", "SSL"]
-AuthMap = NamedTuple("AuthMap", protocol=AuthProtocol, mechanism=AuthMechanism)
-
-SECURITY_PROTOCOL_PORTS: dict[AuthMap, Ports] = {
-    AuthMap("SASL_PLAINTEXT", "SCRAM-SHA-512"): Ports(9092, 19092, 29092, 9097),
-    AuthMap("SASL_SSL", "SCRAM-SHA-512"): Ports(9093, 19093, 29093, 9098),
-    AuthMap("SSL", "SSL"): Ports(9094, 19094, 29094, 19194),
-    AuthMap("SASL_PLAINTEXT", "OAUTHBEARER"): Ports(9095, 19095, 29095, 19195),
-    AuthMap("SASL_SSL", "OAUTHBEARER"): Ports(9096, 19096, 29096, 19196),
-}
+KAFKA_INTERNAL_PORT = 19093
 KARAPACE_PORT = 8081
 KAFKA_UI_PORT = 8080
 KAFKA_UI_PROTO = "https"
@@ -61,16 +39,30 @@ CA_FILE = "/tmp/ca.pem"
 
 KAFKA_UI_SECRET_KEY = "admin-password"
 
-
-def all_active_idle(status: jubilant.Status, *apps: str):
-    """Helper function for jubilant all units active|idle checks."""
-    return jubilant.all_agents_idle(status, *apps) and jubilant.all_active(status, *apps)
-
-
-def get_app_list(kraft_mode):
-    """Get the list of expected applications based on kraft_mode."""
-    base_apps = [KAFKA_UI_APP_NAME, KARAPACE_APP_NAME, CONNECT_APP_NAME, KAFKA_BROKER_APP_NAME]
-    return base_apps + ([KAFKA_CONTROLLER_APP_NAME] if kraft_mode == "multi" else [])
+# Base Terraform configs
+SINGLE_MODE_DEFAULT_CONFIG = {
+    "profile": "testing",
+    "broker": {
+        "units": 1,
+    },
+    "connect": {"units": 1},
+    "karapace": {"units": 1},
+    "ui": {"units": 1},
+    "integrator": {"units": 1},
+}
+SPLIT_MODE_DEFAULT_CONFIG = {
+    "profile": "testing",
+    "broker": {
+        "units": 3,
+    },
+    "controller": {
+        "units": 3,
+    },
+    "connect": {"units": 3},
+    "karapace": {"units": 1},
+    "ui": {"units": 1},
+    "integrator": {"units": 1},
+}
 
 
 class TerraformDeployer:
@@ -205,16 +197,7 @@ def get_single_mode_config(
     enable_cruise_control: bool = False, enable_tls: bool = False
 ) -> Dict[str, Any]:
     """Get Terraform configuration for single-mode deployment."""
-    config = {
-        "profile": "testing",
-        "broker": {
-            "units": 1,
-        },
-        "connect": {"units": 1},
-        "karapace": {"units": 1},
-        "ui": {"units": 1},
-        "integrator": {"units": 1},
-    }
+    config = SINGLE_MODE_DEFAULT_CONFIG.copy()
     if enable_tls:
         config = enable_tls_config(config)
 
@@ -229,19 +212,7 @@ def get_multi_app_config(
     enable_cruise_control: bool = False, enable_tls: bool = False
 ) -> Dict[str, Any]:
     """Get Terraform configuration for multi-app (split) mode deployment."""
-    config = {
-        "profile": "testing",
-        "broker": {
-            "units": 3,
-        },
-        "controller": {
-            "units": 3,
-        },
-        "connect": {"units": 1},
-        "karapace": {"units": 1},
-        "ui": {"units": 1},
-        "integrator": {"units": 1},
-    }
+    config = SPLIT_MODE_DEFAULT_CONFIG.copy()
 
     if enable_tls:
         config = enable_tls_config(config)
@@ -297,3 +268,14 @@ def check_socket(host: str | None, port: int) -> bool:
 
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
         return sock.connect_ex((host, port)) == 0
+
+
+def all_active_idle(status: jubilant.Status, *apps: str):
+    """Helper function for jubilant all units active|idle checks."""
+    return jubilant.all_agents_idle(status, *apps) and jubilant.all_active(status, *apps)
+
+
+def get_app_list(kraft_mode):
+    """Get the list of expected applications based on kraft_mode."""
+    base_apps = [KAFKA_UI_APP_NAME, KARAPACE_APP_NAME, CONNECT_APP_NAME, KAFKA_BROKER_APP_NAME]
+    return base_apps + ([KAFKA_CONTROLLER_APP_NAME] if kraft_mode == "multi" else [])

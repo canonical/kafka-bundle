@@ -17,13 +17,13 @@ from tests.integration.terraform.helpers import (
     CONNECT_API_PORT,
     CONNECT_APP_NAME,
     KAFKA_BROKER_APP_NAME,
+    KAFKA_INTERNAL_PORT,
     KAFKA_UI_APP_NAME,
     KAFKA_UI_PORT,
     KAFKA_UI_PROTO,
     KAFKA_UI_SECRET_KEY,
     KARAPACE_APP_NAME,
     KARAPACE_PORT,
-    SECURITY_PROTOCOL_PORTS,
     check_socket,
     get_secret_by_label,
 )
@@ -132,10 +132,19 @@ class ComponentValidation:
                 # Ignore cleanup errors
                 pass
 
-    def test_karapace(self, juju: jubilant.Juju):
+    def test_kafka_password_rotation(self):
+        """Test rotating system admin password."""
+        # Get current password via jubilant.Juju, looking at the appropriate secret.
+
+        # Use config for system_users to update the password.
+
+        # Check that information has been updated and admin operations are still possible.
+        pass
+
+    def test_karapace(self):
         """Test creating a schema subject in Karapace, listing it and then deletes it."""
         schema_name = "test-key"
-        result = juju.run(unit=self.karapace_unit_name, action="get-password")
+        result = self.juju.run(unit=self.karapace_unit_name, action="get-password")
         password = result.results.get("password")
         karapace_endpoint = self.get_karapace_endpoint()
         base_url = f"http://{karapace_endpoint}"
@@ -275,7 +284,7 @@ class ComponentValidation:
 
     def get_kafka_bootstrap_server(self) -> str | None:
         """Get the Kafka bootstrap server address."""
-        return f"{self.get_unit_ipv4_address(self.kafka_unit_name)}:{SECURITY_PROTOCOL_PORTS['SASL_SSL', 'SCRAM-SHA-512'].internal}"
+        return f"{self.get_unit_ipv4_address(self.kafka_unit_name)}:{KAFKA_INTERNAL_PORT}"
 
     def get_karapace_endpoint(self) -> str | None:
         """Get the Karapace endpoint address."""
