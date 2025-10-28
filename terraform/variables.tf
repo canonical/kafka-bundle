@@ -54,11 +54,6 @@ variable "broker" {
     storage     = optional(map(string), {})
   })
   default = {}
-
-  validation {
-    condition     = var.controller.units == 0 || var.controller.units % 2 != 0
-    error_message = "The number of Apache Kafka KRaft controllers must be odd (e.g., 1, 3, 5, ...)."
-  }
 }
 
 variable "controller" {
