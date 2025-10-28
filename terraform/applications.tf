@@ -1,111 +1,52 @@
-resource "juju_application" "kafka" {
-  depends_on = [juju_machine.kafka]
-  model      = juju_model.kafka.name
-
-  units = var.kafka.units
-
-  charm {
-    name    = "kafka"
-    channel = var.kafka.channel
-    base    = var.kafka.base
-  }
-
-  placement = join(",", juju_machine.kafka[*].machine_id)
-
-  config = var.kafka.config
-}
-
-resource "juju_application" "zookeeper" {
-  depends_on = [juju_machine.zookeeper]
-  model      = juju_model.kafka.name
-
-  units = var.zookeeper.units
-
-  charm {
-    name    = "zookeeper"
-    channel = var.zookeeper.channel
-    base    = var.zookeeper.base
-  }
-
-  placement = join(",", juju_machine.zookeeper[*].machine_id)
-
-  config = var.zookeeper.config
-}
-
-resource "juju_application" "tls" {
-  model = juju_model.kafka.name
-
-  units = var.tls.units
-
-  charm {
-    name    = "self-signed-certificates"
-    channel = var.tls.channel
-    base    = var.tls.base
-  }
-
-  config = var.tls.config
-}
-
 resource "juju_application" "integrator" {
-  model = juju_model.kafka.name
-
+  count = var.integrator.units > 0 ? 1 : 0
+  model = var.model
+  name  = var.integrator.app_name
   units = var.integrator.units
 
   charm {
-    name    = "data-integrator"
-    channel = var.integrator.channel
-    base    = var.integrator.base
+    name     = "data-integrator"
+    channel  = var.integrator.channel
+    revision = var.integrator.revision
+    base     = var.integrator.base
   }
 
   config = var.integrator.config
 }
 
-resource "juju_integration" "kafka_zookeeper" {
-  model = juju_model.kafka.name
 
-  application {
-    name = juju_application.kafka.name
-  }
+resource "juju_application" "kafka_cos_agent" {
+  count = local.cos_enabled ? 1 : 0
+  model = var.model
+  name  = "${module.broker.app_name}-cos-agent"
 
-  application {
-    name = juju_application.zookeeper.name
-  }
-}
-
-resource "juju_integration" "zookeeper_tls" {
-  model = juju_model.kafka.name
-
-  application {
-    name = juju_application.zookeeper.name
-  }
-
-  application {
-    name = juju_application.tls.name
+  charm {
+    name    = local.cos_agent_charm
+    channel = local.cos_agent_channel
+    base    = var.broker.base
   }
 }
 
-resource "juju_integration" "kafka_tls" {
-  model = juju_model.kafka.name
+resource "juju_application" "kraft_cos_agent" {
+  count = local.cos_enabled && local.deployment_mode == "split" ? 1 : 0
+  model = var.model
+  name  = "${module.controller[0].app_name}-cos-agent"
 
-  application {
-    name     = juju_application.kafka.name
-    endpoint = "certificates"
-  }
-
-  application {
-    name = juju_application.tls.name
-  }
-}
-
-resource "juju_integration" "integrator_kafka" {
-  model = juju_model.kafka.name
-
-  application {
-    name = juju_application.integrator.name
-  }
-
-  application {
-    name = juju_application.kafka.name
+  charm {
+    name    = local.cos_agent_charm
+    channel = local.cos_agent_channel
+    base    = var.controller.base
   }
 }
 
+resource "juju_application" "connect_cos_agent" {
+  count = local.cos_enabled && var.connect.units > 0 ? 1 : 0
+  model = var.model
+  name  = "${module.connect[0].app_name}-cos-agent"
+
+  charm {
+    name    = local.cos_agent_charm
+    channel = local.cos_agent_channel
+    base    = var.connect.base
+  }
+}
