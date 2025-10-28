@@ -12,7 +12,7 @@ locals {
 }
 
 module "broker" {
-  source      = "git::https://github.com/canonical/kafka-operator//terraform?ref=refactor/terraform"
+  source      = "git::https://github.com/canonical/kafka-operator//terraform?ref=main"
   model       = var.model
   app_name    = var.broker.app_name
   channel     = var.broker.channel
@@ -29,7 +29,7 @@ module "broker" {
 
 module "controller" {
   count       = local.deployment_mode == "split" ? 1 : 0
-  source      = "git::https://github.com/canonical/kafka-operator//terraform?ref=refactor/terraform"
+  source      = "git::https://github.com/canonical/kafka-operator//terraform?ref=main"
   model       = var.model
   app_name    = var.controller.app_name
   channel     = var.controller.channel
