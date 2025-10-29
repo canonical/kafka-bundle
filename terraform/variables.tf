@@ -66,7 +66,7 @@ variable "controller" {
     resources   = optional(map(string), {})
     revision    = optional(number, null)
     base        = optional(string, "ubuntu@24.04")
-    units       = optional(number, 3)
+    units       = optional(number, 0)
     storage     = optional(map(string), {})
   })
   default = {}

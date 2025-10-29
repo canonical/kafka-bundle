@@ -1,68 +1,74 @@
 #!/usr/bin/env python3
-# Copyright 2023 Canonical Ltd.
+# Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+"""Tests both single-mode and multi-app mode deployments with all components."""
+
 import logging
-import subprocess
 
 import pytest
-import yaml
-from pytest_operator.plugin import OpsTest
+from jubilant import Juju
+from tests.integration.terraform.component_validation import ComponentValidation
+from tests.integration.terraform.helpers import all_active_idle, get_app_list
 
 logger = logging.getLogger(__name__)
 
 
-def get_value(obj: dict, key: str) -> list | str:
-    """Recursively gets value for given key in nested dict."""
-    if key in obj:
-        return obj.get(key, "")
-
-    for _, v in obj.items():
-        if isinstance(v, dict):
-            item = get_value(v, key)
-            if item is not None:
-                return item
+@pytest.mark.skip_if_deployed
+@pytest.mark.abort_on_fail
+def test_deployment_active(juju: Juju, kraft_mode, deploy_cluster):
+    """Test that Kafka is deployed and active."""
+    # Fixtures will deploy using terraform
+    # Wait for all applications to be active
+    app_list = get_app_list(kraft_mode)
+    juju.wait(
+        lambda status: all_active_idle(status, *app_list),
+        delay=5,
+        successes=6,
+        timeout=3600,
+    )
+    status = juju.status()
+    for app in app_list:
+        assert status.apps[app].app_status.current == "active"
 
 
 @pytest.mark.abort_on_fail
-async def test_deploy_terraform_active(ops_test: OpsTest):
-    """Deploy using Terraform."""
-    controller_credentials = yaml.safe_load(
-        subprocess.check_output(
-            "juju show-controller --show-password",
-            stderr=subprocess.PIPE,
-            shell=True,
-            universal_newlines=True,
-        )
+def test_components(juju: Juju):
+    """Test that all components are deployed."""
+    validator = ComponentValidation(juju=juju)
+
+    validator.test_kafka_admin_operations()
+    validator.test_kafka_producer_consumer()
+    validator.test_karapace()
+    validator.test_ui_accessibility()
+    validator.test_connect_endpoints()
+    validator.test_create_mm2_connector()
+
+
+@pytest.mark.abort_on_fail
+def test_tls_toggle(juju: Juju, kraft_mode, enable_terraform_tls):
+    """Test enabling and disabling TLS across the cluster."""
+    app_list = get_app_list(kraft_mode)
+
+    juju.wait(
+        lambda status: all_active_idle(status, *app_list),
+        delay=5,
+        successes=6,
+        timeout=3600,
     )
+    status = juju.status()
+    for app in app_list:
+        assert status.apps[app].app_status.current == "active"
 
-    username = get_value(obj=controller_credentials, key="user")
-    password = get_value(obj=controller_credentials, key="password")
-    controller_addresses = ",".join(get_value(obj=controller_credentials, key="api-endpoints"))
-    ca_cert = get_value(obj=controller_credentials, key="ca-cert")
 
-    command = f"terraform init && terraform import juju_model.kafka {ops_test.model_name} && terraform apply -auto-approve -var 'model={ops_test.model_name}'"
+@pytest.mark.abort_on_fail
+def test_tls_components(juju: Juju):
+    """Test that all components work with TLS enabled."""
+    validator = ComponentValidation(juju=juju, tls=True)
 
-    try:
-        subprocess.check_output(
-            command,
-            stderr=subprocess.PIPE,
-            shell=True,
-            universal_newlines=True,
-            cwd="terraform/dev",
-            env={
-                "JUJU_CONTROLLER_ADDRESSES": str(controller_addresses),
-                "JUJU_USERNAME": str(username),
-                "JUJU_PASSWORD": str(password),
-                "JUJU_CA_CERT": str(ca_cert),
-            },
-        )
-    except subprocess.CalledProcessError as e:
-        logger.info(e.output)
-        logger.info(e.stdout)
-        logger.info(e.stderr)
-        raise e
-
-    await ops_test.model.wait_for_idle(
-        apps=["kafka", "zookeeper"], timeout=2000, idle_period=30, status="active"
-    )
+    validator.test_kafka_admin_operations()
+    validator.test_kafka_producer_consumer()
+    validator.test_karapace()
+    validator.test_ui_accessibility()
+    validator.test_connect_endpoints()
+    validator.test_create_mm2_connector()

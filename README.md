@@ -28,15 +28,9 @@ If looking for a simple Charmed Kafka cluster environment to experiment and deve
 
 ##### Deploying using Terraform
 ```bash
-cd terraform/dev
+cd terraform/
 terraform init
 terraform apply
-```
-
-##### Deploying using Juju
-```bash
-juju add-model dev && juju switch dev
-juju deploy kafka-bundle
 ```
 
 ## Production Configuration
@@ -47,4 +41,3 @@ For certain workloads, you may wish to provision more storage. The supported pro
 You can see example production-ready configurations here:
 - [Terraform production `tfvars` configuration](https://github.com/canonical/kafka-bundle/blob/main/terraform/prod/prod.auto.tfvars)
     - NOTE - Currently does not support defining multiple storage volumes at deploy-time. These will need to be added manually with `juju add-storage kafka -n 11` for production
-- [Juju Bundle production overlays](https://github.com/canonical/kafka-bundle/blob/main/overlays/production.yaml)
