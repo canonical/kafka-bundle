@@ -7,6 +7,7 @@ import typing
 
 import jubilant
 import pytest
+from tests.integration.terraform.component_validation import ComponentValidation
 from tests.integration.terraform.helpers import (
     CA_FILE,
     CERTIFICATES_APP_NAME,
@@ -137,3 +138,19 @@ def model_uuid(juju: jubilant.Juju) -> str:
             if mdl["short-name"] == juju.model
         )
     )
+
+
+@pytest.fixture(autouse=True)
+def service_logs(request, juju: jubilant.Juju):
+    yield
+    log_cmd = "tail -n 1000"
+    if not request.session.testsfailed:
+        return
+
+    validator = ComponentValidation(juju=juju)
+    for service, log_file in validator.service_logs.items():
+        unit = getattr(validator, f"{service}_unit_name")
+        print(f"{service} logs")
+        print("##################################")
+        print(juju.cli("ssh", unit, f"sudo {log_cmd} {log_file}"))
+        print("##################################\n\n\n")
