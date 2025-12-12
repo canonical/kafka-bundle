@@ -1,5 +1,5 @@
-variable "model" {
-  description = "The name of the Juju Model to deploy to"
+variable "model_uuid" {
+  description = "The Model UUID to deploy to"
   type        = string
 }
 

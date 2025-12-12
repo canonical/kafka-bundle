@@ -21,8 +21,8 @@ resource "juju_model" "kafka" {
 
 module "tls" {
   depends_on  = [juju_model.tls_provider]
-  source      = "git::https://github.com/canonical/self-signed-certificates-operator//terraform?ref=rev326"
-  model       = juju_model.tls_provider.name
+  source      = "git::https://github.com/canonical/self-signed-certificates-operator//terraform?ref=rev508"
+  model_uuid  = juju_model.tls_provider.uuid
   app_name    = "certificates"
   channel     = "1/stable"
   revision    = 317
@@ -37,7 +37,7 @@ module "tls" {
 module "kafka" {
   source     = "../../"
   depends_on = [juju_model.kafka, module.tls]
-  model      = var.model
+  model_uuid = juju_model.kafka.uuid
   profile    = var.profile
   tls_offer  = module.tls.offers.certificates.url
   broker = {

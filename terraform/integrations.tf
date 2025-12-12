@@ -1,8 +1,8 @@
 # Integrations between Kafka products
 
 resource "juju_integration" "kafka_kraft" {
-  count = local.deployment_mode == "split" ? 1 : 0
-  model = var.model
+  count      = local.deployment_mode == "split" ? 1 : 0
+  model_uuid = var.model_uuid
 
   application {
     name     = module.broker.app_name
@@ -16,8 +16,8 @@ resource "juju_integration" "kafka_kraft" {
 }
 
 resource "juju_integration" "kafka_connect" {
-  count = var.connect.units > 0 ? 1 : 0
-  model = var.model
+  count      = var.connect.units > 0 ? 1 : 0
+  model_uuid = var.model_uuid
 
   application {
     name     = module.broker.app_name
@@ -30,8 +30,8 @@ resource "juju_integration" "kafka_connect" {
 }
 
 resource "juju_integration" "kafka_karapace" {
-  count = var.karapace.units > 0 ? 1 : 0
-  model = var.model
+  count      = var.karapace.units > 0 ? 1 : 0
+  model_uuid = var.model_uuid
 
   application {
     name     = module.broker.app_name
@@ -44,8 +44,8 @@ resource "juju_integration" "kafka_karapace" {
 }
 
 resource "juju_integration" "kafka_ui" {
-  count = var.ui.units > 0 ? 1 : 0
-  model = var.model
+  count      = var.ui.units > 0 ? 1 : 0
+  model_uuid = var.model_uuid
 
   application {
     name     = module.broker.app_name
@@ -59,8 +59,8 @@ resource "juju_integration" "kafka_ui" {
 
 
 resource "juju_integration" "karapace_ui" {
-  count = var.karapace.units > 0 && var.ui.units > 0 ? 1 : 0
-  model = var.model
+  count      = var.karapace.units > 0 && var.ui.units > 0 ? 1 : 0
+  model_uuid = var.model_uuid
 
   application {
     name     = module.karapace[0].app_name
@@ -73,8 +73,8 @@ resource "juju_integration" "karapace_ui" {
 }
 
 resource "juju_integration" "kafka_connect_ui" {
-  count = var.connect.units > 0 && var.ui.units > 0 ? 1 : 0
-  model = var.model
+  count      = var.connect.units > 0 && var.ui.units > 0 ? 1 : 0
+  model_uuid = var.model_uuid
 
   application {
     name     = module.connect[0].app_name
@@ -87,8 +87,8 @@ resource "juju_integration" "kafka_connect_ui" {
 }
 
 resource "juju_integration" "integrator_kafka" {
-  count = var.integrator.units > 0 ? 1 : 0
-  model = var.model
+  count      = var.integrator.units > 0 ? 1 : 0
+  model_uuid = var.model_uuid
 
   application {
     name = juju_application.integrator[0].name
@@ -102,8 +102,8 @@ resource "juju_integration" "integrator_kafka" {
 # TLS Integrations
 
 resource "juju_integration" "kafka_tls" {
-  count = local.tls_enabled ? 1 : 0
-  model = var.model
+  count      = local.tls_enabled ? 1 : 0
+  model_uuid = var.model_uuid
 
   application {
     name     = module.broker.app_name
@@ -116,8 +116,8 @@ resource "juju_integration" "kafka_tls" {
 }
 
 resource "juju_integration" "kafka_connect_tls" {
-  count = local.tls_enabled && var.connect.units > 0 ? 1 : 0
-  model = var.model
+  count      = local.tls_enabled && var.connect.units > 0 ? 1 : 0
+  model_uuid = var.model_uuid
 
   application {
     name     = module.connect[0].app_name
@@ -130,8 +130,8 @@ resource "juju_integration" "kafka_connect_tls" {
 }
 
 resource "juju_integration" "karapace_tls" {
-  count = local.tls_enabled && var.karapace.units > 0 ? 1 : 0
-  model = var.model
+  count      = local.tls_enabled && var.karapace.units > 0 ? 1 : 0
+  model_uuid = var.model_uuid
 
   application {
     name     = module.karapace[0].app_name
@@ -144,8 +144,8 @@ resource "juju_integration" "karapace_tls" {
 }
 
 resource "juju_integration" "kafka_ui_tls" {
-  count = local.tls_enabled && var.ui.units > 0 ? 1 : 0
-  model = var.model
+  count      = local.tls_enabled && var.ui.units > 0 ? 1 : 0
+  model_uuid = var.model_uuid
 
   application {
     name     = module.ui[0].app_name
@@ -160,8 +160,8 @@ resource "juju_integration" "kafka_ui_tls" {
 # COS Integrations 
 
 resource "juju_integration" "kafka_cos" {
-  count = local.cos_enabled ? 1 : 0
-  model = var.model
+  count      = local.cos_enabled ? 1 : 0
+  model_uuid = var.model_uuid
 
   application {
     name     = module.broker.app_name
@@ -175,8 +175,8 @@ resource "juju_integration" "kafka_cos" {
 }
 
 resource "juju_integration" "kraft_cos" {
-  count = local.cos_enabled && local.deployment_mode == "split" ? 1 : 0
-  model = var.model
+  count      = local.cos_enabled && local.deployment_mode == "split" ? 1 : 0
+  model_uuid = var.model_uuid
 
   application {
     name     = module.controller[0].app_name
@@ -190,8 +190,8 @@ resource "juju_integration" "kraft_cos" {
 }
 
 resource "juju_integration" "connect_cos" {
-  count = local.cos_enabled && var.connect.units > 0 ? 1 : 0
-  model = var.model
+  count      = local.cos_enabled && var.connect.units > 0 ? 1 : 0
+  model_uuid = var.model_uuid
 
   application {
     name     = module.connect[0].app_name

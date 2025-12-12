@@ -1,8 +1,8 @@
 resource "juju_application" "integrator" {
-  count = var.integrator.units > 0 ? 1 : 0
-  model = var.model
-  name  = var.integrator.app_name
-  units = var.integrator.units
+  count      = var.integrator.units > 0 ? 1 : 0
+  model_uuid = var.model_uuid
+  name       = var.integrator.app_name
+  units      = var.integrator.units
 
   charm {
     name     = "data-integrator"
@@ -16,9 +16,9 @@ resource "juju_application" "integrator" {
 
 
 resource "juju_application" "kafka_cos_agent" {
-  count = local.cos_enabled ? 1 : 0
-  model = var.model
-  name  = "${module.broker.app_name}-cos-agent"
+  count      = local.cos_enabled ? 1 : 0
+  model_uuid = var.model_uuid
+  name       = "${module.broker.app_name}-cos-agent"
 
   charm {
     name    = local.cos_agent_charm
@@ -28,9 +28,9 @@ resource "juju_application" "kafka_cos_agent" {
 }
 
 resource "juju_application" "kraft_cos_agent" {
-  count = local.cos_enabled && local.deployment_mode == "split" ? 1 : 0
-  model = var.model
-  name  = "${module.controller[0].app_name}-cos-agent"
+  count      = local.cos_enabled && local.deployment_mode == "split" ? 1 : 0
+  model_uuid = var.model_uuid
+  name       = "${module.controller[0].app_name}-cos-agent"
 
   charm {
     name    = local.cos_agent_charm
@@ -40,9 +40,9 @@ resource "juju_application" "kraft_cos_agent" {
 }
 
 resource "juju_application" "connect_cos_agent" {
-  count = local.cos_enabled && var.connect.units > 0 ? 1 : 0
-  model = var.model
-  name  = "${module.connect[0].app_name}-cos-agent"
+  count      = local.cos_enabled && var.connect.units > 0 ? 1 : 0
+  model_uuid = var.model_uuid
+  name       = "${module.connect[0].app_name}-cos-agent"
 
   charm {
     name    = local.cos_agent_charm
