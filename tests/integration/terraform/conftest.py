@@ -2,6 +2,7 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+import json
 import typing
 
 import jubilant
@@ -43,9 +44,9 @@ def kraft_mode(request: pytest.FixtureRequest) -> KRaftMode:
 
 
 @pytest.fixture()
-def deploy_cluster(juju: jubilant.Juju, kraft_mode):
+def deploy_cluster(juju: jubilant.Juju, model_uuid: str, kraft_mode):
     """Deploy the cluster in single mode."""
-    terraform_deployer = TerraformDeployer(juju.model)
+    terraform_deployer = TerraformDeployer(model_uuid)
 
     # Ensure cleanup of any previous state
     terraform_deployer.cleanup()
@@ -58,7 +59,7 @@ def deploy_cluster(juju: jubilant.Juju, kraft_mode):
 
 
 @pytest.fixture()
-def enable_terraform_tls(juju: jubilant.Juju, kraft_mode):
+def enable_terraform_tls(juju: jubilant.Juju, model_uuid: str, kraft_mode):
     """Deploy a tls endpoint and update terraform."""
     jubilant.Juju().add_model(model=TLS_MODEL_NAME)
     tls_model = jubilant.Juju(model=TLS_MODEL_NAME)
@@ -76,16 +77,16 @@ def enable_terraform_tls(juju: jubilant.Juju, kraft_mode):
     ca = result.results.get("ca-certificate")
     open(CA_FILE, "w").write(ca)
 
-    terraform_deployer = TerraformDeployer(juju.model)
+    terraform_deployer = TerraformDeployer(model_uuid)
     config = get_terraform_config(enable_tls=True, split_mode=(kraft_mode == "multi"))
     tfvars_file = terraform_deployer.create_tfvars(config)
     terraform_deployer.terraform_apply(tfvars_file)
 
 
 @pytest.fixture()
-def disable_terraform_tls(juju: jubilant.Juju, kraft_mode):
+def disable_terraform_tls(juju: jubilant.Juju, model_uuid: str, kraft_mode):
     """Remove the tls endpoint and update terraform."""
-    terraform_deployer = TerraformDeployer(juju.model)
+    terraform_deployer = TerraformDeployer(model_uuid)
     config = get_terraform_config(enable_tls=False, split_mode=(kraft_mode == "multi"))
     tfvars_file = terraform_deployer.create_tfvars(config)
 
@@ -123,3 +124,16 @@ def juju(request: pytest.FixtureRequest):
 
     if request.session.testsfailed:
         print(log, end="")
+
+
+@pytest.fixture(scope="module")
+def model_uuid(juju: jubilant.Juju) -> str:
+    return next(
+        iter(
+            mdl["model-uuid"]
+            for mdl in json.loads(juju.cli("models", "--format", "json", include_model=False))[
+                "models"
+            ]
+            if mdl["short-name"] == juju.model
+        )
+    )
