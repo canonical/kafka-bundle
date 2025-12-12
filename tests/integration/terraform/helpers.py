@@ -117,9 +117,7 @@ class TerraformDeployer:
 
     def terraform_init(self):
         """Initialize Terraform in the terraform directory."""
-        result = subprocess.run(
-            ["terraform", "init"], cwd=self.terraform_dir, capture_output=True, text=True
-        )
+        result = subprocess.run(["terraform", "init"], cwd=self.terraform_dir, text=True)
         if result.returncode != 0:
             raise RuntimeError(f"Terraform init failed: {result.stderr}")
 
@@ -131,7 +129,6 @@ class TerraformDeployer:
         result = subprocess.run(
             ["terraform", "apply", "-auto-approve", f"-var-file={tfvars_file}"],
             cwd=self.terraform_dir,
-            capture_output=True,
             text=True,
             env={**env, **dict(subprocess.os.environ)},
         )
