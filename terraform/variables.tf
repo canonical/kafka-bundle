@@ -100,7 +100,7 @@ variable "karapace" {
   description = "Defines the Karapace application configuration"
   type = object({
     app_name    = optional(string, "karapace")
-    channel     = optional(string, "latest/edge")
+    channel     = optional(string, "latest/edge/tls-fix")
     config      = optional(map(string), {})
     constraints = optional(string, "arch=amd64")
     resources   = optional(map(string), {})
