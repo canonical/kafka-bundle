@@ -52,6 +52,7 @@ variable "broker" {
     base        = optional(string, "ubuntu@24.04")
     units       = optional(number, 3)
     storage     = optional(map(string), {})
+    machines    = optional(set(string), [])
   })
   default = {}
 }
@@ -68,6 +69,7 @@ variable "controller" {
     base        = optional(string, "ubuntu@24.04")
     units       = optional(number, 0)
     storage     = optional(map(string), {})
+    machines    = optional(set(string), [])
   })
   default = {}
 
@@ -89,6 +91,7 @@ variable "connect" {
     revision    = optional(number, null)
     base        = optional(string, "ubuntu@22.04")
     units       = optional(number, 1)
+    machines    = optional(set(string), [])
   })
   default = {}
 }
@@ -104,6 +107,7 @@ variable "karapace" {
     revision    = optional(number, null)
     base        = optional(string, "ubuntu@24.04")
     units       = optional(number, 1)
+    machines    = optional(set(string), [])
   })
   default = {}
 }
@@ -119,6 +123,7 @@ variable "ui" {
     revision    = optional(number, null)
     base        = optional(string, "ubuntu@24.04")
     units       = optional(number, 1)
+    machines    = optional(set(string), [])
   })
   default = {}
 }
@@ -137,6 +142,7 @@ variable "integrator" {
     revision    = optional(number, null)
     base        = optional(string, "ubuntu@24.04")
     units       = optional(number, 1)
+    machines    = optional(set(string), [])
   })
   default = {}
 }
