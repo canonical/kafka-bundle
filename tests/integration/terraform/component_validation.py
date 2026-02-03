@@ -6,6 +6,7 @@
 
 import logging
 import re
+import time
 from functools import cached_property
 from subprocess import PIPE, CalledProcessError, check_output
 from uuid import uuid4
@@ -158,15 +159,24 @@ class ComponentValidation:
             "schema": '{"type": "record", "name": "Obj", "fields":[{"name": "age", "type": "int"}]}'
         }
 
-        response = requests.post(
-            f"{base_url}/subjects/{schema_name}/versions",
-            json=schema_data,
-            headers={"Content-Type": "application/vnd.schemaregistry.v1+json"},
-            auth=auth,
-            verify=_verify,
-        )
-        response.raise_for_status()
-        result = response.text
+        result = ""
+        for i in range(10):
+            try:
+                response = requests.post(
+                    f"{base_url}/subjects/{schema_name}/versions",
+                    json=schema_data,
+                    headers={"Content-Type": "application/vnd.schemaregistry.v1+json"},
+                    auth=auth,
+                    verify=_verify,
+                )
+                response.raise_for_status()
+                result = response.text
+                break
+            except requests.exceptions.RequestException as e:
+                logger.info(f"test_karapace: attempt {i} failed, sleeping for 60 seconds...")
+                logger.info(e)
+                time.sleep(60)
+
         assert '{"id":1}' in result
 
         # Listing it
