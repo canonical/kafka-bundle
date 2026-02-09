@@ -13,7 +13,7 @@ locals {
 
 module "broker" {
   source      = "git::https://github.com/canonical/kafka-operator//terraform?ref=main"
-  model       = var.model
+  model_uuid  = var.model_uuid
   app_name    = var.broker.app_name
   channel     = var.broker.channel
   revision    = var.broker.revision
@@ -30,7 +30,7 @@ module "broker" {
 module "controller" {
   count       = local.deployment_mode == "split" ? 1 : 0
   source      = "git::https://github.com/canonical/kafka-operator//terraform?ref=main"
-  model       = var.model
+  model_uuid  = var.model_uuid
   app_name    = var.controller.app_name
   channel     = var.controller.channel
   revision    = var.controller.revision
@@ -48,7 +48,7 @@ module "controller" {
 module "connect" {
   count       = var.connect.units > 0 ? 1 : 0
   source      = "git::https://github.com/canonical/kafka-connect-operator//terraform?ref=main"
-  model       = var.model
+  model_uuid  = var.model_uuid
   app_name    = var.connect.app_name
   channel     = var.connect.channel
   revision    = var.connect.revision
@@ -61,7 +61,7 @@ module "connect" {
 module "karapace" {
   count       = var.karapace.units > 0 ? 1 : 0
   source      = "git::https://github.com/canonical/karapace-operator//terraform?ref=main"
-  model       = var.model
+  model_uuid  = var.model_uuid
   app_name    = var.karapace.app_name
   channel     = var.karapace.channel
   revision    = var.karapace.revision
@@ -74,7 +74,7 @@ module "karapace" {
 module "ui" {
   count       = var.ui.units > 0 ? 1 : 0
   source      = "git::https://github.com/canonical/kafka-ui-operator//terraform?ref=main"
-  model       = var.model
+  model_uuid  = var.model_uuid
   app_name    = var.ui.app_name
   channel     = var.ui.channel
   revision    = var.ui.revision

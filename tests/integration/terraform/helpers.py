@@ -62,8 +62,8 @@ SPLIT_MODE_DEFAULT_CONFIG = {
 class TerraformDeployer:
     """Helper class to manage Terraform deployments for testing."""
 
-    def __init__(self, model_name: str, terraform_dir: str = "terraform"):
-        self.model_name = model_name
+    def __init__(self, model_uuid: str, terraform_dir: str = "terraform"):
+        self.model_uuid = model_uuid
         self.terraform_dir = Path(terraform_dir).resolve()
         self.tfvars_file = None
 
@@ -74,7 +74,7 @@ class TerraformDeployer:
         )
 
         # Always include model
-        config["model"] = self.model_name
+        config["model_uuid"] = self.model_uuid
 
         # Write JSON content
         json.dump(config, self.tfvars_file, indent=2)
@@ -117,9 +117,7 @@ class TerraformDeployer:
 
     def terraform_init(self):
         """Initialize Terraform in the terraform directory."""
-        result = subprocess.run(
-            ["terraform", "init"], cwd=self.terraform_dir, capture_output=True, text=True
-        )
+        result = subprocess.run(["terraform", "init"], cwd=self.terraform_dir, text=True)
         if result.returncode != 0:
             raise RuntimeError(f"Terraform init failed: {result.stderr}")
 
@@ -131,7 +129,6 @@ class TerraformDeployer:
         result = subprocess.run(
             ["terraform", "apply", "-auto-approve", f"-var-file={tfvars_file}"],
             cwd=self.terraform_dir,
-            capture_output=True,
             text=True,
             env={**env, **dict(subprocess.os.environ)},
         )

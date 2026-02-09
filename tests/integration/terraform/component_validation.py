@@ -6,6 +6,7 @@
 
 import logging
 import re
+import time
 from functools import cached_property
 from subprocess import PIPE, CalledProcessError, check_output
 from uuid import uuid4
@@ -33,6 +34,12 @@ logger = logging.getLogger(__name__)
 
 class ComponentValidation:
     """Test all Kafka ecosystem components functionality."""
+
+    service_logs = {
+        "kafka": "/var/snap/charmed-kafka/common/var/log/kafka/server.log",
+        "karapace": "/var/snap/charmed-karapace/common/var/log/karapace/output.log",
+        "connect": "/var/snap/charmed-kafka/common/var/log/connect/server.log",
+    }
 
     def __init__(self, juju: jubilant.Juju, tls: bool = False):
         self.juju = juju
@@ -134,26 +141,42 @@ class ComponentValidation:
 
     def test_karapace(self):
         """Test creating a schema subject in Karapace, listing it and then deletes it."""
+        scheme = "https" if self.tls else "http"
         schema_name = "test-key"
         result = self.juju.run(unit=self.karapace_unit_name, action="get-password")
         password = result.results.get("password")
         karapace_endpoint = self.get_karapace_endpoint()
-        base_url = f"http://{karapace_endpoint}"
+        base_url = f"{scheme}://{karapace_endpoint}"
         auth = ("operator", password)
+
+        # Verify that we're using TLS provider's cert in case TLS enabled.
+        _verify = False
+        if self.tls:
+            _verify = CA_FILE
 
         # Create the schema
         schema_data = {
             "schema": '{"type": "record", "name": "Obj", "fields":[{"name": "age", "type": "int"}]}'
         }
 
-        response = requests.post(
-            f"{base_url}/subjects/{schema_name}/versions",
-            json=schema_data,
-            headers={"Content-Type": "application/vnd.schemaregistry.v1+json"},
-            auth=auth,
-        )
-        response.raise_for_status()
-        result = response.text
+        result = ""
+        for i in range(10):
+            try:
+                response = requests.post(
+                    f"{base_url}/subjects/{schema_name}/versions",
+                    json=schema_data,
+                    headers={"Content-Type": "application/vnd.schemaregistry.v1+json"},
+                    auth=auth,
+                    verify=_verify,
+                )
+                response.raise_for_status()
+                result = response.text
+                break
+            except requests.exceptions.RequestException as e:
+                logger.info(f"test_karapace: attempt {i} failed, sleeping for 60 seconds...")
+                logger.info(e)
+                time.sleep(60)
+
         assert '{"id":1}' in result
 
         # Listing it
@@ -163,6 +186,7 @@ class ComponentValidation:
         response = requests.get(
             f"{base_url}/subjects",
             auth=auth,
+            verify=_verify,
         )
         response.raise_for_status()
         result = response.text
@@ -173,6 +197,7 @@ class ComponentValidation:
         response = requests.delete(
             f"{base_url}/subjects/{schema_name}",
             auth=auth,
+            verify=_verify,
         )
         response.raise_for_status()
 
