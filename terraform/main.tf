@@ -21,6 +21,7 @@ module "broker" {
   base        = var.broker.base
   units       = var.broker.units
   storage     = var.broker.storage
+  machines    = var.broker.machines
   config = merge(var.broker.config, {
     profile = var.profile
     roles   = local.deployment_mode == "single" ? "broker,controller" : "broker"
@@ -38,6 +39,7 @@ module "controller" {
   base        = var.controller.base
   units       = var.controller.units
   storage     = var.controller.storage
+  machines    = var.controller.machines
   config = merge(var.controller.config, {
     profile = var.profile
     roles   = "controller"
@@ -56,6 +58,7 @@ module "connect" {
   base        = var.connect.base
   units       = var.connect.units
   config      = var.connect.config
+  machines    = var.connect.machines
 }
 
 module "karapace" {
@@ -69,6 +72,7 @@ module "karapace" {
   base        = var.karapace.base
   units       = var.karapace.units
   config      = var.karapace.config
+  machines    = var.karapace.machines
 }
 
 module "ui" {
@@ -82,4 +86,5 @@ module "ui" {
   base        = var.ui.base
   units       = var.ui.units
   config      = var.ui.config
+  machines    = var.ui.machines
 }

@@ -2,7 +2,8 @@ resource "juju_application" "integrator" {
   count      = var.integrator.units > 0 ? 1 : 0
   model_uuid = var.model_uuid
   name       = var.integrator.app_name
-  units      = var.integrator.units
+  units      = length(var.integrator.machines) == 0 ? var.integrator.units : null
+  machines   = length(var.integrator.machines) > 0 ? var.integrator.machines : null
 
   charm {
     name     = "data-integrator"
