@@ -12,6 +12,7 @@ on:
         type: choice
         options:
           - "4/edge"
+          - "4/beta"
           - "4/candidate"
           - "4/stable"
   pull_request:
