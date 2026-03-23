@@ -4,8 +4,24 @@ name: Tests
 
 on:
   workflow_dispatch:
+    inputs:
+      kafka-channel:
+        description: "Channel to use for the Kafka charm (broker and controller)"
+        default: "4/edge"
+        required: false
+        type: choice
+        options:
+          - "4/edge"
+          - "4/candidate"
+          - "4/stable"
   pull_request:
   workflow_call:
+    inputs:
+      kafka-channel:
+        description: "Channel to use for the Kafka charm (broker and controller)"
+        default: "4/edge"
+        required: false
+        type: string
   schedule:
     - cron: "53 0 * * *" # Daily at 00:53 UTC
 
@@ -70,4 +86,4 @@ jobs:
           fi
       - name: Run integration tests
         run: |
-          tox run -e ${{ matrix.tox-environment }} -- -m '${{ steps.select-tests.outputs.mark_expression }}' --keep-models --kraft-mode=${{ matrix.kraft-mode }}
+          tox run -e ${{ matrix.tox-environment }} -- -m '${{ steps.select-tests.outputs.mark_expression }}' --keep-models --kraft-mode=${{ matrix.kraft-mode }} --kafka-channel=${{ inputs.kafka-channel || '4/edge' }}

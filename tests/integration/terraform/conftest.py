@@ -29,6 +29,12 @@ def pytest_addoption(parser):
         help="KRaft mode to run the tests, 'single' or 'multi'",
         default="single",
     )
+    parser.addoption(
+        "--kafka-channel",
+        action="store",
+        help="Channel to use for the Kafka charm (broker and controller)",
+        default="4/edge",
+    )
 
 
 @pytest.fixture(scope="module")
@@ -41,18 +47,24 @@ def kraft_mode(request: pytest.FixtureRequest) -> KRaftMode:
     return mode
 
 
+@pytest.fixture(scope="module")
+def kafka_channel(request: pytest.FixtureRequest) -> str:
+    """Returns the Kafka charm channel to deploy."""
+    return request.config.getoption("--kafka-channel") or "4/edge"
+
+
 # -- Terraform --
 
 
 @pytest.fixture()
-def deploy_cluster(juju: jubilant.Juju, model_uuid: str, kraft_mode):
+def deploy_cluster(juju: jubilant.Juju, model_uuid: str, kraft_mode, kafka_channel):
     """Deploy the cluster in single mode."""
     terraform_deployer = TerraformDeployer(model_uuid)
 
     # Ensure cleanup of any previous state
     terraform_deployer.cleanup()
 
-    config = get_terraform_config(split_mode=(kraft_mode == "multi"))
+    config = get_terraform_config(split_mode=(kraft_mode == "multi"), kafka_channel=kafka_channel)
     tfvars_file = terraform_deployer.create_tfvars(config)
 
     terraform_deployer.terraform_init()
@@ -60,7 +72,7 @@ def deploy_cluster(juju: jubilant.Juju, model_uuid: str, kraft_mode):
 
 
 @pytest.fixture()
-def enable_terraform_tls(juju: jubilant.Juju, model_uuid: str, kraft_mode):
+def enable_terraform_tls(juju: jubilant.Juju, model_uuid: str, kraft_mode, kafka_channel):
     """Deploy a tls endpoint and update terraform."""
     jubilant.Juju().add_model(model=TLS_MODEL_NAME)
     tls_model = jubilant.Juju(model=TLS_MODEL_NAME)
@@ -79,7 +91,9 @@ def enable_terraform_tls(juju: jubilant.Juju, model_uuid: str, kraft_mode):
     open(CA_FILE, "w").write(ca)
 
     terraform_deployer = TerraformDeployer(model_uuid)
-    config = get_terraform_config(enable_tls=True, split_mode=(kraft_mode == "multi"))
+    config = get_terraform_config(
+        enable_tls=True, split_mode=(kraft_mode == "multi"), kafka_channel=kafka_channel
+    )
     tfvars_file = terraform_deployer.create_tfvars(config)
     terraform_deployer.terraform_apply(tfvars_file)
 
