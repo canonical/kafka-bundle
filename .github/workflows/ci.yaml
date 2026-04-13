@@ -46,6 +46,7 @@ jobs:
       matrix:
         tox-environment:
           - integration-terraform
+          - integration-terraform-cos
         kraft-mode:
           - single
           - multi
@@ -131,6 +132,6 @@ jobs:
             echo Skipping unstable tests
             echo "mark_expression=not unstable" >> $GITHUB_OUTPUT
           fi
-      - name: Run COS integration tests
+      - name: Run integration tests
         run: |
-          tox run -e integration-terraform-cos -- -m '${{ steps.select-tests.outputs.mark_expression }}' --keep-models --kraft-mode=${{ matrix.kraft-mode }}
+          tox run -e ${{ matrix.tox-environment }} -- -m '${{ steps.select-tests.outputs.mark_expression }}' --keep-models --kraft-mode=${{ matrix.kraft-mode }}
