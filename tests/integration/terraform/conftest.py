@@ -11,7 +11,10 @@ from tests.integration.terraform.component_validation import ComponentValidation
 from tests.integration.terraform.helpers import (
     CA_FILE,
     CERTIFICATES_APP_NAME,
+    COS_MODEL_NAME,
     TLS_MODEL_NAME,
+    CosDeployer,
+    MulticloudController,
     TerraformDeployer,
     all_active_idle,
     get_app_list,
@@ -34,6 +37,13 @@ def pytest_addoption(parser):
         action="store",
         help="Channel to use for the Kafka charm (broker and controller)",
         default="4/edge",
+    )
+    parser.addoption(
+        "--cos-controller",
+        action="store",
+        help="Name of an existing Juju microk8s controller to deploy COS on. "
+        "If not provided, a new microk8s controller will be bootstrapped.",
+        default=None,
     )
 
 
@@ -120,6 +130,12 @@ def disable_terraform_tls(juju: jubilant.Juju, model_uuid: str, kraft_mode):
 # -- Jubilant --
 
 
+@pytest.fixture(scope="session")
+def lxd_controller() -> typing.Optional[str]:
+    """Return the name of the LXD (machines) Juju controller, or None if not found."""
+    return MulticloudController().lxd_controller
+
+
 @pytest.fixture(scope="module")
 def juju(request: pytest.FixtureRequest):
     model = request.config.getoption("--model")
@@ -149,9 +165,51 @@ def model_uuid(juju: jubilant.Juju) -> str:
             for mdl in json.loads(juju.cli("models", "--format", "json", include_model=False))[
                 "models"
             ]
-            if mdl["short-name"] == juju.model
+            if mdl["short-name"] == juju.model.split(":")[-1]
         )
     )
+
+
+# -- COS --
+
+
+@pytest.fixture(scope="module")
+def cos_deployer(request: pytest.FixtureRequest):
+    """Deploy COS-lite and yield the deployer. Destroys on teardown unless --keep-models."""
+    # keep_models = typing.cast(bool, request.config.getoption("--keep-models"))
+    k8s_controller = request.config.getoption("--cos-controller")
+    deployer = CosDeployer(k8s_controller=k8s_controller)
+    deployer.deploy()
+    deployer.wait_for_active()
+    yield deployer
+    # if not keep_models:
+    #     deployer.destroy()
+
+
+@pytest.fixture(scope="module")
+def cos_juju(cos_deployer: CosDeployer):
+    """Return a Juju instance pointing at the COS model on the k8s controller."""
+    k8s_controller = cos_deployer._resolved_k8s_controller
+    return jubilant.Juju(model=f"{k8s_controller}:{COS_MODEL_NAME}")
+
+
+@pytest.fixture(scope="module")
+def deploy_cluster_with_cos(
+    juju: jubilant.Juju,
+    model_uuid: str,
+    kraft_mode: KRaftMode,
+    cos_deployer: CosDeployer,
+):
+    """Deploy the Kafka cluster with COS integration."""
+    terraform_deployer = TerraformDeployer(model_uuid)
+    terraform_deployer.cleanup()
+
+    config = get_terraform_config(split_mode=(kraft_mode == "multi"))
+    config["cos_offers"] = cos_deployer.get_cos_offers()
+    tfvars_file = terraform_deployer.create_tfvars(config)
+
+    terraform_deployer.terraform_init()
+    terraform_deployer.terraform_apply(tfvars_file)
 
 
 @pytest.fixture(autouse=True)
