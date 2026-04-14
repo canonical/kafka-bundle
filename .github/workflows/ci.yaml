@@ -4,8 +4,25 @@ name: Tests
 
 on:
   workflow_dispatch:
+    inputs:
+      kafka-channel:
+        description: "Channel to use for the Kafka charm (broker and controller)"
+        default: "4/edge"
+        required: false
+        type: choice
+        options:
+          - "4/edge"
+          - "4/beta"
+          - "4/candidate"
+          - "4/stable"
   pull_request:
   workflow_call:
+    inputs:
+      kafka-channel:
+        description: "Channel to use for the Kafka charm (broker and controller)"
+        default: "4/edge"
+        required: false
+        type: string
   schedule:
     - cron: "53 0 * * *" # Daily at 00:53 UTC
 
@@ -34,9 +51,8 @@ jobs:
           - multi
         juju:
           - snap_channel: "3.6/stable"
-            agent: "3.6.10"
     runs-on: [self-hosted, linux, AMD64, X64, xlarge, noble]
-    name: ${{ matrix.tox-environment }}_${{ matrix.kraft-mode }}_${{ matrix.juju.agent || matrix.juju.snap_channel }}
+    name: ${{ matrix.tox-environment }}_${{ matrix.kraft-mode }}_${{ matrix.juju.snap_channel }}
     needs:
       - lint
     timeout-minutes: 120
@@ -48,7 +64,6 @@ jobs:
         with:
           provider: lxd
           juju-channel: ${{ matrix.juju.snap_channel }}
-          bootstrap-options: "--agent-version ${{ matrix.juju.agent }}"
       - name: Install terraform snap
         run: |
           sudo snap install terraform --channel=latest/stable --classic
@@ -70,4 +85,4 @@ jobs:
           fi
       - name: Run integration tests
         run: |
-          tox run -e ${{ matrix.tox-environment }} -- -m '${{ steps.select-tests.outputs.mark_expression }}' --keep-models --kraft-mode=${{ matrix.kraft-mode }}
+          tox run -e ${{ matrix.tox-environment }} -- -m '${{ steps.select-tests.outputs.mark_expression }}' --keep-models --kraft-mode=${{ matrix.kraft-mode }} --kafka-channel=${{ inputs.kafka-channel || '4/edge' }}
