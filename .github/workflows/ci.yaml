@@ -29,14 +29,14 @@ jobs:
       matrix:
         tox-environment:
           - integration-terraform
+          - integration-terraform-cos
         kraft-mode:
           - single
           - multi
         juju:
           - snap_channel: "3.6/stable"
-            agent: "3.6.10"
     runs-on: [self-hosted, linux, AMD64, X64, xlarge, noble]
-    name: ${{ matrix.tox-environment }}_${{ matrix.kraft-mode }}_${{ matrix.juju.agent || matrix.juju.snap_channel }}
+    name: ${{ matrix.tox-environment }}_${{ matrix.kraft-mode }}_${{ matrix.juju.snap_channel }}
     needs:
       - lint
     timeout-minutes: 120
@@ -48,10 +48,10 @@ jobs:
         with:
           provider: lxd
           juju-channel: ${{ matrix.juju.snap_channel }}
-          bootstrap-options: "--agent-version ${{ matrix.juju.agent }}"
-      - name: Install terraform snap
+      - name: Install dependencies
         run: |
           sudo snap install terraform --channel=latest/stable --classic
+          sudo apt-get install -y jq
       - name: Select tests
         id: select-tests
         run: |
