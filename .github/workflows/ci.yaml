@@ -97,9 +97,8 @@ jobs:
           - multi
         juju:
           - snap_channel: "3.6/stable"
-            agent: "3.6.10"
     runs-on: [self-hosted, linux, AMD64, X64, xlarge, noble]
-    name: integration-terraform-cos_${{ matrix.kraft-mode }}_${{ matrix.juju.agent || matrix.juju.snap_channel }}
+    name: integration-terraform-cos_${{ matrix.kraft-mode }}_${{ matrix.juju.snap_channel }}
     needs:
       - lint
     timeout-minutes: 120
@@ -111,7 +110,6 @@ jobs:
         with:
           provider: lxd
           juju-channel: ${{ matrix.juju.snap_channel }}
-          bootstrap-options: "--agent-version ${{ matrix.juju.agent }}"
       - name: Install dependencies
         run: |
           sudo snap install terraform --channel=latest/stable --classic
