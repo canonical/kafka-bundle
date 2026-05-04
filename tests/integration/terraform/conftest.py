@@ -198,13 +198,17 @@ def deploy_cluster_with_cos(
     juju: jubilant.Juju,
     model_uuid: str,
     kraft_mode: KRaftMode,
+    kafka_channel: str,
     cos_deployer: CosDeployer,
 ):
     """Deploy the Kafka cluster with COS integration."""
     terraform_deployer = TerraformDeployer(model_uuid)
     terraform_deployer.cleanup()
 
-    config = get_terraform_config(split_mode=(kraft_mode == "multi"))
+    config = get_terraform_config(split_mode=(kraft_mode == "multi"), kafka_channel=kafka_channel)
+    config["broker"] = {**config["broker"], "units": 1}
+    if kraft_mode == "multi":
+        config["controller"] = {**config["controller"], "units": 1}
     config["cos_offers"] = cos_deployer.get_cos_offers()
     tfvars_file = terraform_deployer.create_tfvars(config)
 
