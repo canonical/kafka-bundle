@@ -440,7 +440,7 @@ class CosDeployer:
             return self._k8s_controller
         return self._multicloud.ensure_microk8s_controller()
 
-    def deploy(self, channel: str = "dev/edge") -> None:
+    def deploy(self, risk: str = "edge") -> None:
         """Deploy COS-lite in a separate microk8s Juju model via Terraform."""
         k8s_controller = self._get_k8s_controller()
         self._resolved_k8s_controller = k8s_controller
@@ -466,7 +466,7 @@ class CosDeployer:
         )
         self.deployer.cleanup()
 
-        config = {"channel": channel}
+        config = {"risk": risk}
         tfvars_file = self.deployer.create_tfvars(config)
 
         self.deployer.terraform_init()

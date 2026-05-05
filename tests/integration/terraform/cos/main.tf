@@ -9,6 +9,6 @@
 module "cos-lite" {
   source       = "git::https://github.com/canonical/observability-stack//terraform/cos-lite?ref=main"
   model_uuid   = var.model_uuid
-  channel      = var.channel
+  risk         = var.risk
   internal_tls = var.internal_tls
 }

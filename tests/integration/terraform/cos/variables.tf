@@ -6,10 +6,10 @@ variable "model_uuid" {
   type        = string
 }
 
-variable "channel" {
-  description = "Channel for COS-lite charms (must start with 'dev/')"
+variable "risk" {
+  description = "Risk level that the COS-lite applications are deployed from"
   type        = string
-  default     = "dev/edge"
+  default     = "edge"
 }
 
 variable "internal_tls" {
