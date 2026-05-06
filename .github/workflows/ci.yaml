@@ -69,6 +69,10 @@ jobs:
         run: |
           sudo snap install terraform --channel=latest/stable --classic
           sudo apt-get install -y jq
+      - name: Setup tmate session
+        uses: canonical/action-tmate@main
+        with:
+          detached: true
       - name: Select tests
         id: select-tests
         run: |
