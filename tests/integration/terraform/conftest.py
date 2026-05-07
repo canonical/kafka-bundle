@@ -158,13 +158,14 @@ def juju(request: pytest.FixtureRequest, lxd_controller: typing.Optional[str]):
 
 
 @pytest.fixture(scope="module")
-def model_uuid(juju: jubilant.Juju) -> str:
+def model_uuid(juju: jubilant.Juju, lxd_controller: typing.Optional[str]) -> str:
+    cmd = ["models", "--format", "json"]
+    if lxd_controller:
+        cmd.extend(["--controller", lxd_controller])
     return next(
         iter(
             mdl["model-uuid"]
-            for mdl in json.loads(juju.cli("models", "--format", "json", include_model=False))[
-                "models"
-            ]
+            for mdl in json.loads(juju.cli(*cmd, include_model=False))["models"]
             if mdl["short-name"] == juju.model.split(":")[-1]
         )
     )
