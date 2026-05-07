@@ -200,9 +200,10 @@ def deploy_cluster_with_cos(
     kraft_mode: KRaftMode,
     kafka_channel: str,
     cos_deployer: CosDeployer,
+    lxd_controller: str,
 ):
     """Deploy the Kafka cluster with COS integration."""
-    terraform_deployer = TerraformDeployer(model_uuid)
+    terraform_deployer = TerraformDeployer(model_uuid, controller=lxd_controller)
     terraform_deployer.cleanup()
 
     config = get_terraform_config(split_mode=(kraft_mode == "multi"), kafka_channel=kafka_channel)
