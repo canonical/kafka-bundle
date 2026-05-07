@@ -446,8 +446,6 @@ class CosDeployer:
         self._resolved_k8s_controller = k8s_controller
         logger.info(f"Deploying COS-lite on k8s controller '{k8s_controller}'")
 
-        # Create the COS model on the k8s controller explicitly (no juju switch needed).
-        # Use controller:model prefix so jubilant targets the right controller without switching.
         jubilant.Juju().cli("add-model", "--controller", k8s_controller, COS_MODEL_NAME)
         self.cos_juju = jubilant.Juju(model=f"{k8s_controller}:{COS_MODEL_NAME}")
 

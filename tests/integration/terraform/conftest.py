@@ -137,12 +137,12 @@ def lxd_controller() -> typing.Optional[str]:
 
 
 @pytest.fixture(scope="module")
-def juju(request: pytest.FixtureRequest):
+def juju(request: pytest.FixtureRequest, lxd_controller: typing.Optional[str]):
     model = request.config.getoption("--model")
     keep_models = typing.cast(bool, request.config.getoption("--keep-models"))
 
     if model is None:
-        with jubilant.temp_model(keep=keep_models) as juju:
+        with jubilant.temp_model(keep=keep_models, controller=lxd_controller) as juju:
             juju.wait_timeout = 10 * 60
             juju.model_config({"update-status-hook-interval": "180s"})
             yield juju
