@@ -7,8 +7,8 @@ locals {
   integrator_app_name = var.integrator.units > 0 ? juju_application.integrator[0].name : null
   cos_enabled         = var.cos_offers.dashboard != null ? true : false
   tls_enabled         = var.tls_offer != null ? true : false
-  cos_agent_charm     = "grafana-agent"
-  cos_agent_channel   = "1/stable"
+  cos_agent_charm     = "opentelemetry-collector"
+  cos_agent_channel   = "2/stable"
 }
 
 module "broker" {
