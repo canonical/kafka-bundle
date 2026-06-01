@@ -203,3 +203,131 @@ resource "juju_integration" "connect_cos" {
   }
 
 }
+
+# Integrate all cos agents with the offers
+
+resource "juju_integration" "kafka_cos_dashboard" {
+  count      = local.cos_enabled ? 1 : 0
+  model_uuid = var.model_uuid
+
+  application {
+    name = juju_application.kafka_cos_agent[0].name
+  }
+
+  application {
+    offer_url = var.cos_offers.dashboard
+  }
+
+}
+
+resource "juju_integration" "kraft_cos_dashboard" {
+  count      = local.cos_enabled && local.deployment_mode == "split" ? 1 : 0
+  model_uuid = var.model_uuid
+
+  application {
+    name = juju_application.kraft_cos_agent[0].name
+  }
+
+  application {
+    offer_url = var.cos_offers.dashboard
+  }
+
+}
+
+resource "juju_integration" "connect_cos_dashboard" {
+  count      = local.cos_enabled && var.connect.units > 0 ? 1 : 0
+  model_uuid = var.model_uuid
+
+  application {
+    name = juju_application.connect_cos_agent[0].name
+  }
+
+  application {
+    offer_url = var.cos_offers.dashboard
+  }
+
+}
+
+resource "juju_integration" "kafka_cos_metrics" {
+  count      = local.cos_enabled ? 1 : 0
+  model_uuid = var.model_uuid
+
+  application {
+    name = juju_application.kafka_cos_agent[0].name
+  }
+
+  application {
+    offer_url = var.cos_offers.metrics
+  }
+
+}
+
+resource "juju_integration" "kraft_cos_metrics" {
+  count      = local.cos_enabled && local.deployment_mode == "split" ? 1 : 0
+  model_uuid = var.model_uuid
+
+  application {
+    name = juju_application.kraft_cos_agent[0].name
+  }
+
+  application {
+    offer_url = var.cos_offers.metrics
+  }
+
+}
+
+resource "juju_integration" "connect_cos_metrics" {
+  count      = local.cos_enabled && var.connect.units > 0 ? 1 : 0
+  model_uuid = var.model_uuid
+
+  application {
+    name = juju_application.connect_cos_agent[0].name
+  }
+
+  application {
+    offer_url = var.cos_offers.metrics
+  }
+
+}
+
+resource "juju_integration" "kafka_cos_logging" {
+  count      = local.cos_enabled ? 1 : 0
+  model_uuid = var.model_uuid
+
+  application {
+    name = juju_application.kafka_cos_agent[0].name
+  }
+
+  application {
+    offer_url = var.cos_offers.logging
+  }
+
+}
+
+resource "juju_integration" "kraft_cos_logging" {
+  count      = local.cos_enabled && local.deployment_mode == "split" ? 1 : 0
+  model_uuid = var.model_uuid
+
+  application {
+    name = juju_application.kraft_cos_agent[0].name
+  }
+
+  application {
+    offer_url = var.cos_offers.logging
+  }
+
+}
+
+resource "juju_integration" "connect_cos_logging" {
+  count      = local.cos_enabled && var.connect.units > 0 ? 1 : 0
+  model_uuid = var.model_uuid
+
+  application {
+    name = juju_application.connect_cos_agent[0].name
+  }
+
+  application {
+    offer_url = var.cos_offers.logging
+  }
+
+}
