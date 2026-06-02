@@ -211,7 +211,8 @@ resource "juju_integration" "kafka_cos_dashboard" {
   model_uuid = var.model_uuid
 
   application {
-    name = juju_application.kafka_cos_agent[0].name
+    name     = juju_application.kafka_cos_agent[0].name
+    endpoint = "grafana-dashboards-provider"
   }
 
   application {
@@ -225,7 +226,8 @@ resource "juju_integration" "kraft_cos_dashboard" {
   model_uuid = var.model_uuid
 
   application {
-    name = juju_application.kraft_cos_agent[0].name
+    name     = juju_application.kraft_cos_agent[0].name
+    endpoint = "grafana-dashboards-provider"
   }
 
   application {
@@ -239,7 +241,8 @@ resource "juju_integration" "connect_cos_dashboard" {
   model_uuid = var.model_uuid
 
   application {
-    name = juju_application.connect_cos_agent[0].name
+    name     = juju_application.connect_cos_agent[0].name
+    endpoint = "grafana-dashboards-provider"
   }
 
   application {
@@ -253,7 +256,8 @@ resource "juju_integration" "kafka_cos_metrics" {
   model_uuid = var.model_uuid
 
   application {
-    name = juju_application.kafka_cos_agent[0].name
+    name     = juju_application.kafka_cos_agent[0].name
+    endpoint = "send-remote-write"
   }
 
   application {
@@ -267,7 +271,8 @@ resource "juju_integration" "kraft_cos_metrics" {
   model_uuid = var.model_uuid
 
   application {
-    name = juju_application.kraft_cos_agent[0].name
+    name     = juju_application.kraft_cos_agent[0].name
+    endpoint = "send-remote-write"
   }
 
   application {
@@ -281,7 +286,8 @@ resource "juju_integration" "connect_cos_metrics" {
   model_uuid = var.model_uuid
 
   application {
-    name = juju_application.connect_cos_agent[0].name
+    name     = juju_application.connect_cos_agent[0].name
+    endpoint = "send-remote-write"
   }
 
   application {
@@ -295,7 +301,8 @@ resource "juju_integration" "kafka_cos_logging" {
   model_uuid = var.model_uuid
 
   application {
-    name = juju_application.kafka_cos_agent[0].name
+    name     = juju_application.kafka_cos_agent[0].name
+    endpoint = "send-loki-logs"
   }
 
   application {
@@ -309,7 +316,8 @@ resource "juju_integration" "kraft_cos_logging" {
   model_uuid = var.model_uuid
 
   application {
-    name = juju_application.kraft_cos_agent[0].name
+    name     = juju_application.kraft_cos_agent[0].name
+    endpoint = "send-loki-logs"
   }
 
   application {
@@ -323,7 +331,8 @@ resource "juju_integration" "connect_cos_logging" {
   model_uuid = var.model_uuid
 
   application {
-    name = juju_application.connect_cos_agent[0].name
+    name     = juju_application.connect_cos_agent[0].name
+    endpoint = "send-loki-logs"
   }
 
   application {

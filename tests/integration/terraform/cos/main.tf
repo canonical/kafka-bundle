@@ -7,7 +7,7 @@
 # the k8s controller would need to be configured in providers.tf and passed here.
 
 module "cos-lite" {
-  source       = "git::https://github.com/canonical/observability-stack//terraform/cos-lite?ref=main"
+  source       = "git::https://github.com/canonical/observability-stack//terraform/cos-lite?ref=429fbe7cef454fe33596d5c918405d719a807a38"
   model_uuid   = var.model_uuid
   risk         = var.risk
   internal_tls = var.internal_tls

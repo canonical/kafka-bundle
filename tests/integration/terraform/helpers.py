@@ -471,13 +471,19 @@ class CosDeployer:
         self.deployer.terraform_apply(tfvars_file)
 
     def get_cos_offers(self) -> Dict[str, str]:
-        """Get COS offer URLs mapped to Kafka bundle cos_offers keys."""
+        """Get COS offer URLs mapped to Kafka bundle cos_offers keys.
+
+        juju_offer.url is sourceless (admin/<model>.<offer>); the consumer
+        runs on a different controller, so prefix with the k8s controller
+        name to form <controller>:admin/<model>.<offer>.
+        """
         output = self.deployer.terraform_output()
         offers = output["offers"]["value"]
+        prefix = f"{self._resolved_k8s_controller}:"
         return {
-            "dashboard": offers["grafana_dashboards"]["url"],
-            "metrics": offers["prometheus_metrics"]["url"],
-            "logging": offers["loki_logging"]["url"],
+            "dashboard": prefix + offers["grafana_dashboards"]["url"],
+            "metrics": prefix + offers["prometheus_metrics"]["url"],
+            "logging": prefix + offers["loki_logging"]["url"],
         }
 
     def wait_for_active(self, timeout: int = 1800) -> None:
