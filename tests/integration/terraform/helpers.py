@@ -186,7 +186,12 @@ class TerraformDeployer:
 
         # Clean up terraform artifacts
         shutil.rmtree(self.terraform_dir / ".terraform", ignore_errors=True)
-        for pattern in [".terraform.lock.hcl", "terraform.tfstate*", "*.tfplan"]:
+        for pattern in [
+            ".terraform.lock.hcl",
+            "terraform.tfstate*",
+            "*.tfplan",
+            "_provider_overrides.tf.json",
+        ]:
             for file_path in self.terraform_dir.glob(pattern):
                 file_path.unlink(missing_ok=True)
 
@@ -471,19 +476,30 @@ class CosDeployer:
         self.deployer.terraform_apply(tfvars_file)
 
     def get_cos_offers(self) -> Dict[str, str]:
-        """Get COS offer URLs mapped to Kafka bundle cos_offers keys.
-
-        juju_offer.url is sourceless (admin/<model>.<offer>); the consumer
-        runs on a different controller, so prefix with the k8s controller
-        name to form <controller>:admin/<model>.<offer>.
-        """
+        """Get COS offer URLs and the controller hosting them."""
         output = self.deployer.terraform_output()
         offers = output["offers"]["value"]
-        prefix = f"{self._resolved_k8s_controller}:"
         return {
-            "dashboard": prefix + offers["grafana_dashboards"]["url"],
-            "metrics": prefix + offers["prometheus_metrics"]["url"],
-            "logging": prefix + offers["loki_logging"]["url"],
+            "dashboard": offers["grafana_dashboards"]["url"],
+            "metrics": offers["prometheus_metrics"]["url"],
+            "logging": offers["loki_logging"]["url"],
+            "offering_controller": self._resolved_k8s_controller,
+        }
+
+    def get_offering_controllers_config(self) -> Dict[str, Dict[str, str]]:
+        """Return the juju provider's `offering_controllers` map for the k8s controller.
+
+        The juju terraform provider needs explicit connection details to consume
+        offers from a different controller.
+        """
+        env = self.deployer.get_controller_credentials(self._resolved_k8s_controller)
+        return {
+            self._resolved_k8s_controller: {
+                "controller_addresses": env["JUJU_CONTROLLER_ADDRESSES"],
+                "username": env["JUJU_USERNAME"],
+                "password": env["JUJU_PASSWORD"],
+                "ca_certificate": env["JUJU_CA_CERT"],
+            }
         }
 
     def wait_for_active(self, timeout: int = 1800) -> None:

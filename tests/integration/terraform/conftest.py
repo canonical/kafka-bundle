@@ -214,6 +214,20 @@ def deploy_cluster_with_cos(
     config["cos_offers"] = cos_deployer.get_cos_offers()
     tfvars_file = terraform_deployer.create_tfvars(config)
 
+    overrides_path = terraform_deployer.terraform_dir / "_provider_overrides.tf.json"
+    overrides_path.write_text(
+        json.dumps(
+            {
+                "provider": {
+                    "juju": {
+                        "offering_controllers": cos_deployer.get_offering_controllers_config(),
+                    }
+                }
+            },
+            indent=2,
+        )
+    )
+
     terraform_deployer.terraform_init()
     terraform_deployer.terraform_apply(tfvars_file)
 

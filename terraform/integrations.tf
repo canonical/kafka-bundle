@@ -216,7 +216,8 @@ resource "juju_integration" "kafka_cos_dashboard" {
   }
 
   application {
-    offer_url = var.cos_offers.dashboard
+    offer_url           = var.cos_offers.dashboard
+    offering_controller = var.cos_offers.offering_controller
   }
 
 }
@@ -231,7 +232,8 @@ resource "juju_integration" "kraft_cos_dashboard" {
   }
 
   application {
-    offer_url = var.cos_offers.dashboard
+    offer_url           = var.cos_offers.dashboard
+    offering_controller = var.cos_offers.offering_controller
   }
 
 }
@@ -246,7 +248,8 @@ resource "juju_integration" "connect_cos_dashboard" {
   }
 
   application {
-    offer_url = var.cos_offers.dashboard
+    offer_url           = var.cos_offers.dashboard
+    offering_controller = var.cos_offers.offering_controller
   }
 
 }
@@ -261,7 +264,8 @@ resource "juju_integration" "kafka_cos_metrics" {
   }
 
   application {
-    offer_url = var.cos_offers.metrics
+    offer_url           = var.cos_offers.metrics
+    offering_controller = var.cos_offers.offering_controller
   }
 
 }
@@ -276,7 +280,8 @@ resource "juju_integration" "kraft_cos_metrics" {
   }
 
   application {
-    offer_url = var.cos_offers.metrics
+    offer_url           = var.cos_offers.metrics
+    offering_controller = var.cos_offers.offering_controller
   }
 
 }
@@ -291,7 +296,8 @@ resource "juju_integration" "connect_cos_metrics" {
   }
 
   application {
-    offer_url = var.cos_offers.metrics
+    offer_url           = var.cos_offers.metrics
+    offering_controller = var.cos_offers.offering_controller
   }
 
 }
@@ -306,7 +312,8 @@ resource "juju_integration" "kafka_cos_logging" {
   }
 
   application {
-    offer_url = var.cos_offers.logging
+    offer_url           = var.cos_offers.logging
+    offering_controller = var.cos_offers.offering_controller
   }
 
 }
@@ -321,7 +328,8 @@ resource "juju_integration" "kraft_cos_logging" {
   }
 
   application {
-    offer_url = var.cos_offers.logging
+    offer_url           = var.cos_offers.logging
+    offering_controller = var.cos_offers.offering_controller
   }
 
 }
@@ -336,7 +344,8 @@ resource "juju_integration" "connect_cos_logging" {
   }
 
   application {
-    offer_url = var.cos_offers.logging
+    offer_url           = var.cos_offers.logging
+    offering_controller = var.cos_offers.offering_controller
   }
 
 }
