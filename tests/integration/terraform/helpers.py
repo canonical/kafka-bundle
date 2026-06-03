@@ -423,8 +423,8 @@ class COSAssertions:
         "Active Controllers",
         "Total of Topics",
     )
-    ALERTS_COUNT_SINGLE = 25
-    ALERTS_COUNT_MULTI = 45
+    ALERTS_COUNT_SINGLE = 48
+    ALERTS_COUNT_MULTI = 78
 
 
 class CosDeployer:
