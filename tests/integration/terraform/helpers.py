@@ -38,7 +38,7 @@ TLS_MODEL_NAME = "tls-model"
 TLS_RELATION_OFFER = f"admin/{TLS_MODEL_NAME}.{CERTIFICATES_APP_NAME}"
 CA_FILE = "/tmp/ca.pem"
 COS_MODEL_NAME = "test-cos"
-COS_TERRAFORM_DIR = "tests/integration/terraform/cos"
+COS_TERRAFORM_DIR = "terraform/examples/cos"
 
 KAFKA_UI_SECRET_KEY = "admin-password"
 
