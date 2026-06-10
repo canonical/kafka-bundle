@@ -203,3 +203,149 @@ resource "juju_integration" "connect_cos" {
   }
 
 }
+
+# Integrate all cos agents with the offers
+
+resource "juju_integration" "kafka_cos_dashboard" {
+  count      = local.cos_enabled ? 1 : 0
+  model_uuid = var.model_uuid
+
+  application {
+    name     = juju_application.kafka_cos_agent[0].name
+    endpoint = "grafana-dashboards-provider"
+  }
+
+  application {
+    offer_url           = var.cos_offers.dashboard
+    offering_controller = var.cos_offers.offering_controller
+  }
+
+}
+
+resource "juju_integration" "kraft_cos_dashboard" {
+  count      = local.cos_enabled && local.deployment_mode == "split" ? 1 : 0
+  model_uuid = var.model_uuid
+
+  application {
+    name     = juju_application.kraft_cos_agent[0].name
+    endpoint = "grafana-dashboards-provider"
+  }
+
+  application {
+    offer_url           = var.cos_offers.dashboard
+    offering_controller = var.cos_offers.offering_controller
+  }
+
+}
+
+resource "juju_integration" "connect_cos_dashboard" {
+  count      = local.cos_enabled && var.connect.units > 0 ? 1 : 0
+  model_uuid = var.model_uuid
+
+  application {
+    name     = juju_application.connect_cos_agent[0].name
+    endpoint = "grafana-dashboards-provider"
+  }
+
+  application {
+    offer_url           = var.cos_offers.dashboard
+    offering_controller = var.cos_offers.offering_controller
+  }
+
+}
+
+resource "juju_integration" "kafka_cos_metrics" {
+  count      = local.cos_enabled ? 1 : 0
+  model_uuid = var.model_uuid
+
+  application {
+    name     = juju_application.kafka_cos_agent[0].name
+    endpoint = "send-remote-write"
+  }
+
+  application {
+    offer_url           = var.cos_offers.metrics
+    offering_controller = var.cos_offers.offering_controller
+  }
+
+}
+
+resource "juju_integration" "kraft_cos_metrics" {
+  count      = local.cos_enabled && local.deployment_mode == "split" ? 1 : 0
+  model_uuid = var.model_uuid
+
+  application {
+    name     = juju_application.kraft_cos_agent[0].name
+    endpoint = "send-remote-write"
+  }
+
+  application {
+    offer_url           = var.cos_offers.metrics
+    offering_controller = var.cos_offers.offering_controller
+  }
+
+}
+
+resource "juju_integration" "connect_cos_metrics" {
+  count      = local.cos_enabled && var.connect.units > 0 ? 1 : 0
+  model_uuid = var.model_uuid
+
+  application {
+    name     = juju_application.connect_cos_agent[0].name
+    endpoint = "send-remote-write"
+  }
+
+  application {
+    offer_url           = var.cos_offers.metrics
+    offering_controller = var.cos_offers.offering_controller
+  }
+
+}
+
+resource "juju_integration" "kafka_cos_logging" {
+  count      = local.cos_enabled ? 1 : 0
+  model_uuid = var.model_uuid
+
+  application {
+    name     = juju_application.kafka_cos_agent[0].name
+    endpoint = "send-loki-logs"
+  }
+
+  application {
+    offer_url           = var.cos_offers.logging
+    offering_controller = var.cos_offers.offering_controller
+  }
+
+}
+
+resource "juju_integration" "kraft_cos_logging" {
+  count      = local.cos_enabled && local.deployment_mode == "split" ? 1 : 0
+  model_uuid = var.model_uuid
+
+  application {
+    name     = juju_application.kraft_cos_agent[0].name
+    endpoint = "send-loki-logs"
+  }
+
+  application {
+    offer_url           = var.cos_offers.logging
+    offering_controller = var.cos_offers.offering_controller
+  }
+
+}
+
+resource "juju_integration" "connect_cos_logging" {
+  count      = local.cos_enabled && var.connect.units > 0 ? 1 : 0
+  model_uuid = var.model_uuid
+
+  application {
+    name     = juju_application.connect_cos_agent[0].name
+    endpoint = "send-loki-logs"
+  }
+
+  application {
+    offer_url           = var.cos_offers.logging
+    offering_controller = var.cos_offers.offering_controller
+  }
+
+}
