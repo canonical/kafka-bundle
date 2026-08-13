@@ -4,6 +4,7 @@
 .pytest_cache
 *.tfstate*
 .terraform*
+!.terraform-docs.yml
 .idea
 build/
 parts/
