@@ -15,6 +15,12 @@ variable "tls_offer" {
   default     = null
 }
 
+variable "oauth_offer" {
+  description = "OAuth provider endpoint to be used on Kafka and Kafka UI."
+  type        = string
+  default     = null
+}
+
 variable "cos_offers" {
   description = "COS offers for observability."
   type = object({

@@ -157,7 +157,37 @@ resource "juju_integration" "kafka_ui_tls" {
   }
 }
 
-# COS Integrations 
+# OAuth Integrations
+
+resource "juju_integration" "kafka_oauth" {
+  count      = local.oauth_enabled ? 1 : 0
+  model_uuid = var.model_uuid
+
+  application {
+    name     = module.broker.app_name
+    endpoint = "oauth"
+  }
+
+  application {
+    offer_url = var.oauth_offer
+  }
+}
+
+resource "juju_integration" "kafka_ui_oauth" {
+  count      = local.oauth_enabled && var.ui.units > 0 ? 1 : 0
+  model_uuid = var.model_uuid
+
+  application {
+    name     = module.ui[0].app_name
+    endpoint = "oauth"
+  }
+
+  application {
+    offer_url = var.oauth_offer
+  }
+}
+
+# COS Integrations
 
 resource "juju_integration" "kafka_cos" {
   count      = local.cos_enabled ? 1 : 0
