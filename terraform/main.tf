@@ -49,7 +49,7 @@ module "controller" {
 
 module "connect" {
   count       = var.connect.units > 0 ? 1 : 0
-  source      = "git::https://github.com/canonical/kafka-connect-operator//terraform?ref=main"
+  source      = "git::https://github.com/canonical/kafka-operator//connect_machine/terraform?ref=main"
   model_uuid  = var.model_uuid
   app_name    = var.connect.app_name
   channel     = var.connect.channel
