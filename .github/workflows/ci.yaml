@@ -39,6 +39,35 @@ jobs:
       - name: Run linters
         run: tox run -e lint
 
+  lint-terraform:
+    name: Lint Terraform
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: terraform
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Terraform
+        run: sudo snap install terraform --channel=latest/stable --classic
+      - name: Check formatting (terraform/ and terraform/examples)
+        run: terraform fmt -check -recursive -diff
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+      - name: Init TFLint
+        run: tflint --init
+      - name: Run TFLint
+        run: tflint --recursive
+      - name: Check README.md is up to date
+        uses: terraform-docs/gh-actions@v1
+        with:
+          working-dir: terraform
+          config-file: .terraform-docs.yml
+          output-file: README.md
+          output-method: inject
+          fail-on-diff: true
+
   integration-test-terraform:
     strategy:
       fail-fast: false
@@ -56,6 +85,7 @@ jobs:
     name: ${{ matrix.tox-environment }}_${{ matrix.kraft-mode }}_${{ matrix.juju.snap_channel }}
     needs:
       - lint
+      - lint-terraform
     timeout-minutes: 120
     steps:
       - name: Checkout
