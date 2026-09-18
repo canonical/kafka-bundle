@@ -309,7 +309,7 @@ def get_app_list(kraft_mode):
 
 
 class MulticloudController:
-    """Helper for managing multi-cloud Juju deployments (LXD + MicroK8s)."""
+    """Helper for managing multi-cloud Juju deployments (LXD + K8s)."""
 
     def _exec(self, cmd: str) -> str:
         """Execute a shell command and return stdout."""
@@ -347,55 +347,18 @@ class MulticloudController:
         return self.get_controller_name("localhost")
 
     @property
-    def microk8s_controller(self) -> Optional[str]:
-        """Return the microk8s controller name, or None if not found."""
-        return self.get_controller_name("microk8s")
+    def k8s_controller(self) -> Optional[str]:
+        """Return the k8s controller name, or None if not found."""
+        return self.get_controller_name("k8s")
 
-    def bootstrap_microk8s(self) -> None:
-        """Install microk8s and bootstrap a Juju controller on it."""
-        user = os.environ.get("USER", "root")
-        ip_addr = self._exec("ip -4 -j route get 2.2.2.2 | jq -r '.[] | .prefsrc'").strip()
-
-        self.run_script(
-            f"""
-            # install microk8s
-            sudo snap install microk8s --classic --channel=1.32
-
-            # configure microk8s user/group
-            sudo usermod -a -G microk8s {user}
-            mkdir -p ~/.kube
-            chmod 0700 ~/.kube
-
-            # wait for microk8s
-            sudo microk8s status --wait-ready
-
-            # enable required addons
-            sudo microk8s enable dns
-            sudo microk8s enable hostpath-storage
-            sudo microk8s enable metallb:{ip_addr}-{ip_addr}
-
-            # configure kubeconfig for juju
-            sudo mkdir -p /var/snap/juju/current/microk8s/credentials
-            sudo microk8s config | sudo tee /var/snap/juju/current/microk8s/credentials/client.config
-            sudo chown -R {user}:{user} /var/snap/juju/current/microk8s/credentials
-
-            juju bootstrap microk8s
-            sleep 90
-        """
-        )
-
-    def ensure_microk8s_controller(self) -> str:
-        """Return existing microk8s controller name, or bootstrap one if missing."""
-        controller = self.microk8s_controller
+    def ensure_k8s_controller(self) -> str:
+        """Return existing k8s controller name, or bootstrap one if missing."""
+        controller = self.k8s_controller
         if controller:
-            logger.info(f"Microk8s controller '{controller}' already exists, skipping bootstrap.")
+            logger.info(f"K8s controller '{controller}' already exists, skipping bootstrap.")
             return controller
-        logger.info("No microk8s controller found, bootstrapping...")
-        self.bootstrap_microk8s()
-        controller = self.microk8s_controller
-        if not controller:
-            raise RuntimeError("Failed to bootstrap microk8s controller")
-        return controller
+
+        raise RuntimeError("Failed to find a k8s controller.")
 
 
 class COS:
@@ -430,7 +393,7 @@ class COSAssertions:
 class CosDeployer:
     """Helper class to manage COS-lite deployment for integration tests.
 
-    Deploys COS-lite on a separate microk8s Juju controller (cross-controller)
+    Deploys COS-lite on a separate k8s Juju controller (cross-controller)
     """
 
     def __init__(self, k8s_controller: Optional[str] = None):
@@ -440,13 +403,13 @@ class CosDeployer:
         self._k8s_controller: Optional[str] = k8s_controller
 
     def _get_k8s_controller(self) -> str:
-        """Return the k8s controller to use, bootstrapping microk8s if needed."""
+        """Return the k8s controller to use."""
         if self._k8s_controller:
             return self._k8s_controller
-        return self._multicloud.ensure_microk8s_controller()
+        return self._multicloud.ensure_k8s_controller()
 
     def deploy(self, risk: str = "edge") -> None:
-        """Deploy COS-lite in a separate microk8s Juju model via Terraform."""
+        """Deploy COS-lite in a separate k8s Juju model via Terraform."""
         k8s_controller = self._get_k8s_controller()
         self._resolved_k8s_controller = k8s_controller
         logger.info(f"Deploying COS-lite on k8s controller '{k8s_controller}'")

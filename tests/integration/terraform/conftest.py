@@ -41,8 +41,8 @@ def pytest_addoption(parser):
     parser.addoption(
         "--cos-controller",
         action="store",
-        help="Name of an existing Juju microk8s controller to deploy COS on. "
-        "If not provided, a new microk8s controller will be bootstrapped.",
+        help="Name of an existing Juju k8s controller to deploy COS on. "
+        "If not provided, a new k8s controller will be bootstrapped.",
         default=None,
     )
 
