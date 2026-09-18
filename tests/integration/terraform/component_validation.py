@@ -38,7 +38,7 @@ class ComponentValidation:
     service_logs = {
         "kafka": "/var/snap/charmed-kafka/common/var/log/kafka/server.log",
         "karapace": "/var/snap/charmed-karapace/common/var/log/karapace/output.log",
-        "connect": "/var/snap/charmed-kafka/common/var/log/connect/server.log",
+        "connect": "/var/snap/charmed-kafka/common/var/log/connect/connect.log",
     }
 
     def __init__(self, juju: jubilant.Juju, tls: bool = False):

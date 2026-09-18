@@ -120,7 +120,13 @@ def test_prometheus_metrics_and_alerts(cos_juju: Juju, kraft_mode):
     match = [g for g in response["data"]["groups"] if KAFKA in g["name"].lower()]
     assert match, "No kafka alert rule groups found"
 
-    kafka_alerts = [rule for g in match for rule in g["rules"]]
+    # filter only kafka, kafka-connect alert rules, not the opentelemetry-collector ones.
+    kafka_alerts = [
+        rule
+        for g in match
+        for rule in g["rules"]
+        if rule["labels"]["juju_charm"] in ("kafka", "kafka-connect")
+    ]
     expected_alerts = (
         COSAssertions.ALERTS_COUNT_SINGLE
         if kraft_mode == "single"

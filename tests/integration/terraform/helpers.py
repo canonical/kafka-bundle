@@ -386,8 +386,8 @@ class COSAssertions:
         "Active Controllers",
         "Total of Topics",
     )
-    ALERTS_COUNT_SINGLE = 48
-    ALERTS_COUNT_MULTI = 78
+    ALERTS_COUNT_SINGLE = 32  # 22 kafka, 10 kafka-connect
+    ALERTS_COUNT_MULTI = 54  # 22+22 kafka, 10 kafka-connect
 
 
 class CosDeployer:
