@@ -8,7 +8,7 @@
 
 module "cos-lite" {
   source       = "git::https://github.com/canonical/observability-stack//terraform/cos-lite?ref=track/3.0"
-  model        = var.model_uuid
+  model        = { uuid = var.model_uuid }
   risk         = var.risk
   internal_tls = var.internal_tls
 }
