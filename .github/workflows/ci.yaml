@@ -42,7 +42,6 @@ jobs:
   integration-test-terraform:
     strategy:
       fail-fast: false
-      max-parallel: 2
       matrix:
         tox-environment:
           - integration-terraform
