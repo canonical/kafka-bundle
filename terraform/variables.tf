@@ -85,12 +85,12 @@ variable "connect" {
   description = "Defines the Kafka Connect application configuration"
   type = object({
     app_name    = optional(string, "kafka-connect")
-    channel     = optional(string, "latest/edge")
+    channel     = optional(string, "4/edge")
     config      = optional(map(string), {})
     constraints = optional(string, "arch=amd64")
     resources   = optional(map(string), {})
     revision    = optional(number, null)
-    base        = optional(string, "ubuntu@22.04")
+    base        = optional(string, "ubuntu@24.04")
     units       = optional(number, 1)
     machines    = optional(set(string), [])
   })
