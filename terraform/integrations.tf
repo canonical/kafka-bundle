@@ -169,7 +169,7 @@ resource "juju_integration" "kafka_oauth" {
   }
 
   application {
-    offer_url = var.oauth_offer
+    offer_url = var.oauth_offers.oauth
   }
 }
 
@@ -183,7 +183,21 @@ resource "juju_integration" "kafka_ui_oauth" {
   }
 
   application {
-    offer_url = var.oauth_offer
+    offer_url = var.oauth_offers.oauth
+  }
+}
+
+resource "juju_integration" "kafka_ui_oauth_ca" {
+  count      = local.oauth_enabled && var.ui.units > 0 ? 1 : 0
+  model_uuid = var.model_uuid
+
+  application {
+    name     = module.ui[0].app_name
+    endpoint = "oauth-ca"
+  }
+
+  application {
+    offer_url = var.oauth_offers.oauth_ca
   }
 }
 

@@ -15,10 +15,25 @@ variable "tls_offer" {
   default     = null
 }
 
-variable "oauth_offer" {
-  description = "OAuth provider endpoint to be used on Kafka and Kafka UI."
-  type        = string
-  default     = null
+variable "oauth_offers" {
+  description = "OAuth offers to be used on Kafka and Kafka UI."
+  type = object({
+    oauth    = optional(string, null),
+    oauth_ca = optional(string, null)
+  })
+
+  default = {}
+
+  validation {
+    condition = ((
+      var.oauth_offers.oauth != null &&
+      var.oauth_offers.oauth_ca != null
+      ) || (
+      var.oauth_offers.oauth == null &&
+      var.oauth_offers.oauth_ca == null
+    ))
+    error_message = "Either all or none of the OAuth offers should be provided: 'oauth', 'oauth_ca'."
+  }
 }
 
 variable "cos_offers" {
