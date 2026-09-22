@@ -10,6 +10,7 @@ import time
 from datetime import datetime, timedelta, timezone
 
 import requests
+import pytest
 from jubilant import Juju
 from tests.integration.terraform.helpers import (
     COS,
@@ -50,6 +51,7 @@ def test_kafka_with_cos_deployment_active(juju: Juju, kraft_mode, deploy_cluster
 #  -- COS Integration Tests --
 
 
+@pytest.mark.solqa
 def test_grafana_dashboard(cos_juju: Juju):
     """Verify Grafana dashboard exists with expected panels."""
     result = cos_juju.run(unit=f"{COS.GRAFANA}/0", action="get-admin-password")
@@ -94,6 +96,7 @@ def test_grafana_dashboard(cos_juju: Juju):
         logger.info(f"|__ {title}")
 
 
+@pytest.mark.solqa
 def test_prometheus_metrics_and_alerts(cos_juju: Juju, kraft_mode):
     """Verify Prometheus has kafka metrics and alert rules."""
     logger.info("Sleeping 5 minutes for metrics to accumulate...")
@@ -141,6 +144,7 @@ def test_prometheus_metrics_and_alerts(cos_juju: Juju, kraft_mode):
         logger.info(f'|__ {rule["name"]}')
 
 
+@pytest.mark.solqa
 def test_loki_log_streams(cos_juju: Juju):
     """Verify Loki is receiving log streams from Kafka."""
     result = cos_juju.run(unit=f"{COS.TRAEFIK}/0", action="show-proxied-endpoints")

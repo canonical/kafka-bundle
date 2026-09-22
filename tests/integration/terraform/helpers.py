@@ -396,11 +396,14 @@ class CosDeployer:
     Deploys COS-lite on a separate k8s Juju controller (cross-controller)
     """
 
-    def __init__(self, k8s_controller: Optional[str] = None):
+    def __init__(self, k8s_controller: Optional[str] = None, cos_model_full_name: Optional[str] = None):
         self.cos_juju: Optional[jubilant.Juju] = None
         self.deployer: Optional[TerraformDeployer] = None
         self._multicloud = MulticloudController()
         self._k8s_controller: Optional[str] = k8s_controller
+        if cos_model_full_name:
+            self.cos_juju = jubilant.Juju(model=cos_model_full_name)
+            self._resolved_k8s_controller = cos_model_full_name.split(":")[0]
 
     def _get_k8s_controller(self) -> str:
         """Return the k8s controller to use."""
