@@ -3,4 +3,10 @@
 # forwarding any arguments to the underlying pytest command.
 set -euo pipefail
 
+sudo apt-get update
+sudo apt-get install -y pipx
+pipx install tox poetry
+pipx ensurepath
+source ~/.bashrc
+
 exec tox -e integration-solqa -- "$@"
