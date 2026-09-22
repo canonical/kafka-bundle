@@ -9,8 +9,8 @@ import logging
 import time
 from datetime import datetime, timedelta, timezone
 
-import requests
 import pytest
+import requests
 from jubilant import Juju
 from tests.integration.terraform.helpers import (
     COS,
