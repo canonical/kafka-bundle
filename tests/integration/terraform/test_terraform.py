@@ -33,6 +33,7 @@ def test_deployment_active(juju: Juju, kraft_mode, deploy_cluster):
 
 
 @pytest.mark.abort_on_fail
+@pytest.mark.solqa
 def test_components(juju: Juju):
     """Test that all components are deployed."""
     validator = ComponentValidation(juju=juju)

@@ -44,6 +44,12 @@ def pytest_addoption(parser):
         help="Name of an existing Juju k8s controller to deploy COS on.",
         default=None,
     )
+    parser.addoption(
+        "--cos-model",
+        action="store",
+        help="Full name of an existing COS model, e.g. [k8s-controller-name]:[model-name].",
+        default=None,
+    )
 
 
 @pytest.fixture(scope="module")
@@ -174,12 +180,25 @@ def model_uuid(juju: jubilant.Juju, lxd_controller: typing.Optional[str]) -> str
 
 
 @pytest.fixture(scope="module")
-def cos_deployer(request: pytest.FixtureRequest):
+def deployed_cos_model(request: pytest.FixtureRequest) -> str | None:
+    """Returns the full name of a deployed COS model, or None if nothing is provided."""
+    if not (_model := request.config.getoption("--cos-model")):
+        return None
+
+    if ":" not in _model:
+        raise RuntimeError('--cos-model should include controller name, e.g. "cocierge-k8s:cos"')
+
+    return _model
+
+
+@pytest.fixture(scope="module")
+def cos_deployer(request: pytest.FixtureRequest, deployed_cos_model: str | None):
     """Deploy COS-lite and yield the deployer. Destroys on teardown unless --keep-models."""
     # keep_models = typing.cast(bool, request.config.getoption("--keep-models"))
     k8s_controller = request.config.getoption("--cos-controller")
-    deployer = CosDeployer(k8s_controller=k8s_controller)
-    deployer.deploy()
+    deployer = CosDeployer(k8s_controller=k8s_controller, cos_model_full_name=deployed_cos_model)
+    if not deployed_cos_model:
+        deployer.deploy()
     deployer.wait_for_active()
     yield deployer
     # if not keep_models:

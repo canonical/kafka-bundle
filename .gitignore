@@ -9,3 +9,4 @@ build/
 parts/
 prime/
 stage/
+test_results.xml
