@@ -3,6 +3,7 @@
 # See LICENSE file for licensing details.
 
 import json
+import logging
 import typing
 
 import jubilant
@@ -22,6 +23,8 @@ from tests.integration.terraform.helpers import (
 )
 
 KRaftMode = typing.Literal["single", "multi"]
+
+logger = logging.getLogger(__name__)
 
 
 def pytest_addoption(parser):
@@ -132,6 +135,18 @@ def disable_terraform_tls(juju: jubilant.Juju, model_uuid: str, kraft_mode):
     juju.destroy_model(model=TLS_MODEL_NAME, force=True)
 
 
+@pytest.fixture(scope="function")
+def kafka_wait_for_active(juju: jubilant.Juju, kraft_mode):
+    """Wait for all apps in the kafka model to settle into active|idle state."""
+    logger.info("Kafka model: waiting for active|idle...")
+    juju.wait(
+        lambda status: all_active_idle(status, *get_app_list(kraft_mode)),
+        delay=3,
+        successes=20,
+        timeout=30 * 60,
+    )
+
+
 # -- Jubilant --
 
 
@@ -210,6 +225,18 @@ def cos_juju(cos_deployer: CosDeployer):
     """Return a Juju instance pointing at the COS model on the k8s controller."""
     k8s_controller = cos_deployer._resolved_k8s_controller
     return jubilant.Juju(model=f"{k8s_controller}:{COS_MODEL_NAME}")
+
+
+@pytest.fixture(scope="function")
+def cos_wait_for_active(cos_juju: jubilant.Juju, kraft_mode):
+    """Wait for all apps in the COS model to settle into active|idle state."""
+    logger.info("COS model: waiting for active|idle...")
+    cos_juju.wait(
+        lambda status: all_active_idle(status),
+        delay=3,
+        successes=10,
+        timeout=30 * 60,
+    )
 
 
 @pytest.fixture(scope="module")

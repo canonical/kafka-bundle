@@ -16,6 +16,7 @@ from tests.integration.terraform.helpers import (
     COS,
     COSAssertions,
     all_active_idle,
+    detect_cos_deployment,
     get_app_list,
 )
 
@@ -52,11 +53,30 @@ def test_kafka_with_cos_deployment_active(juju: Juju, kraft_mode, deploy_cluster
 
 
 @pytest.mark.solqa
-def test_grafana_dashboard(cos_juju: Juju):
+def test_grafana_dashboard(cos_juju: Juju, cos_wait_for_active):
     """Verify Grafana dashboard exists with expected panels."""
-    result = cos_juju.run(unit=f"{COS.GRAFANA}/0", action="get-admin-password")
+    # COS HA has a bug that might return an outdated password in get-admin-password action,
+    # let's set the password to something deterministic:
+    # https://documentation.ubuntu.com/observability/track-3.0/how-to/validate-and-troubleshoot/troubleshooting/#grafana-admin-password
+    admin_password = "Pa55w0rd"
+    grafana_unit = next(iter(cos_juju.status().apps[COS.GRAFANA].units))
+    cos_juju.ssh(
+        grafana_unit,
+        *[
+            "grafana",
+            "cli",
+            "--config",
+            "/etc/grafana/grafana-config.ini",
+            "admin",
+            "reset-admin-password",
+            admin_password,
+        ],
+        container="grafana",
+    )
+    time.sleep(30)
+    result = cos_juju.run(unit=grafana_unit, action="get-admin-password")
     grafana_url = result.results.get("url")
-    admin_password = result.results.get("admin-password")
+    # admin_password = result.results.get("admin-password")
 
     auth = ("admin", admin_password)
 
@@ -97,18 +117,29 @@ def test_grafana_dashboard(cos_juju: Juju):
 
 
 @pytest.mark.solqa
-def test_prometheus_metrics_and_alerts(cos_juju: Juju, kraft_mode):
+def test_prometheus_metrics_and_alerts(cos_juju: Juju, kraft_mode, cos_wait_for_active):
     """Verify Prometheus has kafka metrics and alert rules."""
     logger.info("Sleeping 5 minutes for metrics to accumulate...")
     time.sleep(300)
 
     result = cos_juju.run(unit=f"{COS.TRAEFIK}/0", action="show-proxied-endpoints")
     proxied_endpoints = json.loads(result.results["proxied-endpoints"])
-    prometheus_url = proxied_endpoints[f"{COS.PROMETHEUS}/0"]["url"]
+
+    cos_deployment = detect_cos_deployment(cos_juju)
+    metrics_url = (
+        proxied_endpoints[f"{COS.PROMETHEUS}/0"]["url"]
+        if cos_deployment == "lite"
+        else proxied_endpoints[COS.MIMIR]["url"]
+    )
+    # In mimir, the base url for prometheus-like API is: http://{ingress_ip}/cos-mimir/prometheus
+    # https://grafana.com/docs/mimir/latest/references/http-api
+    prometheus_api_base_url = (
+        metrics_url if cos_deployment == "lite" else f"{metrics_url}/prometheus"
+    )
 
     # Check metrics
     response = requests.get(
-        f"{prometheus_url}/api/v1/label/__name__/values",
+        f"{prometheus_api_base_url}/api/v1/label/__name__/values",
         verify=False,
     ).json()
     metrics = [m for m in response["data"] if KAFKA in m]
@@ -117,7 +148,7 @@ def test_prometheus_metrics_and_alerts(cos_juju: Juju, kraft_mode):
 
     # Check alert rules
     response = requests.get(
-        f"{prometheus_url}/api/v1/rules?type=alert",
+        f"{prometheus_api_base_url}/api/v1/rules?type=alert",
         verify=False,
     ).json()
     match = [g for g in response["data"]["groups"] if KAFKA in g["name"].lower()]
@@ -145,11 +176,14 @@ def test_prometheus_metrics_and_alerts(cos_juju: Juju, kraft_mode):
 
 
 @pytest.mark.solqa
-def test_loki_log_streams(cos_juju: Juju):
+def test_loki_log_streams(cos_juju: Juju, cos_wait_for_active):
     """Verify Loki is receiving log streams from Kafka."""
     result = cos_juju.run(unit=f"{COS.TRAEFIK}/0", action="show-proxied-endpoints")
     proxied_endpoints = json.loads(result.results["proxied-endpoints"])
-    loki_url = proxied_endpoints[f"{COS.LOKI}/0"]["url"]
+    cos_deployment = detect_cos_deployment(cos_juju)
+    # Loki HA uses ingress_per_app, so the proxied endpoint is app-level.
+    component = f"{COS.LOKI}/0" if cos_deployment == "lite" else COS.LOKI
+    loki_url = proxied_endpoints[component]["url"]
 
     start_time = (datetime.now(timezone.utc) - timedelta(hours=4)).strftime("%Y-%m-%dT%H:%M:%SZ")
 

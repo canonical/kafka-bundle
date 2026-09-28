@@ -13,7 +13,7 @@ import subprocess
 import tempfile
 from contextlib import closing
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Literal, Optional
 
 import jubilant
 import yaml
@@ -308,6 +308,12 @@ def get_app_list(kraft_mode):
     return base_apps + ([KAFKA_CONTROLLER_APP_NAME] if kraft_mode == "multi" else [])
 
 
+def detect_cos_deployment(juju: jubilant.Juju) -> Literal["lite", "ha"]:
+    """Detect the COS deployment type being used for tests."""
+    apps = juju.status().apps
+    return "ha" if "mimir" in apps else "lite"
+
+
 class MulticloudController:
     """Helper for managing multi-cloud Juju deployments (LXD + K8s)."""
 
@@ -370,6 +376,7 @@ class COS:
     GRAFANA = "grafana"
     LOKI = "loki"
     PROMETHEUS = "prometheus"
+    MIMIR = "mimir"
 
     APPS = [ALERTMANAGER, CATALOGUE, GRAFANA, LOKI, PROMETHEUS, TRAEFIK]
 
