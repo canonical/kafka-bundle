@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Runs the Solutions QA integration tests (tox -e integration-solqa),
+# forwarding any arguments to the underlying pytest command.
+set -euo pipefail
+
+tox --version || {
+    pip install --user tox
+}
+
+exec ~/.local/bin/tox -e integration-solqa -- "$@"

@@ -13,7 +13,7 @@ import subprocess
 import tempfile
 from contextlib import closing
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Literal, Optional
 
 import jubilant
 import yaml
@@ -308,6 +308,12 @@ def get_app_list(kraft_mode):
     return base_apps + ([KAFKA_CONTROLLER_APP_NAME] if kraft_mode == "multi" else [])
 
 
+def detect_cos_deployment(juju: jubilant.Juju) -> Literal["lite", "ha"]:
+    """Detect the COS deployment type being used for tests."""
+    apps = juju.status().apps
+    return "ha" if "mimir" in apps else "lite"
+
+
 class MulticloudController:
     """Helper for managing multi-cloud Juju deployments (LXD + K8s)."""
 
@@ -370,6 +376,7 @@ class COS:
     GRAFANA = "grafana"
     LOKI = "loki"
     PROMETHEUS = "prometheus"
+    MIMIR = "mimir"
 
     APPS = [ALERTMANAGER, CATALOGUE, GRAFANA, LOKI, PROMETHEUS, TRAEFIK]
 
@@ -396,11 +403,16 @@ class CosDeployer:
     Deploys COS-lite on a separate k8s Juju controller (cross-controller)
     """
 
-    def __init__(self, k8s_controller: Optional[str] = None):
+    def __init__(
+        self, k8s_controller: Optional[str] = None, cos_model_full_name: Optional[str] = None
+    ):
         self.cos_juju: Optional[jubilant.Juju] = None
         self.deployer: Optional[TerraformDeployer] = None
         self._multicloud = MulticloudController()
         self._k8s_controller: Optional[str] = k8s_controller
+        if cos_model_full_name:
+            self.cos_juju = jubilant.Juju(model=cos_model_full_name)
+            self._resolved_k8s_controller = cos_model_full_name.split(":")[0]
 
     def _get_k8s_controller(self) -> str:
         """Return the k8s controller to use."""

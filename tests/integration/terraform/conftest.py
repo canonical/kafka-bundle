@@ -3,6 +3,7 @@
 # See LICENSE file for licensing details.
 
 import json
+import logging
 import typing
 
 import jubilant
@@ -23,6 +24,8 @@ from tests.integration.terraform.helpers import (
 
 KRaftMode = typing.Literal["single", "multi"]
 
+logger = logging.getLogger(__name__)
+
 
 def pytest_addoption(parser):
     """Defines pytest parsers."""
@@ -42,6 +45,12 @@ def pytest_addoption(parser):
         "--cos-controller",
         action="store",
         help="Name of an existing Juju k8s controller to deploy COS on.",
+        default=None,
+    )
+    parser.addoption(
+        "--cos-model",
+        action="store",
+        help="Full name of an existing COS model, e.g. [k8s-controller-name]:[model-name].",
         default=None,
     )
 
@@ -126,6 +135,18 @@ def disable_terraform_tls(juju: jubilant.Juju, model_uuid: str, kraft_mode):
     juju.destroy_model(model=TLS_MODEL_NAME, force=True)
 
 
+@pytest.fixture(scope="function")
+def kafka_wait_for_active(juju: jubilant.Juju, kraft_mode):
+    """Wait for all apps in the kafka model to settle into active|idle state."""
+    logger.info("Kafka model: waiting for active|idle...")
+    juju.wait(
+        lambda status: all_active_idle(status, *get_app_list(kraft_mode)),
+        delay=3,
+        successes=20,
+        timeout=30 * 60,
+    )
+
+
 # -- Jubilant --
 
 
@@ -174,12 +195,25 @@ def model_uuid(juju: jubilant.Juju, lxd_controller: typing.Optional[str]) -> str
 
 
 @pytest.fixture(scope="module")
-def cos_deployer(request: pytest.FixtureRequest):
+def deployed_cos_model(request: pytest.FixtureRequest) -> str | None:
+    """Returns the full name of a deployed COS model, or None if nothing is provided."""
+    if not (_model := request.config.getoption("--cos-model")):
+        return None
+
+    if ":" not in _model:
+        raise RuntimeError('--cos-model should include controller name, e.g. "cocierge-k8s:cos"')
+
+    return _model
+
+
+@pytest.fixture(scope="module")
+def cos_deployer(request: pytest.FixtureRequest, deployed_cos_model: str | None):
     """Deploy COS-lite and yield the deployer. Destroys on teardown unless --keep-models."""
     # keep_models = typing.cast(bool, request.config.getoption("--keep-models"))
     k8s_controller = request.config.getoption("--cos-controller")
-    deployer = CosDeployer(k8s_controller=k8s_controller)
-    deployer.deploy()
+    deployer = CosDeployer(k8s_controller=k8s_controller, cos_model_full_name=deployed_cos_model)
+    if not deployed_cos_model:
+        deployer.deploy()
     deployer.wait_for_active()
     yield deployer
     # if not keep_models:
@@ -191,6 +225,18 @@ def cos_juju(cos_deployer: CosDeployer):
     """Return a Juju instance pointing at the COS model on the k8s controller."""
     k8s_controller = cos_deployer._resolved_k8s_controller
     return jubilant.Juju(model=f"{k8s_controller}:{COS_MODEL_NAME}")
+
+
+@pytest.fixture(scope="function")
+def cos_wait_for_active(cos_juju: jubilant.Juju, kraft_mode):
+    """Wait for all apps in the COS model to settle into active|idle state."""
+    logger.info("COS model: waiting for active|idle...")
+    cos_juju.wait(
+        lambda status: all_active_idle(status),
+        delay=3,
+        successes=10,
+        timeout=30 * 60,
+    )
 
 
 @pytest.fixture(scope="module")
