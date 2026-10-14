@@ -1,0 +1,55 @@
+# Copyright 2026 Canonical Ltd.
+# See LICENSE file for licensing details.
+#
+# Regenerate README.md with:
+#   terraform-docs .
+# (reads this config automatically). The manual header paragraph below is kept
+# in sync via the `content` template, so it survives regeneration.
+
+formatter: "markdown table"
+
+content: |-
+  This repository contains the machine charm Terraform bundle for the Charmed Apache Kafka, available on [Charmhub](https://charmhub.io/kafka).
+
+  The Charmed Apache Kafka Terraform bundle can be used to deploy Apache Kafka brokers and KRaft controllers, Kafka Connect, Karapace Schema Registry, and Kafbat Kafka UI with minimal configuration overhead.
+
+  For a quick start, please refer to the `examples` folder which contains sample deployment scenarios.
+
+  {{ .Requirements }}
+
+  {{ .Providers }}
+
+  {{ .Modules }}
+
+  {{ .Resources }}
+
+  {{ .Inputs }}
+
+  {{ .Outputs }}
+
+output:
+  file: "README.md"
+  mode: inject
+  template: |-
+    <!-- BEGIN_TF_DOCS -->
+    {{ .Content }}
+    <!-- END_TF_DOCS -->
+
+sort:
+  enabled: true
+  by: name
+
+settings:
+  anchor: true
+  color: true
+  default: true
+  description: false
+  escape: true
+  hide-empty: false
+  html: true
+  indent: 2
+  lockfile: true
+  read-comments: true
+  required: true
+  sensitive: true
+  type: true
