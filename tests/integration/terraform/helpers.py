@@ -46,6 +46,7 @@ KAFKA_UI_SECRET_KEY = "admin-password"
 SINGLE_MODE_DEFAULT_CONFIG = {
     "profile": "testing",
     "broker": {"units": 1},
+    "controller": {"units": 0},
     "connect": {"units": 1},
     "karapace": {"units": 1},
     "ui": {"units": 1},

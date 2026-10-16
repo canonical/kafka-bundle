@@ -89,7 +89,7 @@ variable "controller" {
     resources   = optional(map(string), {})
     revision    = optional(number, null)
     base        = optional(string, "ubuntu@24.04")
-    units       = optional(number, 0)
+    units       = optional(number, 3)
     storage     = optional(map(string), {})
     machines    = optional(set(string), [])
   })
