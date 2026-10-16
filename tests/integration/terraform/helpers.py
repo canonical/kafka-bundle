@@ -380,7 +380,7 @@ class COSAssertions:
 
     APP = "kafka"
     DASHBOARDS = ["Kafka", "Kafka Connect Cluster"]
-    PANELS_COUNT = 50
+    PANELS_COUNT = 51
     PANELS_TO_CHECK = (
         "JVM",
         "Brokers Online",
