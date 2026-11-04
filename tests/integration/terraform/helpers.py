@@ -309,6 +309,16 @@ def get_app_list(kraft_mode):
     return base_apps + ([KAFKA_CONTROLLER_APP_NAME] if kraft_mode == "multi" else [])
 
 
+def is_deployed(juju: jubilant.Juju, charm: str) -> bool:
+    """Check if a certain charm is in the current deployment or not."""
+    status = juju.status()
+    for app in status.apps:
+        if status.apps[app].charm_name == charm:
+            return True
+
+    return False
+
+
 class MulticloudController:
     """Helper for managing multi-cloud Juju deployments (LXD + K8s)."""
 
