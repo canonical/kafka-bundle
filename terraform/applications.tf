@@ -16,6 +16,20 @@ resource "juju_application" "integrator" {
   config = var.integrator.config
 }
 
+resource "juju_application" "rack" {
+  count      = var.broker.units
+  model_uuid = var.model_uuid
+  name       = "rack-of-machine${juju_machine.broker_machines[count.index].machine_id}"
+  machines   = length(var.broker.machines) > 0 ? [var.broker.machines[count.index]] : [juju_machine.broker_machines[count.index].machine_id]
+
+  charm {
+    name    = "kafka-broker-rack-awareness"
+    channel = "latest/edge"
+    base    = var.broker.base
+  }
+
+}
+
 
 resource "juju_application" "kafka_cos_agent" {
   count      = local.cos_enabled ? 1 : 0
