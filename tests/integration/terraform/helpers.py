@@ -490,9 +490,9 @@ class CosDeployer:
         if self.deployer:
             try:
                 self.deployer.terraform_destroy(
-                    tfvars_file=self.deployer.tfvars_file.name
-                    if self.deployer.tfvars_file
-                    else None
+                    tfvars_file=(
+                        self.deployer.tfvars_file.name if self.deployer.tfvars_file else None
+                    )
                 )
             except RuntimeError:
                 logger.warning("Terraform destroy failed, proceeding with model removal")

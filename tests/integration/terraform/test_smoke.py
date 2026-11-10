@@ -19,6 +19,15 @@ class TestSmoke:
 
     validator: ComponentValidation | None = None
 
+    def _get_apps(self, juju) -> list[str]:
+        """Return a list of deployed apps of interest."""
+        status = juju.status()
+        return [
+            app
+            for app in status.apps
+            if status.apps[app].charm_name in ("kafka", "kafka-connect", "karapace", "kafka-ui")
+        ]
+
     def _get_tls_state(self, juju) -> bool:
         """Check if TLS is being used on the deployment or not."""
         status = juju.status()
@@ -39,8 +48,9 @@ class TestSmoke:
             self.validator = ComponentValidation(juju=juju, tls=self._get_tls_state(juju=juju))
 
     def test_deployment_active(self, juju: Juju):
+        apps = self._get_apps(juju=juju)
         juju.wait(
-            lambda status: all_active_idle(status),
+            lambda status: all_active_idle(status, *apps),
             delay=5,
             successes=6,
             timeout=3600,
