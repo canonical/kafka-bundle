@@ -17,7 +17,7 @@ resource "juju_application" "integrator" {
 }
 
 resource "juju_application" "rack" {
-  count      = var.broker.units
+  count      = var.enable_rack_awareness ? var.broker.units : 0
   model_uuid = var.model_uuid
   name       = "rack-of-machine${juju_machine.broker_machines[count.index].machine_id}"
   machines   = length(var.broker.machines) > 0 ? [var.broker.machines[count.index]] : [juju_machine.broker_machines[count.index].machine_id]

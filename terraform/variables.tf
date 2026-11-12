@@ -15,6 +15,12 @@ variable "tls_offer" {
   default     = null
 }
 
+variable "enable_rack_awareness" {
+  description = "Whether the deployment is using machines in separate racks (AZs) or not."
+  type        = bool
+  default     = false
+}
+
 variable "oauth_offers" {
   description = "OAuth offers to be used on Kafka and Kafka UI."
   type = object({
@@ -107,7 +113,6 @@ variable "controller" {
     error_message = "The number of Apache Kafka KRaft controllers must be odd (e.g., 1, 3, 5, ...)."
   }
 }
-
 
 variable "connect" {
   description = "Defines the Kafka Connect application configuration"
