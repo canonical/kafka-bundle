@@ -24,7 +24,7 @@ resource "juju_application" "rack" {
 
   charm {
     name    = "kafka-broker-rack-awareness"
-    channel = "latest/edge"
+    channel = "latest/stable"
     base    = var.broker.base
   }
 

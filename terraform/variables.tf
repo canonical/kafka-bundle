@@ -72,7 +72,7 @@ variable "broker" {
   description = "Defines the Apache Kafka broker application configuration"
   type = object({
     app_name    = optional(string, "kafka-broker")
-    channel     = optional(string, "4/edge")
+    channel     = optional(string, "4/stable")
     config      = optional(map(string), {})
     constraints = optional(string, "arch=amd64")
     resources   = optional(map(string), {})
@@ -92,7 +92,7 @@ variable "controller" {
   description = "Defines the Apache Kafka KRaft controller application configuration"
   type = object({
     app_name    = optional(string, "kafka-controller")
-    channel     = optional(string, "4/edge")
+    channel     = optional(string, "4/stable")
     config      = optional(map(string), {})
     constraints = optional(string, "arch=amd64")
     resources   = optional(map(string), {})
@@ -118,7 +118,7 @@ variable "connect" {
   description = "Defines the Kafka Connect application configuration"
   type = object({
     app_name    = optional(string, "kafka-connect")
-    channel     = optional(string, "4/edge")
+    channel     = optional(string, "4/stable")
     config      = optional(map(string), {})
     constraints = optional(string, "arch=amd64")
     resources   = optional(map(string), {})
@@ -138,7 +138,7 @@ variable "karapace" {
   description = "Defines the Karapace application configuration"
   type = object({
     app_name    = optional(string, "karapace")
-    channel     = optional(string, "latest/edge")
+    channel     = optional(string, "latest/stable")
     config      = optional(map(string), {})
     constraints = optional(string, "arch=amd64")
     resources   = optional(map(string), {})
@@ -158,7 +158,7 @@ variable "ui" {
   description = "Defines the Kafbat Kafka UI application configuration"
   type = object({
     app_name    = optional(string, "kafka-ui")
-    channel     = optional(string, "latest/edge")
+    channel     = optional(string, "latest/stable")
     config      = optional(map(string), {})
     constraints = optional(string, "arch=amd64")
     resources   = optional(map(string), {})
@@ -178,7 +178,7 @@ variable "integrator" {
   description = "Defines the Integrator application configuration"
   type = object({
     app_name = optional(string, "data-integrator")
-    channel  = optional(string, "latest/edge")
+    channel  = optional(string, "latest/stable")
     config = optional(map(string), {
       topic-name       = "__admin-user"
       extra-user-roles = "admin"
