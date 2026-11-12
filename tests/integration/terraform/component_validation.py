@@ -71,6 +71,7 @@ class ComponentValidation:
 
         Creates `test` topic and adds ACLs for principal `User:*`.
         """
+        logger.info("Creating test topic")
         bootstrap_server = self.get_kafka_bootstrap_server()
         _ = check_output(
             f"JUJU_MODEL={self.model} juju ssh {self.kafka_unit_name} sudo -i 'sudo charmed-kafka.topics --bootstrap-server {bootstrap_server} --command-config $CONF/client.properties -create -topic test'",
@@ -79,6 +80,7 @@ class ComponentValidation:
             universal_newlines=True,
         )
 
+        logger.info("Adding ACLs for test topic")
         _ = check_output(
             f"JUJU_MODEL={self.model} juju ssh {self.kafka_unit_name} sudo -i 'sudo charmed-kafka.acls --bootstrap-server {bootstrap_server} --add --allow-principal=User:* --operation READ --operation WRITE --operation CREATE --topic test --command-config $CONF/client.properties'",
             stderr=PIPE,
@@ -86,8 +88,17 @@ class ComponentValidation:
             universal_newlines=True,
         )
 
+        logger.info("Removing test topic")
         _ = check_output(
             f"JUJU_MODEL={self.model} juju ssh {self.kafka_unit_name} sudo -i 'sudo charmed-kafka.topics --bootstrap-server {bootstrap_server} --command-config $CONF/client.properties -delete -topic test'",
+            stderr=PIPE,
+            shell=True,
+            universal_newlines=True,
+        )
+
+        logger.info("Cleaning up ACLs")
+        _ = check_output(
+            f"JUJU_MODEL={self.model} juju ssh {self.kafka_unit_name} sudo -i 'sudo charmed-kafka.acls --bootstrap-server {bootstrap_server} --remove --force --topic test --command-config $CONF/client.properties'",
             stderr=PIPE,
             shell=True,
             universal_newlines=True,
@@ -100,7 +111,7 @@ class ComponentValidation:
         bootstrap_server = self.get_kafka_bootstrap_server()
 
         try:
-            # Create topic using charmed-kafka.topics
+            logger.info("Create a topic using charmed-kafka.topics")
             _ = check_output(
                 f"JUJU_MODEL={self.model} juju ssh {self.kafka_unit_name} sudo -i 'sudo charmed-kafka.topics --bootstrap-server {bootstrap_server} --command-config $CONF/client.properties --create --topic {test_topic} --partitions 1 --replication-factor 1'",
                 stderr=PIPE,
@@ -108,7 +119,7 @@ class ComponentValidation:
                 universal_newlines=True,
             )
 
-            # Produce message using charmed-kafka.console-producer
+            logger.info("Producing a message using charmed-kafka.console-producer")
             check_output(
                 f"JUJU_MODEL={self.model} juju ssh {self.kafka_unit_name} sudo -i 'echo \"{test_message}\" | sudo charmed-kafka.console-producer --bootstrap-server {bootstrap_server} --producer.config $CONF/client.properties --topic {test_topic}'",
                 stderr=PIPE,
@@ -123,11 +134,11 @@ class ComponentValidation:
                 universal_newlines=True,
             )
 
-            # Verify message was consumed
+            logger.info("Verify message was consumed")
             assert test_message in output.strip()
 
         finally:
-            # Clean up topic
+            logger.info("Cleaning up...")
             try:
                 check_output(
                     f"JUJU_MODEL={self.model} juju ssh {self.kafka_unit_name} sudo -i 'sudo charmed-kafka.topics --bootstrap-server {bootstrap_server} --command-config $CONF/client.properties --delete --topic {test_topic}'",
@@ -204,10 +215,27 @@ class ComponentValidation:
     def test_connect_endpoints(self):
         """Test Kafka Connect health."""
         connect_address = self.get_unit_ipv4_address(self.connect_unit_name)
+        logger.info(f"Kafka Connect: checking {connect_address}:{CONNECT_API_PORT} socket is open")
         status = check_socket(connect_address, CONNECT_API_PORT)
-
         # assert all endpoints are up
         assert status
+
+        logger.info("Checking Kafka Connect health endpoint...")
+        connect_endpoint = self.get_connect_endpoint()
+        connect_password = self._get_connect_admin_password()
+        protocol = "https" if self.tls else "http"
+        base_url = f"{protocol}://{connect_endpoint}"
+        verify = CA_FILE if self.tls else False
+
+        response = requests.get(
+            f"{base_url}/health",
+            headers={"Content-Type": "application/json"},
+            auth=("admin", connect_password),
+            verify=verify,
+        )
+        health_json = response.json()
+        logger.info(health_json)
+        assert health_json.get("status") == "healthy"
 
     def test_create_mm2_connector(self):
         """Test creating a basic MM2 (MirrorMaker 2) connector."""
@@ -239,7 +267,7 @@ class ComponentValidation:
             },
         }
 
-        # Create connector
+        logger.info(f"Creating a MM2 connector with the following config: {mm2_config}")
         response = requests.post(
             f"{base_url}/connectors",
             json=mm2_config,
@@ -251,6 +279,7 @@ class ComponentValidation:
         assert response.status_code in [200, 201, 400, 409]
 
         if response.status_code in [200, 201]:
+            logger.info("Removing the connector...")
             requests.delete(
                 f"{base_url}/connectors/{connector_name}",
                 auth=("admin", connect_password),
