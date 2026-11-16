@@ -1,0 +1,24 @@
+# Copyright 2026 Canonical Ltd.
+# See LICENSE file for licensing details.
+#
+# Install the hooks with `pre-commit install`, or run them on demand with
+# `pre-commit run --all-files`.
+
+repos:
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.99.4
+    hooks:
+      # Rewrite *.tf files into the canonical HCL style.
+      - id: terraform_fmt
+
+      # Static analysis of the Terraform code (runs recursively across
+      # terraform/ and terraform/examples via .tflint.hcl).
+      - id: terraform_tflint
+        args:
+          - --args=--recursive
+
+      # Keep README.md tables in sync with the module. Uses
+      # terraform/.terraform-docs.yml, which preserves the manual header
+      # paragraph via its `content` template.
+      - id: terraform_docs
+        files: ^terraform/.*\.tf$
