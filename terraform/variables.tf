@@ -21,6 +21,12 @@ variable "enable_rack_awareness" {
   default     = false
 }
 
+variable "rack_config" {
+  description = "Mapping of machine IDs to their racks"
+  type        = map(string)
+  default     = {}
+}
+
 variable "oauth_offers" {
   description = "OAuth offers to be used on Kafka and Kafka UI."
   type = object({
