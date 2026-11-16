@@ -16,6 +16,36 @@ resource "juju_application" "integrator" {
   config = var.integrator.config
 }
 
+locals {
+  # Machine IDs hosting the brokers, either user-provided or created by this module.
+  broker_machine_ids = (
+    length(var.broker.machines) > 0
+    ? tolist(var.broker.machines)
+    : juju_machine.broker_machines[*].machine_id
+  )
+}
+
+resource "juju_application" "rack" {
+  count       = var.enable_rack_awareness ? var.broker.units : 0
+  model_uuid  = var.model_uuid
+  name        = "rack-of-machine${juju_machine.broker_machines[count.index].machine_id}"
+  machines    = [local.broker_machine_ids[count.index]]
+  constraints = var.broker.constraints
+
+  config = {
+    "broker-rack" = lookup(var.rack_config, local.broker_machine_ids[count.index], "default")
+  }
+
+  endpoint_bindings = var.broker.endpoint_bindings
+
+  charm {
+    name    = "kafka-broker-rack-awareness"
+    channel = "latest/stable"
+    base    = var.broker.base
+  }
+
+}
+
 
 resource "juju_application" "kafka_cos_agent" {
   count      = local.cos_enabled ? 1 : 0

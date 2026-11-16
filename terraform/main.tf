@@ -12,6 +12,19 @@ locals {
   cos_agent_channel   = "2/stable"
 }
 
+resource "juju_machine" "broker_machines" {
+  count      = length(var.broker.machines) > 0 ? 0 : var.broker.units
+  model_uuid = var.model_uuid
+  base       = var.broker.base
+  name       = "broker_machine_${count.index}"
+
+  # The following lifecycle directive instructs Terraform to create
+  # new machines before destroying existing ones.
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
 module "broker" {
   source            = "git::https://github.com/canonical/kafka-operator//machine/terraform?ref=main"
   model_uuid        = var.model_uuid
@@ -22,7 +35,7 @@ module "broker" {
   base              = var.broker.base
   units             = var.broker.units
   storage           = var.broker.storage
-  machines          = var.broker.machines
+  machines          = length(var.broker.machines) > 0 ? var.broker.machines : toset(juju_machine.broker_machines[*].machine_id)
   endpoint_bindings = var.broker.endpoint_bindings
   config = merge(var.broker.config, {
     profile = var.profile
